@@ -20,6 +20,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- Chart.js (กราฟ Dashboard) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- html2canvas (แคปภาพสรุป) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <!-- ฟอนต์ Sarabun -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -707,6 +709,22 @@
   </section>
 
 </main>
+
+<!-- ====================== MODAL: สรุปการเช็คชื่อ ====================== -->
+<div id="attResultModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-3 z-[70]">
+  <div class="bg-white rounded-2xl w-full max-w-lg max-h-[92vh] flex flex-col overflow-hidden">
+    <div class="flex items-center justify-between px-4 py-3 border-b">
+      <h3 class="font-bold text-slate-700">📋 สรุปการเช็คชื่อ</h3>
+      <button onclick="closeAttResult()" class="text-slate-400 hover:text-slate-600 text-xl leading-none px-2">×</button>
+    </div>
+    <div id="attCapArea" class="overflow-y-auto p-5 bg-white"></div>
+    <div class="flex gap-2 px-4 py-3 border-t bg-slate-50">
+      <button onclick="closeAttResult()" class="btn bg-slate-200 hover:bg-slate-300 text-slate-600 px-5 py-2.5 text-sm">ปิด</button>
+      <button onclick="captureAttResult()" class="btn flex-1 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 text-sm">📷 แคปภาพ ส่ง LINE</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- ====================== FOOTER ====================== -->
 <footer class="text-center text-[11px] text-slate-400 py-6 px-4 leading-relaxed">
@@ -1751,7 +1769,7 @@ async function showLoginScreen(){
     const teachers=await GAS.call('getTeachers');
     state.teachers=teachers;
     const sel=document.getElementById('loginName');
-    sel.innerHTML='<option value="">— เลือกชื่อ —</option>'+teachers.map(t=>`<option>${esc(t.name)}</option>`).join('');
+    sel.innerHTML='<option value="">— เลือกชื่อ —</option>'+teachers.map(t=>`<option value="${esc(t.name)}">${esc(t.name)}</option>`).join('');
   }catch(e){ setStatus(false); toast(e.message,'error'); }
 }
 
@@ -2004,6 +2022,7 @@ async function saveFlag(){
   try{ showLoading(true);
     await GAS.call('saveAttendance',{date, classLevel:cls, period:0, checkedBy:state.currentUser.name, records});
     toast('บันทึกเช็คชื่อหน้าเสาธงแล้ว');
+    showAttResult({classLevel:cls, date, subtitle:'', students:state.flagStudents, draft:state.flagDraft});
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 
@@ -2052,6 +2071,7 @@ async function savePeriod(){
   try{ showLoading(true);
     await GAS.call('saveAttendance',{date, classLevel:slot.classLevel, period:slot.period, checkedBy:state.currentUser.name, records});
     toast('บันทึกเช็คชื่อคาบ '+slot.period+' แล้ว');
+    showAttResult({classLevel:slot.classLevel, date, subtitle:'คาบ '+slot.period+' • '+(slot.subject||''), students:state.periodStudents, draft:state.periodDraft});
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 
@@ -2202,6 +2222,66 @@ async function loadGrid(){
     html+='</tbody>';
     document.getElementById('gridTable').innerHTML = d.students.length && d.dates.length? html : '<tbody><tr><td class="text-center text-slate-400 py-6">ไม่มีข้อมูลเช็คชื่อในเดือนนี้</td></tr></tbody>';
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
+
+/* ============================================================
+   สรุปการเช็คชื่อ (modal) + แคปภาพส่ง LINE
+   ============================================================ */
+function thaiLongDate(iso){
+  if(!iso) return '';
+  const d=new Date(iso+'T00:00:00');
+  return 'วัน'+WEEKDAYS[d.getDay()]+'ที่ '+d.getDate()+' '+(THAI_MONTHS[d.getMonth()+1]||'')+' '+(d.getFullYear()+543);
+}
+function showAttResult(o){
+  const groups=[
+    {st:'มา', label:'นักเรียนมา', hd:'bg-emerald-100 text-emerald-700', ic:'✅'},
+    {st:'ขาด', label:'นักเรียนขาด', hd:'bg-rose-100 text-rose-700', ic:'❌'},
+    {st:'ลา', label:'นักเรียนลา', hd:'bg-amber-100 text-amber-700', ic:'📝'},
+    {st:'สาย', label:'นักเรียนมาสาย', hd:'bg-orange-100 text-orange-700', ic:'🕒'}
+  ];
+  const cnt={'มา':0,'ขาด':0,'ลา':0,'สาย':0};
+  o.students.forEach(s=>{ const v=o.draft[s.ID]||'มา'; cnt[v]=(cnt[v]||0)+1; });
+  const cards=[
+    ['มา',cnt['มา'],'bg-emerald-50 border-emerald-300 text-emerald-700'],
+    ['ขาด',cnt['ขาด'],'bg-rose-50 border-rose-300 text-rose-700'],
+    ['ลา',cnt['ลา'],'bg-amber-50 border-amber-300 text-amber-700'],
+    ['มาสาย',cnt['สาย'],'bg-violet-50 border-violet-300 text-violet-700']
+  ].map(c=>`<div class="rounded-xl border-2 ${c[2]} py-2 text-center"><div class="text-xs">${c[0]}</div><div class="text-2xl font-bold">${c[1]}</div></div>`).join('');
+  const lists=groups.map(g=>{
+    const mem=o.students.filter(s=>(o.draft[s.ID]||'มา')===g.st);
+    const rows=mem.length? mem.map(s=>`<div class="flex gap-3 py-1.5 border-b border-slate-100 text-sm"><span class="font-semibold text-slate-500 w-16 shrink-0">เลขที่ ${esc(s.number)}</span><span>${esc(s.fullName)}</span></div>`).join('') : '<div class="py-2 text-sm text-slate-300">— ไม่มี —</div>';
+    return `<div class="rounded-xl border border-slate-200 overflow-hidden mb-3">
+      <div class="${g.hd} px-3 py-2 flex justify-between items-center font-semibold text-sm"><span>${g.ic} ${g.label}</span><span>${mem.length} คน</span></div>
+      <div class="px-3 py-1">${rows}</div></div>`;
+  }).join('');
+  document.getElementById('attCapArea').innerHTML=
+    `<div class="text-center mb-4">
+       <div class="text-2xl mb-1">📋</div>
+       <h2 class="text-lg font-bold text-blue-700">สรุปการเช็คชื่อ</h2>
+       <p class="text-slate-600 font-medium">ชั้น ${esc(o.classLevel)}${o.subtitle?' • '+esc(o.subtitle):''}</p>
+       <p class="text-sm text-slate-500">${thaiLongDate(o.date)}</p>
+       <div class="border-b-2 border-blue-200 mt-2"></div>
+     </div>
+     <div class="grid grid-cols-4 gap-2 mb-4">${cards}</div>
+     ${lists}`;
+  const m=document.getElementById('attResultModal'); m.classList.remove('hidden'); m.classList.add('flex');
+}
+function closeAttResult(){ const m=document.getElementById('attResultModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+
+async function captureAttResult(){
+  if(typeof html2canvas==='undefined'){ toast('โหลดเครื่องมือแคปภาพไม่สำเร็จ','error'); return; }
+  try{ showLoading(true);
+    const canvas=await html2canvas(document.getElementById('attCapArea'),{backgroundColor:'#ffffff', scale:2});
+    await new Promise(res=>canvas.toBlob(async (blob)=>{
+      const file=new File([blob],'เช็คชื่อ.png',{type:'image/png'});
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        try{ await navigator.share({files:[file], title:'สรุปการเช็คชื่อ'}); res(); return; }catch(e){}
+      }
+      const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='เช็คชื่อ.png'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      toast('บันทึกรูปแล้ว เปิด LINE แล้วแนบรูปส่งได้เลย');
+      res();
+    },'image/png'));
+  }catch(e){ toast('แคปภาพไม่สำเร็จ: '+e.message,'error'); } finally{ showLoading(false); }
 }
 
 /* ============================================================
