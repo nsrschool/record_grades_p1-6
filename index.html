@@ -292,20 +292,37 @@
   <!-- ---------- TAB: ABILITY ---------- -->
   <section id="tab-ability" class="tabpane hidden">
     <div class="card p-4 mb-4">
-      <label class="text-xs text-slate-500">เลือกนักเรียน</label>
-      <select id="ab_student" class="inp mt-1" onchange="loadAbility()">
-        <option value="">— เลือกนักเรียน —</option>
-      </select>
+      <div class="flex flex-wrap gap-3 items-end">
+        <div><label class="text-xs text-slate-500">ชั้น/ห้อง</label><select id="ab_class" class="inp mt-1"></select></div>
+        <button onclick="loadAbilityClass()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 text-sm">โหลดรายชื่อ</button>
+      </div>
+      <p class="text-[11px] text-slate-400 mt-2">ให้คะแนนรายตัวชี้วัด (ดีเยี่ยม=3 ดี=2 ผ่าน=1 ไม่ผ่าน=0) ระบบสรุประดับให้อัตโนมัติ • กรอกครบทุกส่วนแล้วกดบันทึกครั้งเดียว</p>
     </div>
-    <div id="ab_form" class="hidden card p-4">
-      <h3 class="font-bold text-teal-700 mb-1">ผลการประเมิน (สำหรับ ปพ.1 ตามหลักสูตรแกนกลางฯ 2551)</h3>
-      <p class="text-xs text-slate-400 mb-3">เทียบเคียงจากผลการประเมินตามหลักสูตร 2568 (ข้อ ๕.๔–๕.๖ ของแนวปฏิบัติฯ)</p>
-      <div id="ab_groups"></div>
+
+    <div id="abWrap" class="hidden">
+      <div class="flex gap-2 mb-3 overflow-x-auto nav-scroll pb-1">
+        <button data-absub="char"      class="absubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">⭐ คุณลักษณะอันพึงประสงค์</button>
+        <button data-absub="readthink" class="absubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📖 อ่าน คิดวิเคราะห์ เขียน</button>
+        <button data-absub="activity"  class="absubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🎯 กิจกรรม/สมรรถนะ</button>
+      </div>
+
+      <div id="absub-char" class="absubpane hidden card p-4">
+        <p class="text-xs text-slate-400 mb-2">1.รักชาติ ศาสน์ กษัตริย์ • 2.ซื่อสัตย์สุจริต • 3.มีวินัย • 4.อยู่อย่างพอเพียง • 5.มีจิตสาธารณะ</p>
+        <div class="overflow-x-auto"><table class="w-full text-sm" id="charTable"></table></div>
+      </div>
+      <div id="absub-readthink" class="absubpane hidden card p-4">
+        <div class="overflow-x-auto"><table class="w-full text-sm" id="rtTable"></table></div>
+      </div>
+      <div id="absub-activity" class="absubpane hidden card p-4">
+        <p class="text-xs text-slate-400 mb-2">กิจกรรมพัฒนาผู้เรียน (ผ่าน/ไม่ผ่าน) + ชื่อชุมนุม + สมรรถนะสำคัญ</p>
+        <div class="overflow-x-auto"><table class="w-full text-sm" id="actTable"></table></div>
+      </div>
+
       <div class="text-right mt-4">
-        <button onclick="saveAbilityFn()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 text-sm">💾 บันทึกผลการประเมิน</button>
+        <button onclick="saveAbilityAll()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 text-sm">💾 บันทึกผลประเมินทั้งหมด</button>
       </div>
     </div>
-    <div id="ab_empty" class="card p-8 text-center text-slate-400">เลือกนักเรียนเพื่อบันทึกผลการประเมิน</div>
+    <div id="abEmpty" class="card p-8 text-center text-slate-400">เลือกห้องแล้วกดโหลดรายชื่อ</div>
   </section>
 
   <!-- ---------- TAB: ATTENDANCE ---------- -->
@@ -314,6 +331,7 @@
       <button data-att="flag"   class="attbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🚩 หน้าเสาธง</button>
       <button data-att="period" class="attbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📋 รายคาบ</button>
       <button data-att="summary" class="attbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📊 สรุป/รายงาน</button>
+      <button data-att="register" class="attbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📅 ปพ.5 เวลาเรียน</button>
     </div>
 
     <!-- att: flag -->
@@ -383,6 +401,30 @@
           <thead><tr class="text-left text-slate-400 border-b"><th class="py-2 px-2">เลขที่</th><th class="px-2">ชื่อ-นามสกุล</th><th class="px-2 text-center">มา</th><th class="px-2 text-center">ขาด</th><th class="px-2 text-center">ลา</th><th class="px-2 text-center">สาย</th><th class="px-2 text-center">เวลาเรียน</th></tr></thead>
           <tbody id="sumBody"></tbody>
         </table></div>
+      </div>
+    </div>
+    <!-- att: register (ปพ.5 เวลาเรียน) -->
+    <div id="att-register" class="attpane hidden">
+      <div class="card p-4 mb-4">
+        <div class="flex flex-wrap gap-3 items-end">
+          <div><label class="text-xs text-slate-500">ชั้น/ห้อง</label><select id="reg_class" class="inp mt-1"></select></div>
+          <div><label class="text-xs text-slate-500">ตั้งแต่</label><input type="date" id="reg_from" class="inp mt-1"></div>
+          <div><label class="text-xs text-slate-500">ถึง</label><input type="date" id="reg_to" class="inp mt-1"></div>
+          <div><label class="text-xs text-slate-500">มาตรฐาน ชม./ปี</label><input type="number" id="reg_hours" class="inp mt-1 w-24" value="200"></div>
+          <button onclick="loadRegister()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 text-sm">สรุปเวลาเรียน</button>
+          <button onclick="exportRegister()" class="btn bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 text-sm">📤 ส่งออก Excel</button>
+        </div>
+        <p class="text-[11px] text-slate-400 mt-2">นับวันมาเรียนจากหน้าเสาธง (มา+สาย = มาเรียน) • เวลาเรียน % = วันมา ÷ วันเปิดเรียน • <span class="text-rose-500">แดง = ต่ำกว่า 80% (เสี่ยงไม่มีสิทธิ์สอบ)</span></p>
+      </div>
+      <div id="regInfo" class="text-xs text-slate-500 mb-2"></div>
+      <div class="card p-4 mb-4 overflow-x-auto"><table class="w-full text-sm whitespace-nowrap" id="regTable"></table></div>
+
+      <div class="card p-4">
+        <div class="flex flex-wrap gap-3 items-end mb-3">
+          <div><label class="text-xs text-slate-500">ดูกริดเช็คชื่อรายวัน (เลือกเดือน)</label><select id="reg_month" class="inp mt-1"></select></div>
+          <button onclick="loadGrid()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 text-sm">ดูกริดรายวัน</button>
+        </div>
+        <div class="overflow-x-auto"><table class="w-full text-xs whitespace-nowrap" id="gridTable"></table></div>
       </div>
     </div>
   </section>
@@ -818,7 +860,7 @@ function switchTab(name){
   if(name==='home') renderHome();
   if(name==='settings') switchSub('school');
   if(name==='scores') fillScoreSubjects();
-  if(name==='ability') fillAbilityStudents();
+  if(name==='ability') initAbility();
   if(name==='stats') loadStats();
   if(name==='admin') switchAsub('roster');
   if(name==='attendance') initAttendance();
@@ -844,8 +886,15 @@ function switchAtt(name){
   document.querySelectorAll('.attbtn').forEach(b=>b.classList.toggle('tab-active', b.dataset.att===name));
   if(name==='period') fillPeriodSlots();
   if(name==='summary') initAttReport();
+  if(name==='register') initRegister();
 }
 document.querySelectorAll('.attbtn').forEach(b=>b.onclick=()=>switchAtt(b.dataset.att));
+function switchAbsub(name){
+  document.querySelectorAll('.absubpane').forEach(p=>p.classList.add('hidden'));
+  document.getElementById('absub-'+name).classList.remove('hidden');
+  document.querySelectorAll('.absubbtn').forEach(b=>b.classList.toggle('tab-active', b.dataset.absub===name));
+}
+document.querySelectorAll('.absubbtn').forEach(b=>b.onclick=()=>switchAbsub(b.dataset.absub));
 
 /* ============================================================
    BOOTSTRAP
@@ -1330,58 +1379,105 @@ async function saveModeB(){
 }
 
 /* ============================================================
-   PART 3 : ความสามารถ / คุณลักษณะ / กิจกรรม
+   WP1 : ประเมินรายตัวชี้วัด (คุณลักษณะ/อ่านคิดเขียน/กิจกรรม)
    ============================================================ */
-const ABILITY_ITEMS=[
-  {cat:'characteristic', key:'คุณลักษณะอันพึงประสงค์', opts:['ดีเยี่ยม','ดี','ผ่าน','ไม่ผ่าน']},
-  {cat:'readThink',      key:'การอ่าน คิดวิเคราะห์ และเขียน', opts:['ดีเยี่ยม','ดี','ผ่าน','ไม่ผ่าน']},
-  {cat:'competency',     key:'สมรรถนะสำคัญของผู้เรียน', opts:['ผ่าน','ไม่ผ่าน']},
-  {cat:'activity',       key:'กิจกรรมแนะแนว', opts:['ผ่าน','ไม่ผ่าน']},
-  {cat:'activity',       key:'ลูกเสือ – เนตรนารี', opts:['ผ่าน','ไม่ผ่าน']},
-  {cat:'activity',       key:'ชมรม/ชุมนุม', opts:['ผ่าน','ไม่ผ่าน']},
-  {cat:'activity',       key:'กิจกรรมเพื่อสังคมและสาธารณประโยชน์', opts:['ผ่าน','ไม่ผ่าน']}
+const CHAR_68=[
+  {f:'รักชาติ ศาสน์ กษัตริย์', s:'รักชาติฯ'},
+  {f:'ซื่อสัตย์สุจริต', s:'ซื่อสัตย์'},
+  {f:'มีวินัย', s:'มีวินัย'},
+  {f:'อยู่อย่างพอเพียง', s:'พอเพียง'},
+  {f:'มีจิตสาธารณะ', s:'จิตสาธารณะ'}
 ];
+const READTHINK=[{f:'การอ่าน',s:'การอ่าน'},{f:'การคิดวิเคราะห์',s:'คิดวิเคราะห์'},{f:'การเขียน',s:'การเขียน'}];
+const ACT=[
+  {f:'กิจกรรมแนะแนว', s:'แนะแนว'},
+  {f:'ลูกเสือ – เนตรนารี', s:'ลูกเสือ-เนตรนารี'},
+  {f:'ชมรม/ชุมนุม', s:'ชุมนุม'},
+  {f:'กิจกรรมเพื่อสังคมและสาธารณประโยชน์', s:'เพื่อสังคม'}
+];
+const SCORE_OPTS=[['','-'],['3','ดีเยี่ยม'],['2','ดี'],['1','ผ่าน'],['0','ไม่ผ่าน']];
+const PASS_OPTS=[['','-'],['ผ่าน','ผ่าน'],['ไม่ผ่าน','ไม่ผ่าน']];
+function scoreToLevelJS(a){ return a>=2.5?'ดีเยี่ยม':a>=1.5?'ดี':a>=0.5?'ผ่าน':'ไม่ผ่าน'; }
 
-function fillAbilityStudents(){
-  const sel=document.getElementById('ab_student'); const cur=sel.value;
-  let list=state.students.slice();
+function initAbility(){
+  const sel=document.getElementById('ab_class');
   const u=state.currentUser;
-  if(u && u.role!=='admin' && u.homeroomClass){ list=list.filter(s=>s.classLevel===u.homeroomClass); }
-  list.sort((a,b)=>String(a.classLevel).localeCompare(String(b.classLevel))||Number(a.number)-Number(b.number));
-  sel.innerHTML='<option value="">— เลือกนักเรียน —</option>'+
-    list.map(s=>`<option value="${s.ID}">[${esc(s.classLevel)}] เลขที่ ${esc(s.number)} ${esc(s.fullName)}</option>`).join('');
-  sel.value=cur;
+  let classes=[...new Set(state.students.map(s=>s.classLevel).filter(Boolean))].sort();
+  if(u && u.role!=='admin' && u.homeroomClass) classes=classes.filter(c=>c===u.homeroomClass);
+  sel.innerHTML = classes.length ? classes.map(c=>`<option>${esc(c)}</option>`).join('') : '<option value="">(ไม่มีห้อง)</option>';
 }
-async function loadAbility(){
-  const sid=document.getElementById('ab_student').value;
-  if(!sid){ document.getElementById('ab_form').classList.add('hidden'); document.getElementById('ab_empty').classList.remove('hidden'); return; }
+
+async function loadAbilityClass(){
+  const cls=document.getElementById('ab_class').value;
+  if(!cls){ toast('เลือกห้องก่อน','error'); return; }
   try{ showLoading(true);
-    const items=await GAS.call('getAbilities',{studentID:sid});
-    const map={}; items.forEach(it=>map[it.itemKey]=it.result);
-    renderAbilityForm(map);
-    document.getElementById('ab_form').classList.remove('hidden');
-    document.getElementById('ab_empty').classList.add('hidden');
+    const rows=await GAS.call('getAbilityDetailClass',{classLevel:cls});
+    const map={}; rows.forEach(r=>{ (map[r.studentID]=map[r.studentID]||{})[r.group+'|'+r.item]=r.value; });
+    state.abStudents=state.students.filter(s=>s.classLevel===cls).sort(byNumber);
+    state.abDetailMap=map;
+    renderAbilityTables();
+    document.getElementById('abWrap').classList.remove('hidden');
+    document.getElementById('abEmpty').classList.add('hidden');
+    switchAbsub('char');
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
-function renderAbilityForm(map){
-  const row=(it)=>`<div class="flex items-center justify-between gap-2 py-2 border-b last:border-0">
-    <span class="text-sm">${esc(it.key)}</span>
-    <select class="inp w-32 text-sm abSel" data-cat="${it.cat}" data-key="${esc(it.key)}">
-      <option value="">-</option>${it.opts.map(o=>`<option ${map[it.key]===o?'selected':''}>${o}</option>`).join('')}
-    </select></div>`;
-  const others=ABILITY_ITEMS.filter(i=>i.cat!=='activity');
-  const acts=ABILITY_ITEMS.filter(i=>i.cat==='activity');
-  document.getElementById('ab_groups').innerHTML=
-    `<div>${others.map(row).join('')}</div>
-     <div class="mt-3"><h4 class="font-semibold text-teal-600 text-sm mb-1">กิจกรรมพัฒนาผู้เรียน</h4>${acts.map(row).join('')}</div>`;
+
+function scoreSel(group,item,cur,sid){
+  return `<select class="inp text-xs ab-cell" data-sid="${sid}" data-group="${group}" data-item="${esc(item)}" onchange="updateAbSummary('${sid}')">`+
+    SCORE_OPTS.map(([v,l])=>`<option value="${v}" ${String(cur==null?'':cur)===v?'selected':''}>${l}</option>`).join('')+'</select>';
 }
-async function saveAbilityFn(){
-  const sid=document.getElementById('ab_student').value;
-  if(!sid) return;
-  const items=[...document.querySelectorAll('.abSel')].filter(s=>s.value)
-    .map(s=>({category:s.dataset.cat, itemKey:s.dataset.key, result:s.value}));
-  try{ showLoading(true); await GAS.call('saveAbilities',{studentID:sid, items}); toast('บันทึกผลการประเมินแล้ว'); }
-  catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+function passSel(group,item,cur,sid){
+  return `<select class="inp text-xs ab-cell" data-sid="${sid}" data-group="${group}" data-item="${esc(item)}">`+
+    PASS_OPTS.map(([v,l])=>`<option value="${v}" ${String(cur==null?'':cur)===v?'selected':''}>${l}</option>`).join('')+'</select>';
+}
+function renderAbilityTables(){
+  const sts=state.abStudents, map=state.abDetailMap;
+  const g=(sid,key)=> (map[sid]||{})[key];
+  // คุณลักษณะ
+  document.getElementById('charTable').innerHTML=
+    `<thead><tr class="text-left text-slate-400 border-b"><th class="py-2 px-1">เลขที่</th><th class="px-1">ชื่อ</th>`+
+    CHAR_68.map((c,i)=>`<th class="px-1 text-center" title="${esc(c.f)}">${i+1}</th>`).join('')+`<th class="px-1 text-center">สรุป</th></tr></thead><tbody>`+
+    sts.map(s=>`<tr class="border-b"><td class="px-1 py-1">${esc(s.number)}</td><td class="px-1 whitespace-nowrap">${esc(s.fullName)}</td>`+
+      CHAR_68.map(c=>`<td class="px-1">${scoreSel('characteristic',c.f,g(s.ID,'characteristic|'+c.f),s.ID)}</td>`).join('')+
+      `<td class="px-1 text-center font-semibold text-teal-700" id="charsum-${s.ID}">-</td></tr>`).join('')+`</tbody>`;
+  // อ่านคิดเขียน
+  document.getElementById('rtTable').innerHTML=
+    `<thead><tr class="text-left text-slate-400 border-b"><th class="py-2 px-1">เลขที่</th><th class="px-1">ชื่อ</th>`+
+    READTHINK.map(c=>`<th class="px-1 text-center">${esc(c.s)}</th>`).join('')+`<th class="px-1 text-center">สรุป</th></tr></thead><tbody>`+
+    sts.map(s=>`<tr class="border-b"><td class="px-1 py-1">${esc(s.number)}</td><td class="px-1 whitespace-nowrap">${esc(s.fullName)}</td>`+
+      READTHINK.map(c=>`<td class="px-1">${scoreSel('readthink',c.f,g(s.ID,'readthink|'+c.f),s.ID)}</td>`).join('')+
+      `<td class="px-1 text-center font-semibold text-teal-700" id="rtsum-${s.ID}">-</td></tr>`).join('')+`</tbody>`;
+  // กิจกรรม/สมรรถนะ
+  document.getElementById('actTable').innerHTML=
+    `<thead><tr class="text-left text-slate-400 border-b"><th class="py-2 px-1">เลขที่</th><th class="px-1">ชื่อ</th>`+
+    ACT.map(c=>`<th class="px-1 text-center">${esc(c.s)}</th>`).join('')+`<th class="px-1 text-center">ชื่อชุมนุม</th><th class="px-1 text-center">สมรรถนะ</th></tr></thead><tbody>`+
+    sts.map(s=>`<tr class="border-b"><td class="px-1 py-1">${esc(s.number)}</td><td class="px-1 whitespace-nowrap">${esc(s.fullName)}</td>`+
+      ACT.map(c=>`<td class="px-1">${passSel('activity',c.f,g(s.ID,'activity|'+c.f),s.ID)}</td>`).join('')+
+      `<td class="px-1"><input class="inp text-xs ab-cell w-28" data-sid="${s.ID}" data-group="activity" data-item="ชื่อชุมนุม" value="${esc(g(s.ID,'activity|ชื่อชุมนุม')||'')}"></td>`+
+      `<td class="px-1">${passSel('competency','สมรรถนะสำคัญของผู้เรียน',g(s.ID,'competency|สมรรถนะสำคัญของผู้เรียน'),s.ID)}</td></tr>`).join('')+`</tbody>`;
+  sts.forEach(s=>updateAbSummary(s.ID));
+}
+function updateAbSummary(sid){
+  [['characteristic','charsum-'],['readthink','rtsum-']].forEach(([grp,pre])=>{
+    const cells=[...document.querySelectorAll(`#tab-ability select.ab-cell[data-sid="${sid}"][data-group="${grp}"]`)];
+    const vals=cells.map(c=>c.value).filter(v=>v!=='').map(Number);
+    const span=document.getElementById(pre+sid);
+    if(span) span.textContent = vals.length ? scoreToLevelJS(vals.reduce((a,b)=>a+b,0)/vals.length) : '-';
+  });
+}
+async function saveAbilityAll(){
+  if(!state.abStudents || !state.abStudents.length){ toast('ยังไม่มีรายชื่อ','error'); return; }
+  const sids=state.abStudents.map(s=>s.ID);
+  const rows=[];
+  document.querySelectorAll('#tab-ability .ab-cell').forEach(el=>{
+    const v=(el.value||'').toString().trim();
+    if(v==='') return;
+    rows.push({studentID:el.dataset.sid, group:el.dataset.group, item:el.dataset.item, value:v});
+  });
+  try{ showLoading(true);
+    await GAS.call('saveAbilityDetailBatch',{studentIDs:sids, rows});
+    toast('บันทึกผลประเมินแล้ว');
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 
 /* ============================================================
@@ -1624,18 +1720,15 @@ async function seedDemoIfEmpty(){
     });
     await GAS.call('saveGradesBatch',{grades});
 
-    // ผลการประเมิน (คุณลักษณะ/กิจกรรม)
-    const items=[
-      {category:'characteristic',itemKey:'คุณลักษณะอันพึงประสงค์',result:'ดีเยี่ยม'},
-      {category:'readThink',itemKey:'การอ่าน คิดวิเคราะห์ และเขียน',result:'ดี'},
-      {category:'competency',itemKey:'สมรรถนะสำคัญของผู้เรียน',result:'ผ่าน'},
-      {category:'activity',itemKey:'กิจกรรมแนะแนว',result:'ผ่าน'},
-      {category:'activity',itemKey:'ลูกเสือ – เนตรนารี',result:'ผ่าน'},
-      {category:'activity',itemKey:'ชมรม/ชุมนุม',result:'ผ่าน'},
-      {category:'activity',itemKey:'กิจกรรมเพื่อสังคมและสาธารณประโยชน์',result:'ผ่าน'}
+    // ผลการประเมินตัวอย่าง (รายตัวชี้วัด — ระบบใหม่)
+    const demoRows=(sid)=>[
+      ...CHAR_68.map(c=>({studentID:sid,group:'characteristic',item:c.f,value:'3'})),
+      ...READTHINK.map(c=>({studentID:sid,group:'readthink',item:c.f,value:'2'})),
+      ...ACT.map(c=>({studentID:sid,group:'activity',item:c.f,value:'ผ่าน'})),
+      {studentID:sid,group:'activity',item:'ชื่อชุมนุม',value:'การละเล่นพื้นบ้าน'},
+      {studentID:sid,group:'competency',item:'สมรรถนะสำคัญของผู้เรียน',value:'ผ่าน'}
     ];
-    await GAS.call('saveAbilities',{studentID:a.id,items});
-    await GAS.call('saveAbilities',{studentID:b.id,items});
+    await GAS.call('saveAbilityDetailBatch',{studentIDs:[a.id,b.id], rows:[...demoRows(a.id),...demoRows(b.id)]});
 
     localStorage.setItem('kps_seeded','1');
     await Promise.all([loadStudents(), loadSubjects()]);
@@ -2034,6 +2127,81 @@ function exportAttSummary(){
   XLSX.utils.book_append_sheet(wb,ws,'สรุปการมาเรียน');
   XLSX.writeFile(wb,'สรุปการมาเรียน_'+d.classLevel.replace('/','-')+'.xlsx');
   toast('ส่งออกแล้ว');
+}
+
+/* ============================================================
+   WP2 : เวลาเรียน ปพ.5 (กริดรายวัน + สรุปรายเดือน→ทั้งปี)
+   ============================================================ */
+Object.assign(state, { register:null });
+
+function academicYearRange(){
+  const d=new Date(); const y=d.getFullYear(); const ay=(d.getMonth()>=4)?y:y-1; // พ.ค.=เดือน 4 (0-based)
+  return { from: ay+'-05-01', to: (ay+1)+'-03-31' };
+}
+function initRegister(){
+  const u=state.currentUser, admin=u && u.role==='admin';
+  const sel=document.getElementById('reg_class');
+  let classes=[...new Set(state.students.map(s=>s.classLevel).filter(Boolean))].sort();
+  if(!admin && u.homeroomClass) classes=classes.filter(c=>c===u.homeroomClass);
+  sel.innerHTML=classes.length?classes.map(c=>`<option>${esc(c)}</option>`).join(''):'<option value="">(ไม่มีห้อง)</option>';
+  if(!val('reg_from')||!val('reg_to')){ const r=academicYearRange(); document.getElementById('reg_from').value=r.from; document.getElementById('reg_to').value=r.to; }
+  if(state.settings && state.settings.hoursPerYear) document.getElementById('reg_hours').value=state.settings.hoursPerYear;
+}
+
+async function loadRegister(){
+  const cls=document.getElementById('reg_class').value, from=val('reg_from'), to=val('reg_to');
+  if(!cls||!from||!to){ toast('เลือกห้องและช่วงวันที่','error'); return; }
+  try{ showLoading(true);
+    const d=await GAS.call('getAttendanceRegister',{classLevel:cls, fromDate:from, toDate:to});
+    state.register=d;
+    const hpy=Number(val('reg_hours'))||200;
+    document.getElementById('regInfo').textContent='ชั้น '+cls+' • วันเปิดเรียนรวม '+d.totalSchoolDays+' วัน • มาตรฐาน '+hpy+' ชม./ปี';
+    const mh=d.months.map(m=>`<th class="px-2 text-center">${esc(m.label)}<br><span class="text-[10px] text-slate-300">(${m.schoolDays})</span></th>`).join('');
+    let html=`<thead><tr class="text-left text-slate-400 border-b"><th class="py-2 px-2">ที่</th><th class="px-2">ชื่อ-นามสกุล</th>${mh}<th class="px-2 text-center">รวมมา</th><th class="px-2 text-center">เวลาเรียน</th><th class="px-2 text-center">ชม.โดยประมาณ</th></tr></thead><tbody>`;
+    html+=d.students.map(s=>{
+      const cells=d.months.map(m=>{ const b=s.byMonth[m.ym]||{present:0,total:0}; return `<td class="px-2 text-center">${b.present}/${b.total}</td>`; }).join('');
+      const est=Math.round(s.percent/100*hpy);
+      const low=s.percent<80;
+      return `<tr class="border-b"><td class="px-2 py-1">${esc(s.number)}</td><td class="px-2">${esc(s.fullName)}</td>${cells}<td class="px-2 text-center font-semibold">${s.totalPresent}</td><td class="px-2 text-center font-bold ${low?'text-rose-600':'text-emerald-600'}">${s.percent}%</td><td class="px-2 text-center ${low?'text-rose-600':''}">${est}</td></tr>`;
+    }).join('');
+    html+='</tbody>';
+    document.getElementById('regTable').innerHTML = d.students.length? html : '<tbody><tr><td class="text-center text-slate-400 py-6">ไม่มีข้อมูลเช็คชื่อในช่วงนี้</td></tr></tbody>';
+    // เติมเดือนสำหรับกริด
+    document.getElementById('reg_month').innerHTML = d.months.length? d.months.map(m=>`<option value="${m.ym}">${esc(m.label)}</option>`).join('') : '<option value="">(ไม่มีข้อมูล)</option>';
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
+
+function exportRegister(){
+  const d=state.register;
+  if(!d||!d.students.length){ toast('ยังไม่มีข้อมูล (กดสรุปก่อน)','error'); return; }
+  const hpy=Number(val('reg_hours'))||200;
+  const head=['ที่','ชื่อ-นามสกุล',...d.months.map(m=>m.label+' ('+m.schoolDays+')'),'รวมมา','วันเปิดเรียน','เวลาเรียน(%)','ชม.โดยประมาณ'];
+  const aoa=[head];
+  d.students.forEach(s=>{
+    const row=[s.number,s.fullName,...d.months.map(m=>{const b=s.byMonth[m.ym]||{present:0,total:0}; return b.present+'/'+b.total;}),s.totalPresent,d.totalSchoolDays,s.percent,Math.round(s.percent/100*hpy)];
+    aoa.push(row);
+  });
+  const ws=XLSX.utils.aoa_to_sheet(aoa); const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'สรุปเวลาเรียน');
+  XLSX.writeFile(wb,'ปพ5_สรุปเวลาเรียน_'+d.classLevel.replace('/','-')+'.xlsx');
+  toast('ส่งออกแล้ว');
+}
+
+const ATT_MARK={'มา':{t:'',c:''},'สาย':{t:'ส',c:'text-orange-500'},'ลา':{t:'ล',c:'text-amber-600'},'ขาด':{t:'ข',c:'text-rose-600 font-bold'}};
+async function loadGrid(){
+  const cls=document.getElementById('reg_class').value, ym=document.getElementById('reg_month').value;
+  if(!cls||!ym){ toast('เลือกห้องและเดือน','error'); return; }
+  try{ showLoading(true);
+    const d=await GAS.call('getMonthlyGrid',{classLevel:cls, ym});
+    const dayHead=d.dates.map(dt=>{ const day=Number(dt.slice(8,10)); const wd=WEEKDAYS[new Date(dt+'T00:00:00').getDay()].slice(0,1); return `<th class="px-1 text-center" title="${esc(dt)}">${day}<br><span class="text-[9px] text-slate-300">${wd}</span></th>`; }).join('');
+    let html=`<thead><tr class="text-left text-slate-400 border-b"><th class="py-2 px-1">ที่</th><th class="px-1">ชื่อ</th>${dayHead}<th class="px-1 text-center">มา</th><th class="px-1 text-center">ขาด</th><th class="px-1 text-center">ลา</th><th class="px-1 text-center">สาย</th></tr></thead><tbody>`;
+    html+=d.students.map(s=>{
+      const cells=d.dates.map(dt=>{ const m=ATT_MARK[s.byDate[dt]]||{t:(s.byDate[dt]?'?':''),c:''}; return `<td class="px-1 text-center ${m.c}">${m.t||(s.byDate[dt]==='มา'?'·':'')}</td>`; }).join('');
+      return `<tr class="border-b"><td class="px-1 py-1">${esc(s.number)}</td><td class="px-1 whitespace-nowrap">${esc(s.fullName)}</td>${cells}<td class="px-1 text-center">${s.present}</td><td class="px-1 text-center ${s.absent?'text-rose-600':''}">${s.absent}</td><td class="px-1 text-center">${s.leave}</td><td class="px-1 text-center">${s.late}</td></tr>`;
+    }).join('');
+    html+='</tbody>';
+    document.getElementById('gridTable').innerHTML = d.students.length && d.dates.length? html : '<tbody><tr><td class="text-center text-slate-400 py-6">ไม่มีข้อมูลเช็คชื่อในเดือนนี้</td></tr></tbody>';
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 
 /* ============================================================
