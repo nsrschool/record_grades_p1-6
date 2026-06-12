@@ -481,18 +481,35 @@
     <div id="reportArea"></div>
     <div id="rp_empty" class="card p-8 text-center text-slate-400 report-controls">เลือกชั้นแล้วกด “สร้างรายงาน”</div>
 
-    <!-- ---------- ปก ปพ.5 (สรุปผลรายห้อง) ---------- -->
+    <!-- ---------- เล่มสรุปผลการเรียน ปพ.5 ---------- -->
     <div class="card p-4 mt-6 mb-4 report-controls">
-      <h3 class="font-bold text-teal-700 mb-2">📕 ปก ปพ.5 — สรุปผลการเรียนรายห้อง</h3>
-      <div class="flex flex-col sm:flex-row gap-3 sm:items-end">
+      <h3 class="font-bold text-teal-700 mb-2">📕 เล่มสรุปผลการเรียน ปพ.5</h3>
+      <div class="flex flex-wrap gap-3 items-end">
+        <div>
+          <label class="text-xs text-slate-500">บทบาท</label>
+          <select id="pp5_mode" class="inp mt-1" onchange="onPP5Mode()">
+            <option value="class">ครูประจำชั้น (ทั้งห้อง)</option>
+            <option value="subject">ครูประจำวิชา (เฉพาะวิชา)</option>
+          </select>
+        </div>
         <div>
           <label class="text-xs text-slate-500">เลือกห้อง</label>
-          <select id="pp5_class" class="inp mt-1"></select>
+          <select id="pp5_class" class="inp mt-1" onchange="onPP5Mode()"></select>
         </div>
-        <button onclick="buildPP5()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 text-sm">👁️ สร้างปก ปพ.5</button>
-        <button onclick="printOnly('tab-report')" class="btn bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 text-sm">🖨️ พิมพ์</button>
+        <div id="pp5_subjectWrap" class="hidden">
+          <label class="text-xs text-slate-500">เลือกวิชา</label>
+          <select id="pp5_subject" class="inp mt-1"></select>
+        </div>
       </div>
-      <p class="text-xs text-slate-400 mt-2">💡 ตารางนับจำนวนคนต่อระดับผลการเรียนรายวิชา + ผลประเมิน + บล็อกลงนาม ตามแบบ ปพ.5 (1 หน้า A4)</p>
+      <div class="mt-3">
+        <div class="text-xs text-slate-500 mb-1">เลือกหน้าที่ต้องการพิมพ์</div>
+        <div id="pp5_pages" class="flex flex-wrap gap-x-4 gap-y-1 text-sm"></div>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <button onclick="buildPP5Book()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 text-sm">👁️ สร้างเล่ม</button>
+        <button onclick="printOnly('tab-report')" class="btn bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 text-sm">🖨️ พิมพ์ทั้งเล่ม</button>
+      </div>
+      <p class="text-xs text-slate-400 mt-2">💡 ประกอบหน้าตามที่เลือก เรียงเป็นเล่มเดียว สั่งพิมพ์ตัดหน้า A4 อัตโนมัติ</p>
     </div>
     <div id="pp5Area"></div>
   </section>
@@ -2718,18 +2735,170 @@ function fillPP5Classes(){
   const cur=sel.value;
   sel.innerHTML=classes.length?classes.map(c=>`<option>${esc(c)}</option>`).join(''):'<option value="">(ไม่มีห้อง)</option>';
   if(cur) sel.value=cur;
+  renderPP5Pages();
+  onPP5Mode();
 }
 
-async function buildPP5(){
+// หน้าที่เลือกได้ (id, ชื่อ, เฉพาะโหมด)
+const PP5_PAGES=[
+  {id:'cover', name:'1. ปก ปพ.5', both:true},
+  {id:'chart', name:'2. แผนภูมิสรุป', both:true},
+  {id:'students', name:'3. ข้อมูลนักเรียน', classOnly:true},
+  {id:'docs', name:'4. คำอธิบายรายวิชา', both:true},
+  {id:'scores', name:'5. คะแนน', both:true},
+  {id:'attMonth', name:'6. เวลาเรียน (รายเดือน)', classOnly:true},
+  {id:'attSummary', name:'7. เวลาเรียน (สรุป)', classOnly:true},
+  {id:'char', name:'8. คุณลักษณะอันพึงประสงค์', classOnly:true},
+  {id:'readthink', name:'9. อ่าน คิดวิเคราะห์ เขียน', classOnly:true}
+];
+function renderPP5Pages(){
+  const wrap=document.getElementById('pp5_pages'); if(!wrap) return;
+  const subjMode=document.getElementById('pp5_mode').value==='subject';
+  wrap.innerHTML=PP5_PAGES.filter(p=>subjMode? !p.classOnly : true).map(p=>
+    `<label class="flex items-center gap-1"><input type="checkbox" class="pp5pg" value="${p.id}" checked> ${p.name}</label>`).join('');
+}
+function onPP5Mode(){
+  const subjMode=document.getElementById('pp5_mode').value==='subject';
+  document.getElementById('pp5_subjectWrap').classList.toggle('hidden', !subjMode);
+  if(subjMode){
+    const cls=document.getElementById('pp5_class').value;
+    const u=state.currentUser;
+    let subs=state.subjects.filter(s=>!s.classLevel || classDigit(s.classLevel)===classDigit(cls));
+    if(u && u.role!=='admin' && state.mySchedule && state.mySchedule.length){
+      const taught=new Set(state.mySchedule.map(s=>s.subject+'|'+classDigit(s.classLevel)));
+      subs=subs.filter(s=>taught.has(s.name+'|'+classDigit(s.classLevel)));
+    }
+    const sel=document.getElementById('pp5_subject'); const cur=sel.value;
+    sel.innerHTML=subs.map(s=>`<option value="${s.ID}">[${esc(s.classLevel)}] ${esc(s.code||'')} ${esc(s.name)}</option>`).join('');
+    if(cur) sel.value=cur;
+  }
+  renderPP5Pages();
+}
+
+async function buildPP5Book(){
   const cls=document.getElementById('pp5_class').value;
   if(!cls){ toast('เลือกห้องก่อน','error'); return; }
+  const mode=document.getElementById('pp5_mode').value;
+  const subjectID=mode==='subject'?document.getElementById('pp5_subject').value:'';
+  if(mode==='subject' && !subjectID){ toast('เลือกวิชาก่อน','error'); return; }
+  const pages=new Set([...document.querySelectorAll('.pp5pg:checked')].map(c=>c.value));
+  if(!pages.size){ toast('เลือกอย่างน้อย 1 หน้า','error'); return; }
   try{ showLoading(true);
-    const d=await GAS.call('getPP5Cover',{classLevel:cls});
-    document.getElementById('pp5Area').innerHTML=pp5PageHTML(d);
+    const d=await GAS.call('getPP5Book',{scope:mode, classLevel:cls, subjectID});
+    const parts=[];
+    if(pages.has('cover'))      parts.push(pp5PageHTML(d.cover));
+    if(pages.has('chart'))      parts.push(pp5ChartPage(d));
+    if(pages.has('students'))   parts.push(pp5StudentsPage(d));
+    if(pages.has('docs'))       parts.push(pp5DocsPage(d));
+    if(pages.has('scores'))     parts.push(pp5ScoresPage(d));
+    if(pages.has('attMonth'))   parts.push(pp5AttMonthPages(d));
+    if(pages.has('attSummary')) parts.push(pp5AttSummaryPage(d));
+    if(pages.has('char'))       parts.push(pp5AbilityPage(d,'characteristic',CHAR_68,'คุณลักษณะอันพึงประสงค์'));
+    if(pages.has('readthink'))  parts.push(pp5AbilityPage(d,'readthink',READTHINK,'การอ่าน คิดวิเคราะห์ และเขียน'));
+    document.getElementById('pp5Area').innerHTML=parts.join('');
     document.getElementById('reportArea').innerHTML='';
     document.getElementById('rp_empty').classList.add('hidden');
-    toast('สร้างปก ปพ.5 แล้ว');
+    if(pages.has('chart')) renderPP5BookCharts(d);
+    toast('สร้างเล่มแล้ว '+parts.length+' ส่วน — กด 🖨️ พิมพ์ทั้งเล่ม');
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
+
+// กรอบหน้า A4
+function pp5Page(inner){ return `<div class="report-page" style="background:#fff;width:210mm;min-height:297mm;margin:0 auto 8px;padding:12mm 10mm;box-shadow:0 2px 8px rgba(0,0,0,.08);font-size:12px;color:#000;">${inner}</div>`; }
+function pp5Head(d,title){ const s=d.settings||{}; return `<div style="text-align:center;margin-bottom:10px">
+  <div style="font-size:16px;font-weight:700">${esc(title)}</div>
+  <div style="font-size:13px">${esc(s.schoolName||'')} • ชั้น ${esc(d.classLevel)} • ปีการศึกษา ${esc(s.academicYear||'')}</div></div>`; }
+
+function pp5StudentsPage(d){
+  const rows=d.students.map(st=>`<tr>
+    <td style="border:1px solid #000;text-align:center">${esc(st.number)}</td>
+    <td style="border:1px solid #000;text-align:center">${esc(st.studentCode||'')}</td>
+    <td style="border:1px solid #000;padding:2px 6px">${esc((st.prefix||'')+(st.firstName||'')||nmFirst(st))}</td>
+    <td style="border:1px solid #000;padding:2px 6px">${esc(st.lastName||nmLast(st))}</td></tr>`).join('');
+  return pp5Page(pp5Head(d,'ข้อมูลนักเรียน')+`<table style="border-collapse:collapse;width:100%;font-size:13px">
+    <tr style="background:#f1f5f9"><th style="border:1px solid #000;width:50px">เลขที่</th><th style="border:1px solid #000;width:90px">เลขประจำตัว</th><th style="border:1px solid #000">คำนำหน้า-ชื่อ</th><th style="border:1px solid #000">นามสกุล</th></tr>
+    ${rows}</table><div style="margin-top:6px;font-size:12px">รวม ${d.students.length} คน</div>`);
+}
+
+function pp5DocsPage(d){
+  let body='';
+  d.subjects.forEach(sub=>{
+    const docs=(d.docs[sub.ID]||[]);
+    body+=`<div style="margin-bottom:10px"><div style="font-weight:700;border-bottom:1px solid #cbd5e1;margin-bottom:4px">${esc(sub.code||'')} ${esc(sub.name)} [${esc(sub.classLevel)}]</div>`;
+    if(!docs.length){ body+='<div style="color:#94a3b8;font-size:12px">— ยังไม่มีไฟล์คำอธิบาย —</div>'; }
+    else body+=docs.map(doc=> doc.type==='image'
+      ? `<img src="https://drive.google.com/thumbnail?id=${esc(doc.fileId)}&sz=w1200" style="max-width:100%;max-height:230px;object-fit:contain;display:block;margin:4px 0">`
+      : `<div style="font-size:12px;margin:3px 0">📄 ${esc(doc.fileName||'ไฟล์ PDF')} — <a href="https://drive.google.com/file/d/${esc(doc.fileId)}/view" target="_blank">เปิด/พิมพ์ไฟล์แนบ</a></div>`
+    ).join('');
+    body+='</div>';
+  });
+  return pp5Page(pp5Head(d,'คำอธิบายรายวิชา')+body);
+}
+
+function pp5ScoresPage(d){
+  const subs=d.subjects;
+  const head=`<tr style="background:#f1f5f9"><th style="border:1px solid #000;width:40px">ที่</th><th style="border:1px solid #000">ชื่อ-นามสกุล</th>${subs.map(s=>`<th style="border:1px solid #000;font-size:10px;width:34px" title="${esc(s.name)}">${esc(s.code||s.name)}</th>`).join('')}</tr>`;
+  const rows=d.students.map((st,i)=>{
+    const g=d.grades[i].bysubject;
+    return `<tr><td style="border:1px solid #000;text-align:center">${esc(st.number)}</td>
+      <td style="border:1px solid #000;padding:2px 6px;white-space:nowrap">${esc(st.fullName)}</td>
+      ${subs.map(sub=>{ const r=g.find(x=>x.subjectID===sub.ID)||{}; return `<td style="border:1px solid #000;text-align:center">${(r.grade51!=null&&r.grade51!=='')?esc(r.grade51):'-'}</td>`; }).join('')}</tr>`;
+  }).join('');
+  return pp5Page(pp5Head(d,'สรุปผลการเรียน (เกรด) รายวิชา')+`<table style="border-collapse:collapse;width:100%;font-size:12px">${head}${rows}</table>`);
+}
+
+function pp5AttMonthPages(d){
+  if(!d.grids.length) return pp5Page(pp5Head(d,'เวลาเรียนรายเดือน')+'<div style="color:#94a3b8">ยังไม่มีข้อมูลการเช็คชื่อ</div>');
+  return d.grids.map(gr=>{
+    const dnum=gr.dates.map(x=>Number(x.slice(8,10)));
+    const head=`<tr style="background:#f1f5f9"><th style="border:1px solid #000;width:30px">ที่</th><th style="border:1px solid #000">ชื่อ-นามสกุล</th>${dnum.map(n=>`<th style="border:1px solid #000;width:18px;font-size:10px">${n}</th>`).join('')}<th style="border:1px solid #000;width:28px">มา</th></tr>`;
+    const rows=gr.students.map(st=>`<tr><td style="border:1px solid #000;text-align:center">${esc(st.number)}</td>
+      <td style="border:1px solid #000;padding:1px 4px;white-space:nowrap;font-size:11px">${esc(st.fullName)}</td>
+      ${gr.dates.map(dt=>{ const v=st.byDate[dt]||''; const m={'มา':'✓','สาย':'ส','ลา':'ล','ขาด':'x'}; const c=v==='ขาด'?'color:#dc2626':(v==='ลา'?'color:#d97706':''); return `<td style="border:1px solid #000;text-align:center;font-size:10px;${c}">${m[v]||''}</td>`; }).join('')}
+      <td style="border:1px solid #000;text-align:center;font-weight:700">${st.present}</td></tr>`).join('');
+    return pp5Page(pp5Head(d,'เวลาเรียนรายเดือน — '+gr.label)+`<table style="border-collapse:collapse;width:100%">${head}${rows}</table><div style="font-size:11px;margin-top:4px">✓=มา • ส=สาย • ล=ลา • x=ขาด • วันเปิดเรียน ${gr.dates.length} วัน</div>`);
+  }).join('');
+}
+
+function pp5AttSummaryPage(d){
+  const r=d.register;
+  const mh=r.months.map(m=>`<th style="border:1px solid #000;font-size:10px">${esc(m.label)}<br>(${m.schoolDays})</th>`).join('');
+  const rows=r.students.map(st=>{
+    const low=st.percent<80;
+    return `<tr><td style="border:1px solid #000;text-align:center">${esc(st.number)}</td>
+      <td style="border:1px solid #000;padding:2px 6px;white-space:nowrap">${esc(st.fullName)}</td>
+      ${r.months.map(m=>{ const b=st.byMonth[m.ym]||{present:0}; return `<td style="border:1px solid #000;text-align:center">${b.present}</td>`; }).join('')}
+      <td style="border:1px solid #000;text-align:center;font-weight:700">${st.totalPresent}</td>
+      <td style="border:1px solid #000;text-align:center;font-weight:700;${low?'color:#dc2626':''}">${st.percent}%</td></tr>`;
+  }).join('');
+  return pp5Page(pp5Head(d,'สรุปเวลาเรียน (ทั้งปี)')+`<table style="border-collapse:collapse;width:100%;font-size:12px">
+    <tr style="background:#f1f5f9"><th style="border:1px solid #000;width:30px">ที่</th><th style="border:1px solid #000">ชื่อ-นามสกุล</th>${mh}<th style="border:1px solid #000;width:40px">รวมมา</th><th style="border:1px solid #000;width:48px">ร้อยละ</th></tr>
+    ${rows}</table><div style="font-size:11px;margin-top:4px">วันเปิดเรียนรวม ${r.totalSchoolDays} วัน • แดง = เวลาเรียนต่ำกว่า 80%</div>`);
+}
+
+function pp5AbilityPage(d, group, items, title){
+  const valOf={};
+  d.abilityRaw.forEach(a=>{ const m={}; a.rows.forEach(r=>{ if(r.group===group) m[r.item]=r.value; }); valOf[a.studentID]=m; });
+  const lvl={'3':'ดีเยี่ยม','2':'ดี','1':'ผ่าน','0':'ไม่ผ่าน'};
+  const head=`<tr style="background:#f1f5f9"><th style="border:1px solid #000;width:30px">ที่</th><th style="border:1px solid #000">ชื่อ-นามสกุล</th>${items.map(it=>`<th style="border:1px solid #000;font-size:10px">${esc(it.s)}</th>`).join('')}<th style="border:1px solid #000">สรุป</th></tr>`;
+  const rows=d.students.map(st=>{
+    const m=valOf[st.ID]||{}; const vals=[];
+    const cells=items.map(it=>{ const v=m[it.f]; if(v!=null&&v!=='') vals.push(Number(v)); return `<td style="border:1px solid #000;text-align:center;font-size:11px">${v!=null&&v!==''?(lvl[v]||v):'-'}</td>`; }).join('');
+    const sum=vals.length?scoreToLevelJS(vals.reduce((a,b)=>a+b,0)/vals.length):'-';
+    return `<tr><td style="border:1px solid #000;text-align:center">${esc(st.number)}</td><td style="border:1px solid #000;padding:2px 6px;white-space:nowrap">${esc(st.fullName)}</td>${cells}<td style="border:1px solid #000;text-align:center;font-weight:700">${sum}</td></tr>`;
+  }).join('');
+  return pp5Page(pp5Head(d,title)+`<table style="border-collapse:collapse;width:100%;font-size:12px">${head}${rows}</table>`);
+}
+
+function pp5ChartPage(d){
+  return pp5Page(pp5Head(d,'แผนภูมิสรุปผลการเรียน')+`
+    <div style="margin-bottom:14px"><div style="font-weight:700;text-align:center;margin-bottom:4px">การกระจายเกรด (รวม)</div><div style="height:240px"><canvas id="pp5cDist"></canvas></div></div>
+    <div><div style="font-weight:700;text-align:center;margin-bottom:4px">เกรดเฉลี่ยรายวิชา</div><div style="height:300px"><canvas id="pp5cAvg"></canvas></div></div>`);
+}
+function renderPP5BookCharts(d){
+  const GR=d.stats.gradeLevels, COL=['#0d9488','#14b8a6','#2dd4bf','#5eead4','#fcd34d','#fbbf24','#f59e0b','#ef4444'];
+  makeChart('pp5cDist',{type:'doughnut',data:{labels:GR.map(g=>'เกรด '+g),datasets:[{data:d.stats.overall,backgroundColor:COL}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}}}}});
+  makeChart('pp5cAvg',{type:'bar',data:{labels:d.stats.subjects.map(s=>s.name),datasets:[{label:'เกรดเฉลี่ย',data:d.stats.subjects.map(s=>s.avg),backgroundColor:'#14b8a6',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,scales:{x:{min:0,max:4,ticks:{stepSize:1}}},plugins:{legend:{display:false}}}});
 }
 
 function pp5PageHTML(d){
