@@ -1080,11 +1080,19 @@ function nmLast(s){ return nm(s).last||''; }
 // Favicon ตามโลโก้โรงเรียน (วาดเป็นวงกลม 64px; ถ้าโหลดรูปไม่ได้จะใช้ URL ตรง)
 function applyFavicon(){
   const url=state.settings && state.settings.logoURL; if(!url) return;
-  const set=href=>{
-    let l=document.querySelector("link[rel='icon']");
-    if(!l){ l=document.createElement('link'); l.rel='icon'; document.head.appendChild(l); }
-    l.href=href;
+  const set=(href,type)=>{
+    document.querySelectorAll("link[rel~='icon']").forEach(n=>n.remove());
+    const l=document.createElement('link');
+    l.rel='icon'; if(type) l.type=type; l.href=href;
+    document.head.appendChild(l);
   };
+  // แปลง Drive URL → thumbnail (เสถียร + ใช้เป็น favicon ได้)
+  let direct=url;
+  const m=String(url).match(/[-\w]{25,}/);
+  if(/drive\.google\.com|googleusercontent/.test(url) && m) direct='https://drive.google.com/thumbnail?id='+m[0]+'&sz=w128';
+  // 1) ตั้ง favicon จากรูปโลโก้ทันที (ใช้ได้เสมอ)
+  set(direct);
+  // 2) พยายามวาดเป็นไอคอนวงกลมคมชัด (ถ้า CORS อนุญาต)
   const img=new Image();
   img.crossOrigin='anonymous';
   img.onload=()=>{
@@ -1095,11 +1103,10 @@ function applyFavicon(){
       x.fillStyle='#fff'; x.fillRect(0,0,64,64);
       const sc=Math.min(64/img.width,64/img.height);
       x.drawImage(img,(64-img.width*sc)/2,(64-img.height*sc)/2,img.width*sc,img.height*sc);
-      set(c.toDataURL('image/png'));
-    }catch(e){ set(url); }
+      set(c.toDataURL('image/png'),'image/png');
+    }catch(e){ /* คง favicon URL ตรงไว้ */ }
   };
-  img.onerror=()=>set(url);
-  img.src=url;
+  img.src=direct;
 }
 
 const THAI_MONTHS=['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
@@ -2187,7 +2194,7 @@ function importRoster(ev){
       showLoading(true);
       const res=await GAS.call('bulkImportRoster',{rows});
       await loadStudents();
-      toast('นำเข้า '+res.count+' รายชื่อแล้ว');
+      toast('นำเข้าสำเร็จ • เพิ่มใหม่ '+(res.added||0)+' • อัปเดต(คงข้อมูลเดิม) '+(res.updated||0));
     }catch(err){ toast(err.message,'error'); } finally{ showLoading(false); ev.target.value=''; }
   };
   reader.readAsArrayBuffer(file);
