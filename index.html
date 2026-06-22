@@ -357,7 +357,7 @@
       <button data-att="flag"   class="attbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🚩 หน้าเสาธง</button>
       <button data-att="period" class="attbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📋 รายคาบ</button>
       <button data-att="summary" class="attbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📊 สรุป/รายงาน</button>
-      <button data-att="register" class="attbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📅 ปพ.5 เวลาเรียน</button>
+      <button data-att="register" class="attbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📅 บันทึกเวลาเรียน</button>
     </div>
 
     <!-- att: flag -->
@@ -429,7 +429,7 @@
         </table></div>
       </div>
     </div>
-    <!-- att: register (ปพ.5 เวลาเรียน) -->
+    <!-- att: register (บันทึกเวลาเรียน) -->
     <div id="att-register" class="attpane hidden">
       <div class="card p-4 mb-4">
         <div class="flex flex-wrap gap-3 items-end">
@@ -477,9 +477,9 @@
     <div id="reportArea"></div>
     <div id="rp_empty" class="card p-8 text-center text-slate-400 report-controls">เลือกชั้นแล้วกด “สร้างรายงาน”</div>
 
-    <!-- ---------- เล่มสรุปผลการเรียน ปพ.5 ---------- -->
+    <!-- ---------- เล่มสรุปผลการเรียน ---------- -->
     <div class="card p-4 mt-6 mb-4 report-controls">
-      <h3 class="font-bold text-teal-700 mb-2">📕 เล่มสรุปผลการเรียน ปพ.5</h3>
+      <h3 class="font-bold text-teal-700 mb-2">📕 เล่มสรุปผลการเรียน</h3>
       <div class="flex flex-wrap gap-3 items-end">
         <div>
           <label class="text-xs text-slate-500">บทบาท</label>
@@ -533,18 +533,16 @@
     </div>
     <div class="card p-4">
       <h3 class="font-bold text-teal-700 mb-1">📤 ส่งออกเกรดเข้า School MIS</h3>
-      <p class="text-xs text-slate-400 mb-3">ส่งออกเป็นไฟล์ Excel เพื่อนำเกรด (ระบบ 51) ไปลงระบบ School MIS สำหรับออก ปพ.1</p>
+      <p class="text-xs text-slate-400 mb-3">ส่งออกเกรด (หลักสูตร 2551) เพื่อนำไปกรอกในระบบ School MIS สำหรับจัดทำเอกสารหลักฐานการศึกษา</p>
       <div class="flex flex-wrap gap-2 items-end">
         <div>
-          <label class="text-xs text-slate-500">เลือกชั้น (ไม่เลือก = ทั้งหมด)</label>
-          <select id="ex_class" class="inp mt-1 w-auto">
-            <option value="">ทั้งหมด</option>
-            <option>ป.1</option><option>ป.2</option><option>ป.3</option>
-            <option>ป.4</option><option>ป.5</option><option>ป.6</option>
-          </select>
+          <label class="text-xs text-slate-500">เลือกห้อง</label>
+          <select id="ex_class" class="inp mt-1 w-auto"><option value="">— เลือกห้อง —</option></select>
         </div>
-        <button onclick="exportMIS()" class="btn bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 text-sm">📤 ส่งออก Excel</button>
+        <button onclick="exportMISWide()" class="btn bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 text-sm">📤 ส่งออกแบบ School MIS (รายห้อง)</button>
+        <button onclick="exportMIS()" class="btn bg-white border border-slate-200 text-slate-600 px-4 py-2 text-sm">📄 ส่งออกแบบยาว (รายวิชา)</button>
       </div>
+      <p class="text-[11px] text-slate-400 mt-2">💡 แบบ School MIS = 1 แถว/คน คอลัมน์เป็นรหัสวิชา (ค่า=เกรด 2551) + กิจกรรม (ผ/มผ) — รูปแบบตรงไฟล์ที่นำไปกรอก</p>
     </div>
   </section>
 
@@ -586,11 +584,11 @@
             <input id="set_area" class="inp mt-1">
           </div>
           <div>
-            <label class="text-xs text-slate-500">ที่ตั้ง (ตำบล อำเภอ จังหวัด) — ใช้บนปก ปพ.5</label>
+            <label class="text-xs text-slate-500">ที่ตั้ง (ตำบล อำเภอ จังหวัด) — ใช้บนปกเล่มรายงาน</label>
             <input id="set_address" class="inp mt-1" placeholder="หมูม่น อำเภอ เมืองอุดรธานี จังหวัด อุดรธานี">
           </div>
           <div>
-            <label class="text-xs text-slate-500">หัวหน้างานวิชาการ — ใช้บนปก ปพ.5</label>
+            <label class="text-xs text-slate-500">หัวหน้างานวิชาการ — ใช้บนปกเล่มรายงาน</label>
             <input id="set_academicHead" class="inp mt-1">
           </div>
           <div>
@@ -814,7 +812,7 @@
     </div>
   </section>
 
-  <!-- ---------- TAB: SUMMARY68 (สรุปผลการเรียน ปพ.5 หน้าปก) ---------- -->
+  <!-- ---------- TAB: SUMMARY68 (สรุปผลการเรียน หน้าปก) ---------- -->
   <section id="tab-summary68" class="tabpane hidden">
     <div class="card p-4 mb-4 report-controls">
       <div class="flex flex-wrap gap-3 items-end">
@@ -822,7 +820,7 @@
         <button onclick="loadSummary68()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 text-sm">แสดงสรุป</button>
         <button onclick="printOnly('tab-summary68')" class="btn bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 text-sm">🖨️ พิมพ์</button>
       </div>
-      <p class="text-[11px] text-slate-400 mt-2">สรุปจำนวนนักเรียนที่ได้แต่ละระดับผลการเรียนรายวิชา + คุณลักษณะ/อ่านคิดเขียน/กิจกรรม (แบบหน้าปก ปพ.5) ใช้โลโก้โรงเรียน</p>
+      <p class="text-[11px] text-slate-400 mt-2">สรุปจำนวนนักเรียนที่ได้แต่ละระดับผลการเรียนรายวิชา + คุณลักษณะ/อ่านคิดเขียน/กิจกรรม (แบบหน้าปกเล่มรายงาน) ใช้โลโก้โรงเรียน</p>
     </div>
     <div id="sm68Area"></div>
     <div id="sm68Empty" class="card p-8 text-center text-slate-400 report-controls">เลือกห้องแล้วกด “แสดงสรุป”</div>
@@ -1137,7 +1135,7 @@ function switchTab(name){
     b.classList.toggle('tab-active', b.dataset.tab===name);
   });
   if(name==='home') renderHome();
-  if(name==='settings') switchSub('school');
+  if(name==='settings'){ switchSub('school'); fillExClass(); }
   if(name==='scores') fillScoreSubjects();
   if(name==='ability') initAbility();
   if(name==='report'){ fillReportClasses(); fillPP5Classes(); }
@@ -1770,8 +1768,9 @@ function scoreSel(group,item,cur,sid){
   return `<select class="inp text-xs ab-cell" data-sid="${sid}" data-group="${group}" data-item="${esc(item)}" onchange="updateAbSummary('${sid}')">`+
     SCORE_OPTS.map(([v,l])=>`<option value="${v}" ${String(cur==null?'':cur)===v?'selected':''}>${l}</option>`).join('')+'</select>';
 }
-function passSel(group,item,cur,sid){
-  return `<select class="inp text-xs ab-cell" data-sid="${sid}" data-group="${group}" data-item="${esc(item)}">`+
+function passSel(group,item,cur,sid,withSummary){
+  const oc = withSummary ? ` onchange="updateAbSummary('${sid}')"` : '';
+  return `<select class="inp text-xs ab-cell" data-sid="${sid}" data-group="${group}" data-item="${esc(item)}"${oc}>`+
     PASS_OPTS.map(([v,l])=>`<option value="${v}" ${String(cur==null?'':cur)===v?'selected':''}>${l}</option>`).join('')+'</select>';
 }
 function renderAbilityTables(){
@@ -1782,14 +1781,14 @@ function renderAbilityTables(){
     `<thead><tr class="text-left text-slate-400 border-b"><th class="py-2 px-1">เลขที่</th><th class="px-1">ชื่อ</th><th class="px-1">นามสกุล</th>`+
     CHAR_68.map((c,i)=>`<th class="px-1 text-center" title="${esc(c.f)}">${i+1}</th>`).join('')+`<th class="px-1 text-center">สรุป</th></tr></thead><tbody>`+
     sts.map(s=>`<tr class="border-b"><td class="px-1 py-1">${esc(s.number)}</td><td class="px-1 whitespace-nowrap">${esc(nmFirst(s))}</td><td class="px-1 whitespace-nowrap">${esc(nmLast(s))}</td>`+
-      CHAR_68.map(c=>`<td class="px-1">${scoreSel('characteristic',c.f,g(s.ID,'characteristic|'+c.f),s.ID)}</td>`).join('')+
+      CHAR_68.map(c=>`<td class="px-1">${passSel('characteristic',c.f,g(s.ID,'characteristic|'+c.f),s.ID,true)}</td>`).join('')+
       `<td class="px-1 text-center font-semibold text-teal-700" id="charsum-${s.ID}">-</td></tr>`).join('')+`</tbody>`;
   // อ่านคิดเขียน
   document.getElementById('rtTable').innerHTML=
     `<thead><tr class="text-left text-slate-400 border-b"><th class="py-2 px-1">เลขที่</th><th class="px-1">ชื่อ</th><th class="px-1">นามสกุล</th>`+
     READTHINK.map(c=>`<th class="px-1 text-center">${esc(c.s)}</th>`).join('')+`<th class="px-1 text-center">สรุป</th></tr></thead><tbody>`+
     sts.map(s=>`<tr class="border-b"><td class="px-1 py-1">${esc(s.number)}</td><td class="px-1 whitespace-nowrap">${esc(nmFirst(s))}</td><td class="px-1 whitespace-nowrap">${esc(nmLast(s))}</td>`+
-      READTHINK.map(c=>`<td class="px-1">${scoreSel('readthink',c.f,g(s.ID,'readthink|'+c.f),s.ID)}</td>`).join('')+
+      READTHINK.map(c=>`<td class="px-1">${passSel('readthink',c.f,g(s.ID,'readthink|'+c.f),s.ID,true)}</td>`).join('')+
       `<td class="px-1 text-center font-semibold text-teal-700" id="rtsum-${s.ID}">-</td></tr>`).join('')+`</tbody>`;
   // กิจกรรม/สมรรถนะ
   document.getElementById('actTable').innerHTML=
@@ -1804,9 +1803,9 @@ function renderAbilityTables(){
 function updateAbSummary(sid){
   [['characteristic','charsum-'],['readthink','rtsum-']].forEach(([grp,pre])=>{
     const cells=[...document.querySelectorAll(`#tab-ability select.ab-cell[data-sid="${sid}"][data-group="${grp}"]`)];
-    const vals=cells.map(c=>c.value).filter(v=>v!=='').map(Number);
+    const vals=cells.map(c=>c.value).filter(v=>v!=='');
     const span=document.getElementById(pre+sid);
-    if(span) span.textContent = vals.length ? scoreToLevelJS(vals.reduce((a,b)=>a+b,0)/vals.length) : '-';
+    if(span) span.textContent = vals.length ? (vals.some(v=>v==='ไม่ผ่าน')?'ไม่ผ่าน':'ผ่าน') : '-';
   });
 }
 async function saveAbilityAll(){
@@ -1989,6 +1988,25 @@ async function loadStats(){
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 
+function fillExClass(){
+  const sel=document.getElementById('ex_class'); if(!sel) return;
+  const rooms=allClasses(); const cur=sel.value;
+  sel.innerHTML='<option value="">— เลือกห้อง —</option>'+rooms.map(r=>`<option>${esc(r)}</option>`).join('');
+  if(cur) sel.value=cur;
+}
+async function exportMISWide(){
+  const cls=document.getElementById('ex_class').value;
+  if(!cls){ toast('เลือกห้องก่อน','error'); return; }
+  try{ showLoading(true);
+    const d=await GAS.call('exportSchoolMISWide',{classLevel:cls});
+    if(!d.rows.length){ toast('ไม่มีข้อมูลในห้องนี้','error'); return; }
+    const aoa=[d.header,...d.rows];
+    const ws=XLSX.utils.aoa_to_sheet(aoa); const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'SchoolMIS');
+    XLSX.writeFile(wb,'SchoolMIS_'+cls.replace('/','-')+'.xlsx');
+    toast('ส่งออก '+d.rows.length+' คนแล้ว');
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
 async function exportMIS(){
   const cls=document.getElementById('ex_class').value;
   try{ showLoading(true);
@@ -2103,8 +2121,8 @@ async function seedDemoIfEmpty(){
 
     // ผลการประเมินตัวอย่าง (รายตัวชี้วัด — ระบบใหม่)
     const demoRows=(sid)=>[
-      ...CHAR_68.map(c=>({studentID:sid,group:'characteristic',item:c.f,value:'3'})),
-      ...READTHINK.map(c=>({studentID:sid,group:'readthink',item:c.f,value:'2'})),
+      ...CHAR_68.map(c=>({studentID:sid,group:'characteristic',item:c.f,value:'ผ่าน'})),
+      ...READTHINK.map(c=>({studentID:sid,group:'readthink',item:c.f,value:'ผ่าน'})),
       ...ACT.map(c=>({studentID:sid,group:'activity',item:c.f,value:'ผ่าน'})),
       {studentID:sid,group:'activity',item:'ชื่อชุมนุม',value:'การละเล่นพื้นบ้าน'},
       {studentID:sid,group:'competency',item:'สมรรถนะสำคัญของผู้เรียน',value:'ผ่าน'}
@@ -2524,7 +2542,7 @@ function exportAttSummary(){
 }
 
 /* ============================================================
-   WP2 : เวลาเรียน ปพ.5 (กริดรายวัน + สรุปรายเดือน→ทั้งปี)
+   WP2 : บันทึกเวลาเรียน (กริดรายวัน + สรุปรายเดือน→ทั้งปี)
    ============================================================ */
 Object.assign(state, { register:null });
 
@@ -2666,7 +2684,7 @@ async function captureAttResult(){
 }
 
 /* ============================================================
-   WP3 : สรุปผลการเรียนรายชั้น (ปพ.5 หน้าปก) + พิมพ์
+   WP3 : สรุปผลการเรียนรายชั้น (หน้าปก) + พิมพ์
    ============================================================ */
 function printOnly(id){
   const el=document.getElementById(id); if(!el) return;
@@ -2708,7 +2726,7 @@ function pp5CoverHTML(d){
   const ht=(d.homeroomTeachers&&d.homeroomTeachers.length)?d.homeroomTeachers:[''];
   const sign=(name,role)=>`<div style="flex:0 1 48%;text-align:center;margin-top:18px;line-height:1.7">ลงชื่อ ...................................................<br>( ${esc(name||'............................')} )<br>${esc(role)}</div>`;
   return `<div class="report-page bg-white mx-auto" style="width:210mm;min-height:297mm;padding:14mm 12mm;font-family:'Sarabun',sans-serif;color:#000;">
-    <div style="text-align:right;font-weight:bold">ปพ.5</div>
+    
     <div style="text-align:center">
       ${s.logoURL?`<img src="${esc(s.logoURL)}" style="height:70px;object-fit:contain">`:''}
       <div style="font-size:18px;font-weight:bold;margin-top:4px">สมุดบันทึกการพัฒนาคุณภาพผู้เรียน</div>
@@ -2755,7 +2773,7 @@ function pp5CoverHTML(d){
 }
 
 /* ============================================================
-   WP3 : ปก ปพ.5 — สรุปผลการเรียนรายห้อง
+   WP3 : ปกเล่ม — สรุปผลการเรียนรายห้อง
    ============================================================ */
 function fillPP5Classes(){
   const sel=document.getElementById('pp5_class'); if(!sel) return;
@@ -2771,7 +2789,7 @@ function fillPP5Classes(){
 
 // หน้าที่เลือกได้ (id, ชื่อ, เฉพาะโหมด)
 const PP5_PAGES=[
-  {id:'cover', name:'1. ปก ปพ.5', both:true},
+  {id:'cover', name:'1. ปก (หน้าสรุป)', both:true},
   {id:'chart', name:'2. แผนภูมิสรุป', both:true},
   {id:'students', name:'3. ข้อมูลนักเรียน', classOnly:true},
   {id:'docs', name:'4. คำอธิบายรายวิชา', both:true},
@@ -2940,12 +2958,11 @@ function pp5AttSummaryPage(d){
 function pp5AbilityPage(d, group, items, title){
   const valOf={};
   d.abilityRaw.forEach(a=>{ const m={}; a.rows.forEach(r=>{ if(r.group===group) m[r.item]=r.value; }); valOf[a.studentID]=m; });
-  const lvl={'3':'ดีเยี่ยม','2':'ดี','1':'ผ่าน','0':'ไม่ผ่าน'};
   const head=`<tr style="background:#f1f5f9"><th style="border:1px solid #000;width:30px">ที่</th><th style="border:1px solid #000">ชื่อ-นามสกุล</th>${items.map(it=>`<th style="border:1px solid #000;font-size:10px">${esc(it.s)}</th>`).join('')}<th style="border:1px solid #000">สรุป</th></tr>`;
   const rows=d.students.map(st=>{
-    const m=valOf[st.ID]||{}; const vals=[];
-    const cells=items.map(it=>{ const v=m[it.f]; if(v!=null&&v!=='') vals.push(Number(v)); return `<td style="border:1px solid #000;text-align:center;font-size:11px">${v!=null&&v!==''?(lvl[v]||v):'-'}</td>`; }).join('');
-    const sum=vals.length?scoreToLevelJS(vals.reduce((a,b)=>a+b,0)/vals.length):'-';
+    const m=valOf[st.ID]||{}; let any=false, fail=false;
+    const cells=items.map(it=>{ const v=m[it.f]; if(v!=null&&v!=='') { any=true; if(v==='ไม่ผ่าน') fail=true; } return `<td style="border:1px solid #000;text-align:center;font-size:11px">${v!=null&&v!==''?esc(v):'-'}</td>`; }).join('');
+    const sum=any?(fail?'ไม่ผ่าน':'ผ่าน'):'-';
     return `<tr><td style="border:1px solid #000;text-align:center">${esc(st.number)}</td><td style="border:1px solid #000;padding:2px 6px;white-space:nowrap">${esc(st.fullName)}</td>${cells}<td style="border:1px solid #000;text-align:center;font-weight:700">${sum}</td></tr>`;
   }).join('');
   return pp5Page(pp5Head(d,title)+`<table style="border-collapse:collapse;width:100%;font-size:12px">${head}${rows}</table>`);
@@ -2953,12 +2970,14 @@ function pp5AbilityPage(d, group, items, title){
 
 function pp5ChartPage(d){
   return pp5Page(pp5Head(d,'แผนภูมิสรุปผลการเรียน')+`
-    <div style="margin-bottom:14px"><div style="font-weight:700;text-align:center;margin-bottom:4px">การกระจายเกรด (รวม)</div><div style="height:240px"><canvas id="pp5cDist"></canvas></div></div>
-    <div><div style="font-weight:700;text-align:center;margin-bottom:4px">เกรดเฉลี่ยรายวิชา</div><div style="height:300px"><canvas id="pp5cAvg"></canvas></div></div>`);
+    <div style="margin-bottom:14px"><div style="font-weight:700;text-align:center;margin-bottom:4px">การกระจายระดับพัฒนาการ (หลักสูตร 2568)</div><div style="height:240px"><canvas id="pp5cDist"></canvas></div></div>
+    <div><div style="font-weight:700;text-align:center;margin-bottom:4px">เกรดเฉลี่ยรายวิชา (หลักสูตร 2551)</div><div style="height:300px"><canvas id="pp5cAvg"></canvas></div></div>`);
 }
 function renderPP5BookCharts(d){
-  const GR=d.stats.gradeLevels, COL=['#0d9488','#14b8a6','#2dd4bf','#5eead4','#fcd34d','#fbbf24','#f59e0b','#ef4444'];
-  makeChart('pp5cDist',{type:'doughnut',data:{labels:GR.map(g=>'เกรด '+g),datasets:[{data:d.stats.overall,backgroundColor:COL}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}}}}});
+  const DEV=(d.cover&&d.cover.gradeLevels)||['เริ่มต้น','พัฒนา','ชำนาญ','เชี่ยวชาญ'];
+  const dist=DEV.map((_,i)=>(d.cover&&d.cover.subjects||[]).reduce((sum,sub)=>sum+(sub.counts[i]||0),0));
+  const COL=['#ef4444','#fbbf24','#2dd4bf','#0d9488']; // เริ่มต้น→เชี่ยวชาญ
+  makeChart('pp5cDist',{type:'doughnut',data:{labels:DEV,datasets:[{data:dist,backgroundColor:COL}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:12}}}}}});
   makeChart('pp5cAvg',{type:'bar',data:{labels:d.stats.subjects.map(s=>s.name),datasets:[{label:'เกรดเฉลี่ย',data:d.stats.subjects.map(s=>s.avg),backgroundColor:'#14b8a6',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,scales:{x:{min:0,max:4,ticks:{stepSize:1}}},plugins:{legend:{display:false}}}});
 }
 
@@ -2987,7 +3006,7 @@ function pp5PageHTML(d){
       <tr>
         <td rowspan="2" style="${bd}padding:2px 4px;text-align:center;font-weight:700;width:52px;">รหัสวิชา</td>
         <td rowspan="2" style="${bd}padding:2px 4px;text-align:center;font-weight:700;width:150px;">รายวิชา</td>
-        <td colspan="8" style="${bd}padding:2px 4px;text-align:center;font-weight:700;">จำนวนคนที่ได้ระดับผลการเรียน</td>
+        <td colspan="${d.gradeLevels.length}" style="${bd}padding:2px 4px;text-align:center;font-weight:700;">จำนวนคนที่ได้ระดับพัฒนาการ (หลักสูตร 2568)</td>
       </tr>
       <tr>${d.gradeLevels.map(g=>`<td style="${bd}${gw}text-align:center;font-weight:700;">${g}</td>`).join('')}</tr>
       ${leftRows}
@@ -2996,20 +3015,20 @@ function pp5PageHTML(d){
   // ===== ตารางขวา: ผลการประเมิน + การอนุมัติ =====
   const rc='padding:2px 4px;text-align:center;';
   const hl='background:#f1f5f9;font-weight:700;';
-  const cw='width:34px;';
+  const cw='width:48px;';
   const rightTable=`
     <table style="border-collapse:collapse;font-size:12px;">
-      <tr><td style="${bd}${rc}${hl}">ผลการประเมิน</td>${['ดีเยี่ยม','ดี','ผ่าน','ไม่ผ่าน'].map(l=>`<td style="${bd}${rc}${hl}${cw}">${l}</td>`).join('')}</tr>
+      <tr><td style="${bd}${rc}${hl}">ผลการประเมิน</td>${['ผ่าน','ไม่ผ่าน'].map(l=>`<td style="${bd}${rc}${hl}${cw}">${l}</td>`).join('')}</tr>
       <tr><td style="${bd}padding:2px 4px;">คุณลักษณะอันพึงประสงค์</td>${d.charCounts.map(c=>`<td style="${bd}${rc}${cw}">${c}</td>`).join('')}</tr>
       <tr><td style="${bd}padding:2px 4px;">การอ่าน คิดวิเคราะห์ และเขียน</td>${d.rtCounts.map(c=>`<td style="${bd}${rc}${cw}">${c}</td>`).join('')}</tr>
-      <tr><td style="${bd}${rc}${hl}">ผลการประเมิน</td><td colspan="2" style="${bd}${rc}${hl}">ผ่าน</td><td colspan="2" style="${bd}${rc}${hl}">ไม่ผ่าน</td></tr>
-      <tr><td style="${bd}padding:2px 4px;">กิจกรรมพัฒนาผู้เรียน</td><td colspan="2" style="${bd}${rc}">${d.activity.pass}</td><td colspan="2" style="${bd}${rc}">${d.activity.fail}</td></tr>
-      <tr><td style="${bd}${rc}${hl}">การอนุมัติผลการเรียน</td><td style="${bd}${rc}${hl}${cw}">ชาย</td><td style="${bd}${rc}${hl}${cw}">หญิง</td><td colspan="2" style="${bd}${rc}${hl}">รวม</td></tr>
-      <tr><td style="${bd}padding:2px 4px;">จำนวนนักเรียนในบัญชี</td><td style="${bd}${rc}">${d.totals.male}</td><td style="${bd}${rc}">${d.totals.female}</td><td colspan="2" style="${bd}${rc}">${d.totals.all}</td></tr>
-      <tr><td style="${bd}padding:2px 4px;">จำนวนนักเรียนที่เข้าระหว่างปี</td><td style="${bd}"></td><td style="${bd}"></td><td colspan="2" style="${bd}"></td></tr>
-      <tr><td style="${bd}padding:2px 4px;">จำนวนนักเรียนที่ออกระหว่างปี</td><td style="${bd}"></td><td style="${bd}"></td><td colspan="2" style="${bd}"></td></tr>
-      <tr><td style="${bd}padding:2px 4px;">จำนวนนักเรียนที่ตัดสินให้ซ้ำชั้น</td><td style="${bd}"></td><td style="${bd}"></td><td colspan="2" style="${bd}"></td></tr>
-      <tr><td style="${bd}padding:2px 4px;">จำนวนนักเรียนที่ตัดสินให้เลื่อนชั้นปลายปี</td><td style="${bd}"></td><td style="${bd}"></td><td colspan="2" style="${bd}"></td></tr>
+      <tr><td style="${bd}${rc}${hl}">ผลการประเมิน</td><td style="${bd}${rc}${hl}">ผ่าน</td><td style="${bd}${rc}${hl}">ไม่ผ่าน</td></tr>
+      <tr><td style="${bd}padding:2px 4px;">กิจกรรมพัฒนาผู้เรียน</td><td style="${bd}${rc}">${d.activity.pass}</td><td style="${bd}${rc}">${d.activity.fail}</td></tr>
+      <tr><td style="${bd}${rc}${hl}">การอนุมัติผลการเรียน</td><td style="${bd}${rc}${hl}">ชาย ${d.totals.male}</td><td style="${bd}${rc}${hl}">หญิง ${d.totals.female}</td></tr>
+      <tr><td style="${bd}padding:2px 4px;">จำนวนนักเรียนในบัญชี</td><td colspan="2" style="${bd}${rc}">${d.totals.all}</td></tr>
+      <tr><td style="${bd}padding:2px 4px;">จำนวนนักเรียนที่เข้าระหว่างปี</td><td colspan="2" style="${bd}"></td></tr>
+      <tr><td style="${bd}padding:2px 4px;">จำนวนนักเรียนที่ออกระหว่างปี</td><td colspan="2" style="${bd}"></td></tr>
+      <tr><td style="${bd}padding:2px 4px;">จำนวนนักเรียนที่ตัดสินให้ซ้ำชั้น</td><td colspan="2" style="${bd}"></td></tr>
+      <tr><td style="${bd}padding:2px 4px;">จำนวนนักเรียนที่ตัดสินให้เลื่อนชั้นปลายปี</td><td colspan="2" style="${bd}"></td></tr>
     </table>`;
 
   const sign=(name,role)=>`<div style="flex:0 1 48%;text-align:center;margin-top:18px;line-height:1.7;">
@@ -3021,7 +3040,7 @@ function pp5PageHTML(d){
   const htSigns=(realHts.length?realHts:['']).map(n=>sign(n,'ครูประจำชั้น')).join('');
   return `
   <div class="report-page" style="background:#fff;width:210mm;min-height:297mm;margin:0 auto;padding:12mm 10mm;box-shadow:0 2px 8px rgba(0,0,0,.08);font-size:13px;color:#000;position:relative;">
-    <div style="position:absolute;top:10mm;right:10mm;font-weight:700;">ปพ.5</div>
+    
     <div style="text-align:center;">
       ${s.logoURL?`<img src="${esc(s.logoURL)}" style="height:64px;object-fit:contain;display:inline-block;">`:''}
       <div style="font-size:17px;font-weight:700;margin-top:4px;">สมุดบันทึกการพัฒนาคุณภาพผู้เรียน</div>
