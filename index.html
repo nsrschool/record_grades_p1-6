@@ -1872,7 +1872,7 @@ function reportPageHTML(s, rs){
   const dirSign = s.directorSignURL?`<img src="${esc(s.directorSignURL)}" style="height:32px;object-fit:contain;display:block;margin:0 auto -2px">`:'<div style="height:30px"></div>';
   const depSign = s.deputySignURL?`<img src="${esc(s.deputySignURL)}" style="height:32px;object-fit:contain;display:block;margin:0 auto -2px">`:'<div style="height:30px"></div>';
 
-  const leftRows=rs.subjects.map(x=>`<tr><td>${esc(x.name)}</td><td style="text-align:center">${esc(x.hours)}</td><td style="text-align:center">${g(x.level68)}</td></tr>`).join('');
+  const leftRows=(rs.abilityGroups||[]).map(x=>`<tr><td>${esc(x.name)}</td><td style="text-align:center">${g(x.level)}</td></tr>`).join('');
   const basicRows=basic.map(x=>`<tr><td style="text-align:center">${esc(x.code)}</td><td>${esc(x.name)}</td><td style="text-align:center">${esc(x.hours)}</td><td class="rp-grade">${g(x.grade51)}</td></tr>`).join('');
   const extraRows=extra.length?(`<tr><td colspan="4" style="background:#e2e8f0;font-weight:600;text-align:center">รายวิชาเพิ่มเติม</td></tr>`+extra.map(x=>`<tr><td style="text-align:center">${esc(x.code)}</td><td>${esc(x.name)}</td><td style="text-align:center">${esc(x.hours)}</td><td class="rp-grade">${g(x.grade51)}</td></tr>`).join('')):'';
 
@@ -1899,10 +1899,10 @@ function reportPageHTML(s, rs){
     <div style="display:grid;grid-template-columns:1fr 1.18fr;gap:6px;align-items:start">
       <table class="rp-tbl">
         <thead>
-          <tr><th class="rp-head-68" colspan="3">หลักสูตรการศึกษาประถมศึกษาตอนต้น พุทธศักราช 2568</th></tr>
-          <tr><th>ความสามารถผู้เรียน</th><th style="width:54px">เวลา (ชม.)</th><th style="width:66px">ระดับความสามารถ</th></tr>
+          <tr><th class="rp-head-68" colspan="2">หลักสูตรการศึกษาประถมศึกษาตอนต้น พุทธศักราช 2568</th></tr>
+          <tr><th>ความสามารถผู้เรียน</th><th style="width:80px">ระดับความสามารถ</th></tr>
         </thead>
-        <tbody>${leftRows||'<tr><td colspan="3" style="text-align:center;color:#888">ยังไม่มีข้อมูล</td></tr>'}</tbody>
+        <tbody>${leftRows||'<tr><td colspan="2" style="text-align:center;color:#888">ยังไม่มีข้อมูล</td></tr>'}</tbody>
       </table>
       <table class="rp-tbl">
         <thead>
@@ -2915,15 +2915,25 @@ async function fillPP5Docs(){
 }
 
 function pp5ScoresPage(d){
-  const subs=d.subjects;
-  const head=`<tr style="background:#f1f5f9"><th style="border:1px solid #000;width:40px">ที่</th><th style="border:1px solid #000">ชื่อ-นามสกุล</th>${subs.map(s=>`<th style="border:1px solid #000;font-size:10px;width:34px" title="${esc(s.name)}">${esc(s.code||s.name)}</th>`).join('')}</tr>`;
+  // โหมดวิชา (ครูประจำวิชา) → แสดงเกรดรายวิชาแบบเดิม
+  if(d.scope==='subject'){
+    const subs=d.subjects;
+    const head=`<tr style="background:#f1f5f9"><th style="border:1px solid #000;width:40px">ที่</th><th style="border:1px solid #000">ชื่อ-นามสกุล</th>${subs.map(s=>`<th style="border:1px solid #000;font-size:10px;width:40px" title="${esc(s.name)}">${esc(s.code||s.name)}</th>`).join('')}</tr>`;
+    const rows=d.students.map((st,i)=>`<tr><td style="border:1px solid #000;text-align:center">${esc(st.number)}</td>
+      <td style="border:1px solid #000;padding:2px 6px;white-space:nowrap">${esc(st.fullName)}</td>
+      ${subs.map(sub=>{ const r=d.grades[i].bysubject.find(x=>x.subjectID===sub.ID)||{}; return `<td style="border:1px solid #000;text-align:center">${(r.grade51!=null&&r.grade51!=='')?esc(r.grade51):'-'}</td>`; }).join('')}</tr>`).join('');
+    return pp5Page(pp5Head(d,'สรุปผลการเรียน (เกรด) รายวิชา')+`<table style="border-collapse:collapse;width:100%;font-size:12px">${head}${rows}</table>`, true);
+  }
+  // โหมดครูประจำชั้น → ตารางระดับความสามารถ (หลักสูตร 2568)
+  const gn=d.groupNames||[];
+  const head=`<tr style="background:#f1f5f9"><th style="border:1px solid #000;width:36px">ที่</th><th style="border:1px solid #000">ชื่อ-นามสกุล</th>${gn.map(n=>`<th style="border:1px solid #000;font-size:10px">${esc(n)}</th>`).join('')}</tr>`;
   const rows=d.students.map((st,i)=>{
-    const g=d.grades[i].bysubject;
+    const lv=(d.groupLevels[i]&&d.groupLevels[i].levels)||[];
     return `<tr><td style="border:1px solid #000;text-align:center">${esc(st.number)}</td>
       <td style="border:1px solid #000;padding:2px 6px;white-space:nowrap">${esc(st.fullName)}</td>
-      ${subs.map(sub=>{ const r=g.find(x=>x.subjectID===sub.ID)||{}; return `<td style="border:1px solid #000;text-align:center">${(r.grade51!=null&&r.grade51!=='')?esc(r.grade51):'-'}</td>`; }).join('')}</tr>`;
+      ${gn.map((_,gi)=>`<td style="border:1px solid #000;text-align:center;font-size:11px">${lv[gi]||'-'}</td>`).join('')}</tr>`;
   }).join('');
-  return pp5Page(pp5Head(d,'สรุปผลการเรียน (เกรด) รายวิชา')+`<table style="border-collapse:collapse;width:100%;font-size:12px">${head}${rows}</table>`, true);
+  return pp5Page(pp5Head(d,'สรุประดับความสามารถผู้เรียน (หลักสูตร 2568)')+`<table style="border-collapse:collapse;width:100%;font-size:12px">${head}${rows}</table><div style="font-size:11px;margin-top:4px;color:#555">เกณฑ์: เฉลี่ยร้อยละของวิชาที่เกี่ยวข้อง • ≥80 เชี่ยวชาญ • ≥70 ชำนาญ • ≥50 พัฒนา • &lt;50 เริ่มต้น</div>`, true);
 }
 
 function pp5AttMonthPages(d){
@@ -2971,14 +2981,15 @@ function pp5AbilityPage(d, group, items, title){
 function pp5ChartPage(d){
   return pp5Page(pp5Head(d,'แผนภูมิสรุปผลการเรียน')+`
     <div style="margin-bottom:14px"><div style="font-weight:700;text-align:center;margin-bottom:4px">การกระจายระดับพัฒนาการ (หลักสูตร 2568)</div><div style="height:240px"><canvas id="pp5cDist"></canvas></div></div>
-    <div><div style="font-weight:700;text-align:center;margin-bottom:4px">เกรดเฉลี่ยรายวิชา (หลักสูตร 2551)</div><div style="height:300px"><canvas id="pp5cAvg"></canvas></div></div>`);
+    <div><div style="font-weight:700;text-align:center;margin-bottom:4px">ร้อยละเฉลี่ยรายความสามารถ (หลักสูตร 2568)</div><div style="height:300px"><canvas id="pp5cAvg"></canvas></div></div>`);
 }
 function renderPP5BookCharts(d){
   const DEV=(d.cover&&d.cover.gradeLevels)||['เริ่มต้น','พัฒนา','ชำนาญ','เชี่ยวชาญ'];
   const dist=DEV.map((_,i)=>(d.cover&&d.cover.subjects||[]).reduce((sum,sub)=>sum+(sub.counts[i]||0),0));
   const COL=['#ef4444','#fbbf24','#2dd4bf','#0d9488']; // เริ่มต้น→เชี่ยวชาญ
   makeChart('pp5cDist',{type:'doughnut',data:{labels:DEV,datasets:[{data:dist,backgroundColor:COL}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:12}}}}}});
-  makeChart('pp5cAvg',{type:'bar',data:{labels:d.stats.subjects.map(s=>s.name),datasets:[{label:'เกรดเฉลี่ย',data:d.stats.subjects.map(s=>s.avg),backgroundColor:'#14b8a6',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,scales:{x:{min:0,max:4,ticks:{stepSize:1}}},plugins:{legend:{display:false}}}});
+  const gs=d.groupStats||[];
+  makeChart('pp5cAvg',{type:'bar',data:{labels:gs.map(s=>s.name),datasets:[{label:'ร้อยละเฉลี่ย',data:gs.map(s=>s.avg),backgroundColor:'#14b8a6',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,scales:{x:{min:0,max:100,ticks:{stepSize:20}}},plugins:{legend:{display:false}}}});
 }
 
 function pp5PageHTML(d){
@@ -2992,20 +3003,18 @@ function pp5PageHTML(d){
   const gw='width:26px;';
   let leftRows='';
   d.subjects.forEach(sub=>{
-    leftRows+=`<tr><td style="${bd}padding:2px 4px;text-align:center;">${esc(sub.code||'')}</td>`+
-      `<td style="${bd}padding:2px 4px;">${esc(sub.name)}</td>`+
+    leftRows+=`<tr><td style="${bd}padding:2px 4px;">${esc(sub.name)}</td>`+
       sub.counts.map(c=>`<td style="${bd}${gw}text-align:center;">${c||0}</td>`).join('')+'</tr>';
   });
   const blank=Math.max(0, 13-d.subjects.length);
   for(let i=0;i<blank;i++){
-    leftRows+=`<tr><td style="${bd}height:20px;">&nbsp;</td><td style="${bd}"></td>`+
+    leftRows+=`<tr><td style="${bd}height:20px;"></td>`+
       d.gradeLevels.map(()=>`<td style="${bd}${gw}"></td>`).join('')+'</tr>';
   }
   const leftTable=`
     <table style="border-collapse:collapse;font-size:12px;">
       <tr>
-        <td rowspan="2" style="${bd}padding:2px 4px;text-align:center;font-weight:700;width:52px;">รหัสวิชา</td>
-        <td rowspan="2" style="${bd}padding:2px 4px;text-align:center;font-weight:700;width:150px;">รายวิชา</td>
+        <td rowspan="2" style="${bd}padding:2px 4px;text-align:center;font-weight:700;width:170px;">รายวิชา</td>
         <td colspan="${d.gradeLevels.length}" style="${bd}padding:2px 4px;text-align:center;font-weight:700;">จำนวนคนที่ได้ระดับพัฒนาการ (หลักสูตร 2568)</td>
       </tr>
       <tr>${d.gradeLevels.map(g=>`<td style="${bd}${gw}text-align:center;font-weight:700;">${g}</td>`).join('')}</tr>
