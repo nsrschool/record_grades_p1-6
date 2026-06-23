@@ -155,13 +155,14 @@
     <button data-tab="home"     data-role="all"   class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">🏠 หน้าแรก</button>
     <span class="nav-cat" data-role="all">📚 งานวิชาการ</span>
     <button data-tab="subjects" data-role="admin" class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">🏫 จัดการรายวิชา</button>
-    <button data-tab="scores"   data-role="all"   class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">📝 บันทึกผลการเรียน</button>
-    <button data-tab="ability"  data-role="all"   class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">🎓 ความสามารถ/คุณลักษณะ</button>
+    <button data-tab="scores"   data-role="staff"   class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">📝 บันทึกผลการเรียน</button>
+    <button data-tab="schedule" data-role="all"   class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">🗓️ ตารางสอน</button>
+    <button data-tab="ability"  data-role="staff"   class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">🎓 ความสามารถ/คุณลักษณะ</button>
     <button data-tab="report"   data-role="all"   class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">🖨️ พิมพ์ใบรายงาน</button>
     <button data-tab="summary68" data-role="all"   class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">📋 สรุปผลการเรียน</button>
-    <button data-tab="stats"    data-role="admin" class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">📊 รายงานสรุป</button>
+    <button data-tab="stats"    data-role="director" class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">📊 รายงานสรุป</button>
     <span class="nav-cat" data-role="all">🕒 งานปกครอง</span>
-    <button data-tab="attendance" data-role="all"  class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">✅ เช็คชื่อ</button>
+    <button data-tab="attendance" data-role="staff"  class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">✅ เช็คชื่อ</button>
     <button data-tab="calendar"  data-role="all"  class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">📅 ปฏิทินวิชาการ</button>
     <button data-tab="risk"      data-role="all"  class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">⚠️ นักเรียนเสี่ยง</button>
     <span class="nav-cat" data-role="admin">⚙️ ผู้ดูแลระบบ</span>
@@ -748,7 +749,7 @@
         <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
           <input id="tnew_name" class="inp col-span-2" placeholder="ชื่อ (เช่น ครูรุ่งนิรันดร์)">
           <input id="tnew_pin" class="inp" placeholder="PIN">
-          <select id="tnew_role" class="inp"><option value="teacher">ครู</option><option value="admin">แอดมิน</option></select>
+          <select id="tnew_role" class="inp"><option value="teacher">ครู</option><option value="director">ผู้บริหาร</option><option value="admin">แอดมิน</option></select>
           <select id="tnew_home" class="inp"><option value="">— ห้องประจำชั้น —</option></select>
           <button onclick="addTeacher()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 text-sm col-span-2 sm:col-span-5">➕ เพิ่มครู</button>
         </div>
@@ -887,6 +888,21 @@
       <div id="rk_summary" class="flex flex-wrap gap-2 mt-3"></div>
     </div>
     <div id="rk_area" class="card p-4 text-sm text-slate-400">เลือกเงื่อนไขแล้วกด “ตรวจสอบ”</div>
+  </section>
+
+  <!-- ---------- TAB: SCHEDULE (ตารางสอน) ---------- -->
+  <section id="tab-schedule" class="tabpane hidden">
+    <div class="card p-4 mb-4">
+      <div class="flex flex-wrap gap-3 items-end">
+        <h3 class="font-bold text-teal-700">🗓️ ตารางสอน</h3>
+        <div id="sch_pickWrap" class="hidden ml-auto">
+          <label class="text-xs text-slate-500">เลือกครู</label>
+          <select id="sch_teacher" class="inp mt-1" onchange="loadScheduleView()"></select>
+        </div>
+      </div>
+      <p id="sch_hint" class="text-xs text-slate-400 mt-1"></p>
+    </div>
+    <div id="sch_area" class="card p-4 overflow-x-auto text-sm text-slate-400">กำลังโหลด…</div>
   </section>
 
   <!-- ---------- TAB: MANUAL ---------- -->
@@ -1163,6 +1179,7 @@ function switchTab(name){
   if(name==='attendance') initAttendance();
   if(name==='calendar') initCalendar();
   if(name==='risk') initRisk();
+  if(name==='schedule') initSchedule();
   if(name==='summary68') initSummary68();
 }
 function switchSub(name){
@@ -1531,7 +1548,7 @@ function scoreStudents(){
 function gradeRoomsFor(sub){
   const d=classDigit(sub.classLevel);
   const u=state.currentUser; let rooms;
-  if(u && u.role!=='admin' && state.mySchedule && state.mySchedule.length){
+  if(u && isTeacherScope(u) && state.mySchedule && state.mySchedule.length){
     rooms=state.mySchedule.filter(s=>s.subject===sub.name && classDigit(s.classLevel)===d).map(s=>s.classLevel);
   }else{
     rooms=state.students.filter(s=>classDigit(s.classLevel)===d).map(s=>s.classLevel);
@@ -1543,7 +1560,7 @@ function fillScoreSubjects(){
   const sel=document.getElementById('sc_subject'); const cur=sel.value;
   let subs=state.subjects.slice();
   const u=state.currentUser;
-  if(u && u.role!=='admin' && state.mySchedule && state.mySchedule.length){
+  if(u && isTeacherScope(u) && state.mySchedule && state.mySchedule.length){
     const taught=new Set(state.mySchedule.map(s=>s.subject+'|'+classDigit(s.classLevel)));
     subs=subs.filter(s=>taught.has(s.name+'|'+classDigit(s.classLevel)));
   }
@@ -1763,7 +1780,7 @@ function initAbility(){
   const sel=document.getElementById('ab_class');
   const u=state.currentUser;
   let classes=[...new Set(state.students.map(s=>s.classLevel).filter(Boolean))].sort();
-  if(u && u.role!=='admin' && u.homeroomClass) classes=classes.filter(c=>c===u.homeroomClass);
+  if(u && isTeacherScope(u) && u.homeroomClass) classes=classes.filter(c=>c===u.homeroomClass);
   sel.innerHTML = classes.length ? classes.map(c=>`<option>${esc(c)}</option>`).join('') : '<option value="">(ไม่มีห้อง)</option>';
 }
 
@@ -1850,7 +1867,7 @@ function fillReportClasses(){
   const sel=document.getElementById('rp_class'); if(!sel) return;
   const u=state.currentUser;
   let classes=[...new Set(state.students.map(s=>s.classLevel).filter(Boolean))].sort();
-  if(u && u.role!=='admin' && u.homeroomClass) classes=classes.filter(c=>c===u.homeroomClass);
+  if(u && isTeacherScope(u) && u.homeroomClass) classes=classes.filter(c=>c===u.homeroomClass);
   const cur=sel.value;
   sel.innerHTML='<option value="">— เลือกห้อง —</option>'+classes.map(c=>`<option>${esc(c)}</option>`).join('');
   if(cur) sel.value=cur;
@@ -2181,7 +2198,7 @@ async function doLogin(){
     const u=await GAS.call('login',{name, pin});
     state.currentUser=u;
     try{ localStorage.setItem('kps_session', JSON.stringify(u)); }catch(e){}
-    state.mySchedule = (u.role!=='admin') ? await GAS.call('getSchedule',{teacher:u.name}) : [];
+    state.mySchedule = (isTeacherScope(u)) ? await GAS.call('getSchedule',{teacher:u.name}) : [];
     const ls=document.getElementById('loginScreen'); ls.classList.add('hidden'); ls.classList.remove('flex');
     applyRole();
     await bootstrap();
@@ -2212,12 +2229,21 @@ function logout(){
   showLoginScreen();
 }
 
+function isTeacherScope(u){ return u && u.role==='teacher'; }
 function applyRole(){
-  const admin = state.currentUser && state.currentUser.role==='admin';
+  const role = state.currentUser ? state.currentUser.role : 'teacher';
+  const admin = role==='admin', director = role==='director';
   document.querySelectorAll('[data-role]').forEach(el=>{
-    el.style.display=(el.dataset.role==='admin' && !admin) ? 'none' : '';
+    const dr=el.dataset.role; let show;
+    if(admin) show=true;
+    else if(dr==='all') show=true;
+    else if(dr==='director') show=director;        // แอดมิน+ผู้บริหาร
+    else if(dr==='staff') show=(role==='teacher');  // เฉพาะครู (แอดมินเห็นผ่านเงื่อนไขบน)
+    else show=false;                                // 'admin'
+    el.style.display = show ? '' : 'none';
   });
-  document.getElementById('userChip').textContent='👤 '+state.currentUser.name+(admin?' • แอดมิน':'');
+  const label = admin?' • แอดมิน':(director?' • ผู้บริหาร':'');
+  document.getElementById('userChip').textContent='👤 '+state.currentUser.name+label;
   document.getElementById('userBar').classList.remove('hidden');
 }
 
@@ -2331,7 +2357,7 @@ function renderTeachers(){
   document.getElementById('teachersBody').innerHTML = list.length ? list.map(t=>`
     <tr class="border-b" data-id="${t.ID}">
       <td class="px-1 py-1"><input class="inp text-sm tc-name" value="${esc(t.name)}"></td>
-      <td class="px-1"><select class="inp text-sm tc-role"><option value="teacher" ${t.role!=='admin'?'selected':''}>ครู</option><option value="admin" ${t.role==='admin'?'selected':''}>แอดมิน</option></select></td>
+      <td class="px-1"><select class="inp text-sm tc-role"><option value="teacher" ${(!t.role||t.role==='teacher')?'selected':''}>ครู</option><option value="director" ${t.role==='director'?'selected':''}>ผู้บริหาร</option><option value="admin" ${t.role==='admin'?'selected':''}>แอดมิน</option></select></td>
       <td class="px-1"><input class="inp text-sm w-20 tc-pin" value="${esc(t.pin)}"></td>
       <td class="px-1"><select class="inp text-sm w-28 tc-home">${homeroomOptions(t.homeroomClass)}</select></td>
       <td class="px-1 text-right whitespace-nowrap">
@@ -2391,7 +2417,7 @@ function fillFlagClasses(){
   const sel=document.getElementById('att_flag_class');
   const u=state.currentUser;
   let classes=[...new Set(state.students.map(s=>s.classLevel).filter(Boolean))].sort();
-  if(u && u.role!=='admin' && u.homeroomClass) classes=classes.filter(c=>c===u.homeroomClass);
+  if(u && isTeacherScope(u) && u.homeroomClass) classes=classes.filter(c=>c===u.homeroomClass);
   sel.innerHTML = classes.length ? classes.map(c=>`<option>${esc(c)}</option>`).join('') : '<option value="">(ไม่มีห้องประจำชั้น)</option>';
 }
 
@@ -2460,7 +2486,7 @@ function fillPeriodSlots(){
     return;
   }
   const u=state.currentUser;
-  const src=(u && u.role!=='admin') ? (state.mySchedule||[]) : (state.schedule||[]);
+  const src=(u && isTeacherScope(u)) ? (state.mySchedule||[]) : (state.schedule||[]);
   const slots=src.filter(s=>s.day===wd).sort((a,b)=>Number(a.period)-Number(b.period)||String(a.classLevel).localeCompare(String(b.classLevel)));
   state.periodSlots=slots;
   const isAdmin=u && u.role==='admin';
@@ -2735,7 +2761,7 @@ function initSummary68(){
   const sel=document.getElementById('sm68_class');
   const u=state.currentUser;
   let classes=[...new Set(state.students.map(s=>s.classLevel).filter(Boolean))].sort();
-  if(u && u.role!=='admin' && u.homeroomClass) classes=classes.filter(c=>c===u.homeroomClass);
+  if(u && isTeacherScope(u) && u.homeroomClass) classes=classes.filter(c=>c===u.homeroomClass);
   sel.innerHTML=classes.length?classes.map(c=>`<option>${esc(c)}</option>`).join(''):'<option value="">(ไม่มีห้อง)</option>';
 }
 async function loadSummary68(){
@@ -2816,7 +2842,7 @@ function fillPP5Classes(){
   const sel=document.getElementById('pp5_class'); if(!sel) return;
   const u=state.currentUser;
   let classes=[...new Set(state.students.map(s=>s.classLevel).filter(Boolean))].sort();
-  if(u && u.role!=='admin' && u.homeroomClass) classes=classes.filter(c=>c===u.homeroomClass);
+  if(u && isTeacherScope(u) && u.homeroomClass) classes=classes.filter(c=>c===u.homeroomClass);
   const cur=sel.value;
   sel.innerHTML=classes.length?classes.map(c=>`<option>${esc(c)}</option>`).join(''):'<option value="">(ไม่มีห้อง)</option>';
   if(cur) sel.value=cur;
@@ -2849,7 +2875,7 @@ function onPP5Mode(){
     const cls=document.getElementById('pp5_class').value;
     const u=state.currentUser;
     let subs=state.subjects.filter(s=>!s.classLevel || classDigit(s.classLevel)===classDigit(cls));
-    if(u && u.role!=='admin' && state.mySchedule && state.mySchedule.length){
+    if(u && isTeacherScope(u) && state.mySchedule && state.mySchedule.length){
       const taught=new Set(state.mySchedule.map(s=>s.subject+'|'+classDigit(s.classLevel)));
       subs=subs.filter(s=>taught.has(s.name+'|'+classDigit(s.classLevel)));
     }
@@ -3498,10 +3524,10 @@ function initRisk(){
   const sel=document.getElementById('rk_class');
   const u=state.currentUser;
   let classes=allClasses();
-  if(u && u.role!=='admin' && u.homeroomClass) classes=classes.filter(c=>c===u.homeroomClass);
+  if(u && isTeacherScope(u) && u.homeroomClass) classes=classes.filter(c=>c===u.homeroomClass);
   const cur=sel.value;
   sel.innerHTML='<option value="">ทุกห้อง</option>'+classes.map(c=>`<option>${esc(c)}</option>`).join('');
-  if(cur) sel.value=cur; else if(u && u.role!=='admin' && u.homeroomClass) sel.value=u.homeroomClass;
+  if(cur) sel.value=cur; else if(u && isTeacherScope(u) && u.homeroomClass) sel.value=u.homeroomClass;
 }
 async function loadRisk(){
   try{ showLoading(true);
@@ -3596,6 +3622,67 @@ async function loadGradeCharts(){
 }
 
 /* ============================================================
+   ตารางสอน
+   ============================================================ */
+const SCH_DAYS=['จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์'];
+async function initSchedule(){
+  const u=state.currentUser;
+  const pickWrap=document.getElementById('sch_pickWrap');
+  if(isTeacherScope(u)){
+    pickWrap.classList.add('hidden');
+    document.getElementById('sch_hint').textContent='ตารางสอนของ '+u.name;
+    renderScheduleGrid(state.mySchedule||[], false);
+  }else{
+    // แอดมิน/ผู้บริหาร เลือกครูได้
+    pickWrap.classList.remove('hidden');
+    document.getElementById('sch_hint').textContent='เลือกครูเพื่อดูตารางสอน (ผู้บริหาร/แอดมินเห็นได้ทุกคน)';
+    let teachers=state.teachers||[];
+    if(!teachers.length){ try{ teachers=state.teachers=await GAS.call('getTeachers'); }catch(e){} }
+    const sel=document.getElementById('sch_teacher'); const cur=sel.value;
+    const names=teachers.filter(t=>t.role!=='admin').map(t=>t.name);
+    sel.innerHTML=names.map(n=>`<option>${esc(n)}</option>`).join('')||'<option value="">(ไม่มีครู)</option>';
+    if(cur) sel.value=cur;
+    loadScheduleView();
+  }
+}
+async function loadScheduleView(){
+  const name=document.getElementById('sch_teacher').value;
+  if(!name){ document.getElementById('sch_area').innerHTML='<span class="text-slate-400">ไม่มีครู</span>'; return; }
+  try{ showLoading(true);
+    const rows=await GAS.call('getSchedule',{teacher:name});
+    renderScheduleGrid(rows, true);
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
+function renderScheduleGrid(rows, showTeacher){
+  const el=document.getElementById('sch_area');
+  if(!rows || !rows.length){ el.innerHTML='<div class="text-center text-slate-400 py-6">ยังไม่มีตารางสอน</div>'; return; }
+  let maxP=0; rows.forEach(r=>{ const p=Number(r.period)||0; if(p>maxP) maxP=p; });
+  if(maxP<1) maxP=8;
+  // map[day][period] = [{subject,class,teacher}]
+  const map={};
+  rows.forEach(r=>{
+    const d=String(r.day||'').trim(), p=Number(r.period)||0;
+    (map[d]=map[d]||{})[p]=(map[d]&&map[d][p]||[]);
+    map[d][p].push(r);
+  });
+  let head='<tr><th class="border border-slate-300 bg-slate-100 px-2 py-1">วัน\\คาบ</th>';
+  for(let p=1;p<=maxP;p++) head+=`<th class="border border-slate-300 bg-slate-100 px-2 py-1">${p}</th>`;
+  head+='</tr>';
+  let body='';
+  SCH_DAYS.forEach(d=>{
+    body+=`<tr><td class="border border-slate-300 bg-slate-50 px-2 py-1 font-medium whitespace-nowrap">${d}</td>`;
+    for(let p=1;p<=maxP;p++){
+      const cell=(map[d]&&map[d][p])||[];
+      body+='<td class="border border-slate-300 px-1 py-1 align-top text-xs">'+
+        cell.map(c=>`<div class="mb-0.5"><span class="font-medium text-teal-700">${esc(c.classLevel||'')}</span> ${esc(c.subject||'')}${showTeacher&&c.teacher?'<br><span class="text-slate-400">'+esc(c.teacher)+'</span>':''}</div>`).join('')+
+        '</td>';
+    }
+    body+='</tr>';
+  });
+  el.innerHTML=`<table class="border-collapse w-full" style="min-width:560px">${head}${body}</table>`;
+}
+
+/* ============================================================
    START
    ============================================================ */
 async function startApp(){
@@ -3604,7 +3691,7 @@ async function startApp(){
     if(saved){
       const u=JSON.parse(saved);
       state.currentUser=u;
-      try{ state.mySchedule=(u.role!=='admin')? await GAS.call('getSchedule',{teacher:u.name}):[]; }catch(e){ state.mySchedule=[]; }
+      try{ state.mySchedule=(isTeacherScope(u))? await GAS.call('getSchedule',{teacher:u.name}):[]; }catch(e){ state.mySchedule=[]; }
       const ls=document.getElementById('loginScreen'); ls.classList.add('hidden'); ls.classList.remove('flex');
       applyRole(); await bootstrap(); switchTab('home');
       return;
