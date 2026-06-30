@@ -1581,6 +1581,21 @@ function gradeRoomsFor(sub){
   return [...new Set(rooms.filter(Boolean))].sort();
 }
 
+// รายการ (ห้อง, วิชา) ที่ครูรับผิดชอบ — ใช้ตรรกะเดียวกับหน้าบันทึกผล
+// มีตารางสอน → กรองตามที่สอน ; ไม่มี → แสดงทุกวิชารายห้อง
+function mySubjectRoomList(){
+  const u=state.currentUser;
+  let subs=(state.subjects||[]).slice();
+  if(u && isTeacherScope(u) && state.mySchedule && state.mySchedule.length){
+    const taught=new Set(state.mySchedule.map(s=>s.subject+'|'+classDigit(s.classLevel)));
+    subs=subs.filter(s=>taught.has(s.name+'|'+classDigit(s.classLevel)));
+  }
+  subs.sort((a,b)=>String(a.classLevel).localeCompare(String(b.classLevel))||String(a.code).localeCompare(String(b.code)));
+  const out=[];
+  subs.forEach(s=>gradeRoomsFor(s).forEach(room=>out.push({classLevel:room, subject:s.name})));
+  return out;
+}
+
 function fillScoreSubjects(){
   const sel=document.getElementById('sc_subject'); const cur=sel.value;
   let subs=state.subjects.slice();
@@ -3715,11 +3730,13 @@ async function initTeachDoc(){
   const u=state.currentUser;
   const el=document.getElementById('td_area');
   try{ showLoading(true);
-    const [subs,docs]=await Promise.all([
-      GAS.call('getMyTeachingSubjects',{teacher:u.name}),
-      GAS.call('getTeachingDocs',{teacher:u.name})
-    ]);
-    if(!subs.length){ el.innerHTML='<div class="card p-6 text-center text-slate-400">ยังไม่มีวิชาที่รับผิดชอบ (ต้องมีตารางสอนของท่านในระบบก่อน)</div>'; return; }
+    if(!state.subjects || !state.subjects.length){ try{ await loadSubjects(); }catch(e){} }
+    const subs=mySubjectRoomList();
+    const docs=await GAS.call('getTeachingDocs',{teacher:u.name});
+    if(!subs.length){
+      el.innerHTML='<div class="card p-6 text-center text-slate-400">ยังไม่มีวิชาให้ส่ง — ให้แอดมินเพิ่มรายวิชาในระบบก่อน</div>';
+      return;
+    }
     const find=(cls,sub,type)=>docs.find(d=>String(d.classLevel)===cls&&String(d.subject)===sub&&d.docType===type);
     el.innerHTML=subs.map(s=>{
       const cells=TD_TYPES.map(([tp,lb])=>{
