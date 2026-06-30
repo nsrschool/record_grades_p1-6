@@ -156,6 +156,8 @@
     <span class="nav-cat" data-role="all">📚 งานวิชาการ</span>
     <button data-tab="subjects" data-role="admin" class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">🏫 จัดการรายวิชา</button>
     <button data-tab="scores"   data-role="staff"   class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">📝 บันทึกผลการเรียน</button>
+    <button data-tab="teachdoc" data-role="staff"   class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">📤 ส่งเอกสารการสอน</button>
+    <button data-tab="teachsum" data-role="director" class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">📂 ติดตามเอกสารการสอน</button>
     <button data-tab="schedule" data-role="all"   class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">🗓️ ตารางสอน</button>
     <button data-tab="ability"  data-role="staff"   class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">🎓 ความสามารถ/คุณลักษณะ</button>
     <button data-tab="report"   data-role="all"   class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">🖨️ พิมพ์ใบรายงาน</button>
@@ -425,7 +427,7 @@
           <button onclick="loadAttSummary()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 text-sm">สรุป</button>
           <button onclick="exportAttSummary()" class="btn bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 text-sm">📤 ส่งออก Excel</button>
         </div>
-        <p class="text-[11px] text-slate-400 mb-2">เวลาเรียน = คาบที่มาเรียน ÷ คาบทั้งหมดตามตารางสอน (คาบที่ครูไม่เช็ค ใช้ผลหน้าเสาธงแทน) • <span class="text-rose-500">แดง = ต่ำกว่า 80%</span></p>
+        <p class="text-[11px] text-slate-400 mb-2">เวลาเรียน = คาบที่มาเรียน ÷ คาบทั้งหมดตามตารางสอน (ถ้ายังไม่มีตารางสอน จะคิดจาก วันมา+สาย ÷ วันเรียนทั้งหมด) • <span class="text-rose-500">แดง = ต่ำกว่า 80%</span></p>
         <div id="sumInfo" class="text-xs text-slate-500 mb-2"></div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-left text-slate-400 border-b"><th class="py-2 px-2">เลขที่</th><th class="px-2">ชื่อ-นามสกุล</th><th class="px-2 text-center">มา</th><th class="px-2 text-center">ขาด</th><th class="px-2 text-center">ลา</th><th class="px-2 text-center">สาย</th><th class="px-2 text-center">เวลาเรียน</th></tr></thead>
@@ -890,6 +892,27 @@
     <div id="rk_area" class="card p-4 text-sm text-slate-400">เลือกเงื่อนไขแล้วกด “ตรวจสอบ”</div>
   </section>
 
+  <!-- ---------- TAB: TEACHDOC (ครูส่งเอกสารการสอน) ---------- -->
+  <section id="tab-teachdoc" class="tabpane hidden">
+    <div class="card p-4 mb-4">
+      <h3 class="font-bold text-teal-700 mb-1">📤 ส่งกำหนดการสอน & แผนการสอน</h3>
+      <p class="text-xs text-slate-400">อัปโหลดไฟล์ (PDF/รูป) ตามวิชาที่รับผิดชอบ — แอดมินและผู้บริหารจะเห็นไฟล์และสรุปการส่ง</p>
+    </div>
+    <div id="td_area" class="space-y-3 text-sm text-slate-400">กำลังโหลด…</div>
+  </section>
+
+  <!-- ---------- TAB: TEACHSUM (สรุปติดตามเอกสารการสอน) ---------- -->
+  <section id="tab-teachsum" class="tabpane hidden">
+    <div class="card p-4 mb-4">
+      <div class="flex flex-wrap items-center gap-3">
+        <h3 class="font-bold text-teal-700">📂 ติดตามการส่งเอกสารการสอน</h3>
+        <button onclick="loadTeachSum()" class="btn bg-white border border-slate-200 px-3 py-1.5 text-sm ml-auto">🔄 รีเฟรช</button>
+      </div>
+      <div id="ts_cards" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3"></div>
+    </div>
+    <div id="ts_area" class="card p-4 overflow-x-auto text-sm text-slate-400">กำลังโหลด…</div>
+  </section>
+
   <!-- ---------- TAB: SCHEDULE (ตารางสอน) ---------- -->
   <section id="tab-schedule" class="tabpane hidden">
     <div class="card p-4 mb-4">
@@ -1180,6 +1203,8 @@ function switchTab(name){
   if(name==='calendar') initCalendar();
   if(name==='risk') initRisk();
   if(name==='schedule') initSchedule();
+  if(name==='teachdoc') initTeachDoc();
+  if(name==='teachsum') loadTeachSum();
   if(name==='summary68') initSummary68();
 }
 function switchSub(name){
@@ -3680,6 +3705,90 @@ function renderScheduleGrid(rows, showTeacher){
     body+='</tr>';
   });
   el.innerHTML=`<table class="border-collapse w-full" style="min-width:560px">${head}${body}</table>`;
+}
+
+/* ============================================================
+   ส่งเอกสารการสอน (ครู) + ติดตาม (แอดมิน/ผู้บริหาร)
+   ============================================================ */
+const TD_TYPES=[['plan','กำหนดการสอน'],['lesson','แผนการสอน']];
+async function initTeachDoc(){
+  const u=state.currentUser;
+  const el=document.getElementById('td_area');
+  try{ showLoading(true);
+    const [subs,docs]=await Promise.all([
+      GAS.call('getMyTeachingSubjects',{teacher:u.name}),
+      GAS.call('getTeachingDocs',{teacher:u.name})
+    ]);
+    if(!subs.length){ el.innerHTML='<div class="card p-6 text-center text-slate-400">ยังไม่มีวิชาที่รับผิดชอบ (ต้องมีตารางสอนของท่านในระบบก่อน)</div>'; return; }
+    const find=(cls,sub,type)=>docs.find(d=>String(d.classLevel)===cls&&String(d.subject)===sub&&d.docType===type);
+    el.innerHTML=subs.map(s=>{
+      const cells=TD_TYPES.map(([tp,lb])=>{
+        const d=find(s.classLevel,s.subject,tp);
+        const status=d
+          ? `<a href="https://drive.google.com/file/d/${esc(d.fileId)}/view" target="_blank" class="text-teal-600 underline">📄 ดูไฟล์</a>
+             <button onclick="delTeachDoc('${esc(d.ID)}')" class="text-rose-500 ml-1">🗑️</button>`
+          : '<span class="text-slate-300">ยังไม่ส่ง</span>';
+        return `<div class="flex items-center justify-between gap-2 border-t pt-2">
+          <div><div class="text-sm font-medium">${lb}</div><div class="text-xs mt-0.5">${status}</div></div>
+          <label class="btn bg-teal-50 text-teal-700 px-3 py-1.5 text-xs cursor-pointer whitespace-nowrap">
+            ${d?'เปลี่ยนไฟล์':'⬆️ อัปโหลด'}
+            <input type="file" accept="application/pdf,image/*" class="hidden"
+              onchange="uploadTeachDoc(this,'${esc(s.classLevel)}','${esc(s.subject)}','${tp}')">
+          </label>
+        </div>`;
+      }).join('');
+      return `<div class="card p-4">
+        <div class="font-bold text-slate-700">${esc(s.subject)} <span class="text-teal-600 text-sm">• ${esc(s.classLevel)}</span></div>
+        <div class="space-y-2 mt-2">${cells}</div>
+      </div>`;
+    }).join('');
+  }catch(e){ el.innerHTML='<div class="text-rose-500">'+esc(e.message)+'</div>'; }
+  finally{ showLoading(false); }
+}
+async function uploadTeachDoc(input,classLevel,subject,docType){
+  const file=input.files[0]; if(!file) return;
+  if(file.size>15*1024*1024){ toast('ไฟล์ใหญ่เกิน 15MB','error'); input.value=''; return; }
+  try{ showLoading(true);
+    const dataURL=await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
+    await GAS.call('uploadTeachingDoc',{teacher:state.currentUser.name, classLevel, subject, docType, fileName:file.name, base64:dataURL});
+    toast('ส่งเอกสารแล้ว'); initTeachDoc();
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); input.value=''; }
+}
+async function delTeachDoc(id){
+  if(!confirm('ยืนยันลบเอกสารนี้?')) return;
+  try{ showLoading(true); await GAS.call('deleteTeachingDoc',{id}); toast('ลบแล้ว'); initTeachDoc(); }
+  catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
+
+async function loadTeachSum(){
+  const area=document.getElementById('ts_area');
+  try{ showLoading(true);
+    const d=await GAS.call('getTeachingSummary');
+    document.getElementById('ts_cards').innerHTML=[
+      ['ทั้งหมด (วิชา×ครู)',d.total,'bg-slate-50 text-slate-700'],
+      ['กำหนดการสอน ส่งแล้ว',d.planDone,'bg-emerald-50 text-emerald-700'],
+      ['แผนการสอน ส่งแล้ว',d.lessonDone,'bg-teal-50 text-teal-700'],
+      ['ยังไม่ส่ง (แผน)',d.lessonPending,'bg-rose-50 text-rose-600'],
+    ].map(([l,v,c])=>`<div class="rounded-xl p-3 ${c}"><div class="text-2xl font-bold">${v}</div><div class="text-xs">${l}</div></div>`).join('');
+    if(!d.rows.length){ area.innerHTML='<div class="text-center text-slate-400 py-6">ยังไม่มีข้อมูล (ต้องมีตารางสอนในระบบก่อน)</div>'; return; }
+    const cell=info=>info
+      ? `<a href="https://drive.google.com/file/d/${esc(info.fileId)}/view" target="_blank" class="text-teal-600 underline">✅ ดูไฟล์</a>`
+      : '<span class="text-rose-400">✗ ยังไม่ส่ง</span>';
+    const body=d.rows.map((r,i)=>`<tr class="border-b">
+      <td class="px-2 py-1 text-center text-slate-400">${i+1}</td>
+      <td class="px-2 py-1 whitespace-nowrap">${esc(r.teacher)}</td>
+      <td class="px-2 py-1 whitespace-nowrap">${esc(r.subject)}</td>
+      <td class="px-2 py-1 text-center">${esc(r.classLevel)}</td>
+      <td class="px-2 py-1 text-center">${cell(r.plan)}</td>
+      <td class="px-2 py-1 text-center">${cell(r.lesson)}</td>
+    </tr>`).join('');
+    area.innerHTML=`<table class="w-full text-sm" style="min-width:640px">
+      <thead><tr class="text-left text-slate-400 border-b">
+        <th class="px-2 py-2">#</th><th class="px-2">ครู</th><th class="px-2">วิชา</th>
+        <th class="px-2 text-center">ห้อง</th><th class="px-2 text-center">กำหนดการสอน</th><th class="px-2 text-center">แผนการสอน</th>
+      </tr></thead><tbody>${body}</tbody></table>`;
+  }catch(e){ area.innerHTML='<div class="text-rose-500">'+esc(e.message)+'</div>'; }
+  finally{ showLoading(false); }
 }
 
 /* ============================================================
