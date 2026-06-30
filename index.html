@@ -3726,15 +3726,34 @@ function renderScheduleGrid(rows, showTeacher){
    ส่งเอกสารการสอน (ครู) + ติดตาม (แอดมิน/ผู้บริหาร)
    ============================================================ */
 const TD_TYPES=[['plan','กำหนดการสอน'],['lesson','แผนการสอน']];
+function myTaughtList(){
+  const sch=state.mySchedule||[];
+  const seen=new Set(), out=[];
+  sch.forEach(s=>{
+    const cls=String(s.classLevel||'').trim(), sub=String(s.subject||'').trim();
+    if(!cls||!sub) return;
+    const k=cls+'|'+sub; if(seen.has(k)) return; seen.add(k);
+    out.push({classLevel:cls, subject:sub});
+  });
+  out.sort((a,b)=>String(a.classLevel).localeCompare(String(b.classLevel))||String(a.subject).localeCompare(String(b.subject)));
+  return out;
+}
 async function initTeachDoc(){
   const u=state.currentUser;
   const el=document.getElementById('td_area');
   try{ showLoading(true);
-    if(!state.subjects || !state.subjects.length){ try{ await loadSubjects(); }catch(e){} }
-    const subs=mySubjectRoomList();
+    // ใช้ตารางสอนจริงของครูเท่านั้น (เฉพาะวิชาที่รับผิดชอบ)
+    const subs=myTaughtList();
     const docs=await GAS.call('getTeachingDocs',{teacher:u.name});
     if(!subs.length){
-      el.innerHTML='<div class="card p-6 text-center text-slate-400">ยังไม่มีวิชาให้ส่ง — ให้แอดมินเพิ่มรายวิชาในระบบก่อน</div>';
+      let hint='';
+      try{
+        const tnames=await GAS.call('getScheduleTeachers');
+        hint = tnames.length
+          ? '<div class="text-xs text-slate-400 mt-3 leading-relaxed">ชื่อครูที่พบในตารางสอน:<br>'+tnames.map(esc).join(' • ')+'<br><br>ชื่อของท่านในระบบ: <b>'+esc(u.name)+'</b><br>หากสะกดไม่ตรงกัน ให้แอดมินแก้ชื่อในตารางสอน หรือบัญชีครูให้ตรงกัน</div>'
+          : '<div class="text-xs text-slate-400 mt-3">ยังไม่มีตารางสอนในระบบ — ให้แอดมินนำเข้าตารางสอนก่อน</div>';
+      }catch(e){}
+      el.innerHTML='<div class="card p-6 text-center text-slate-400">ไม่พบวิชาที่ท่านรับผิดชอบในตารางสอน'+hint+'</div>';
       return;
     }
     const find=(cls,sub,type)=>docs.find(d=>String(d.classLevel)===cls&&String(d.subject)===sub&&d.docType===type);
