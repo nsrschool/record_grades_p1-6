@@ -1556,7 +1556,7 @@ function gradeFromLevel(level){
   rows.sort((a,b)=>Number(b.maxPercent)-Number(a.maxPercent));
   return {grade51:rows[0].grade51, letter51:rows[0].letter51};
 }
-function classDigit(c){ return String(c||'').replace(/[^0-9]/g,'').charAt(0); }
+function classDigit(c){ c=String(c||''); const d=c.replace(/[^0-9]/g,'').charAt(0); const m=c.match(/[ก-ฮ]+/); return (m?m[0].charAt(0):'')+d; }
 function studentsOfClass(classLevel){
   const d=classDigit(classLevel);
   return state.students
@@ -1579,6 +1579,21 @@ function gradeRoomsFor(sub){
     rooms=state.students.filter(s=>classDigit(s.classLevel)===d).map(s=>s.classLevel);
   }
   return [...new Set(rooms.filter(Boolean))].sort();
+}
+
+// รายการ (ห้อง, วิชา) ที่ครูรับผิดชอบ — ใช้ตรรกะเดียวกับหน้าบันทึกผล
+// มีตารางสอน → กรองตามที่สอน ; ไม่มี → แสดงทุกวิชารายห้อง
+function mySubjectRoomList(){
+  const u=state.currentUser;
+  let subs=(state.subjects||[]).slice();
+  if(u && isTeacherScope(u) && state.mySchedule && state.mySchedule.length){
+    const taught=new Set(state.mySchedule.map(s=>s.subject+'|'+classDigit(s.classLevel)));
+    subs=subs.filter(s=>taught.has(s.name+'|'+classDigit(s.classLevel)));
+  }
+  subs.sort((a,b)=>String(a.classLevel).localeCompare(String(b.classLevel))||String(a.code).localeCompare(String(b.code)));
+  const out=[];
+  subs.forEach(s=>gradeRoomsFor(s).forEach(room=>out.push({classLevel:room, subject:s.name})));
+  return out;
 }
 
 function fillScoreSubjects(){
@@ -3711,15 +3726,36 @@ function renderScheduleGrid(rows, showTeacher){
    ส่งเอกสารการสอน (ครู) + ติดตาม (แอดมิน/ผู้บริหาร)
    ============================================================ */
 const TD_TYPES=[['plan','กำหนดการสอน'],['lesson','แผนการสอน']];
+function myTaughtList(){
+  const sch=state.mySchedule||[];
+  const seen=new Set(), out=[];
+  sch.forEach(s=>{
+    const cls=String(s.classLevel||'').trim(), sub=String(s.subject||'').trim();
+    if(!cls||!sub) return;
+    const k=cls+'|'+sub; if(seen.has(k)) return; seen.add(k);
+    out.push({classLevel:cls, subject:sub});
+  });
+  out.sort((a,b)=>String(a.classLevel).localeCompare(String(b.classLevel))||String(a.subject).localeCompare(String(b.subject)));
+  return out;
+}
 async function initTeachDoc(){
   const u=state.currentUser;
   const el=document.getElementById('td_area');
   try{ showLoading(true);
-    const [subs,docs]=await Promise.all([
-      GAS.call('getMyTeachingSubjects',{teacher:u.name}),
-      GAS.call('getTeachingDocs',{teacher:u.name})
-    ]);
-    if(!subs.length){ el.innerHTML='<div class="card p-6 text-center text-slate-400">ยังไม่มีวิชาที่รับผิดชอบ (ต้องมีตารางสอนของท่านในระบบก่อน)</div>'; return; }
+    // ใช้ตารางสอนจริงของครูเท่านั้น (เฉพาะวิชาที่รับผิดชอบ)
+    const subs=myTaughtList();
+    const docs=await GAS.call('getTeachingDocs',{teacher:u.name});
+    if(!subs.length){
+      let hint='';
+      try{
+        const tnames=await GAS.call('getScheduleTeachers');
+        hint = tnames.length
+          ? '<div class="text-xs text-slate-400 mt-3 leading-relaxed">ชื่อครูที่พบในตารางสอน:<br>'+tnames.map(esc).join(' • ')+'<br><br>ชื่อของท่านในระบบ: <b>'+esc(u.name)+'</b><br>หากสะกดไม่ตรงกัน ให้แอดมินแก้ชื่อในตารางสอน หรือบัญชีครูให้ตรงกัน</div>'
+          : '<div class="text-xs text-slate-400 mt-3">ยังไม่มีตารางสอนในระบบ — ให้แอดมินนำเข้าตารางสอนก่อน</div>';
+      }catch(e){}
+      el.innerHTML='<div class="card p-6 text-center text-slate-400">ไม่พบวิชาที่ท่านรับผิดชอบในตารางสอน'+hint+'</div>';
+      return;
+    }
     const find=(cls,sub,type)=>docs.find(d=>String(d.classLevel)===cls&&String(d.subject)===sub&&d.docType===type);
     el.innerHTML=subs.map(s=>{
       const cells=TD_TYPES.map(([tp,lb])=>{
