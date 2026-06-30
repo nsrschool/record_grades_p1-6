@@ -705,6 +705,7 @@
       <button data-asub="roster"   class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🧑‍🎓 นำเข้ารายชื่อนักเรียน</button>
       <button data-asub="schedule" class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📅 นำเข้าตารางสอน</button>
       <button data-asub="teachers" class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">👤 จัดการครู / PIN</button>
+      <button data-asub="assign"   class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🧩 มอบหมายวิชาให้ครู</button>
       <button data-asub="docs"     class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📄 คำอธิบายรายวิชา</button>
       <button data-asub="backup"   class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">💾 สำรองข้อมูลอัตโนมัติ</button>
       <button data-asub="locks"    class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🔒 อนุมัติ/ล็อกผล</button>
@@ -764,6 +765,21 @@
           <tbody id="teachersBody"></tbody>
         </table></div>
         <div class="text-right mt-3"><button onclick="saveAllTeachers()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 text-sm">💾 บันทึกทั้งหมด</button></div>
+      </div>
+    </div>
+
+    <!-- asub: assign (มอบหมายวิชาให้ครู) -->
+    <div id="asub-assign" class="asubpane hidden">
+      <div class="card p-4">
+        <div class="flex flex-wrap items-end gap-3 mb-3">
+          <div>
+            <label class="text-xs text-slate-500">เลือกครู</label>
+            <select id="as_teacher" class="inp mt-1" onchange="loadAssign()"><option value="">— เลือกครู —</option></select>
+          </div>
+          <button onclick="saveAssign()" class="btn bg-teal-600 text-white px-4 py-2 text-sm">💾 บันทึกวิชาที่รับผิดชอบ</button>
+        </div>
+        <p class="text-xs text-slate-400 mb-2">ติ๊กวิชา×ห้องที่ครูคนนี้รับผิดชอบ — ใช้กับหน้าบันทึกผล & ส่งเอกสารการสอน (ถ้าไม่กำหนด ระบบจะใช้ตารางสอนแทน)</p>
+        <div id="as_list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-1 text-sm">เลือกครูก่อน</div>
       </div>
     </div>
 
@@ -1218,6 +1234,7 @@ function switchAsub(name){
   document.querySelectorAll('.asubbtn').forEach(b=>b.classList.toggle('tab-active', b.dataset.asub===name));
   if(name==='schedule') loadSchedule();
   if(name==='teachers') renderTeachers();
+  if(name==='assign') initAssign();
   if(name==='docs') initDocsAdmin();
   if(name==='backup') initBackup();
   if(name==='locks') renderLocksAdmin();
@@ -1570,11 +1587,17 @@ function scoreStudents(){
     .sort((a,b)=>Number(a.number)-Number(b.number));
 }
 // ห้องที่ใช้กับวิชานี้ (ครู=จากตารางสอน, แอดมิน=ทุกห้องที่มีนักเรียนระดับชั้นนั้น)
+function myAssignedSrc(){
+  if(state.mySubjects && state.mySubjects.length) return state.mySubjects;
+  if(state.mySchedule && state.mySchedule.length) return state.mySchedule;
+  return null;
+}
 function gradeRoomsFor(sub){
   const d=classDigit(sub.classLevel);
   const u=state.currentUser; let rooms;
-  if(u && isTeacherScope(u) && state.mySchedule && state.mySchedule.length){
-    rooms=state.mySchedule.filter(s=>s.subject===sub.name && classDigit(s.classLevel)===d).map(s=>s.classLevel);
+  const src = (u && isTeacherScope(u)) ? myAssignedSrc() : null;
+  if(src){
+    rooms=src.filter(s=>s.subject===sub.name && classDigit(s.classLevel)===d).map(s=>s.classLevel);
   }else{
     rooms=state.students.filter(s=>classDigit(s.classLevel)===d).map(s=>s.classLevel);
   }
@@ -1600,8 +1623,9 @@ function fillScoreSubjects(){
   const sel=document.getElementById('sc_subject'); const cur=sel.value;
   let subs=state.subjects.slice();
   const u=state.currentUser;
-  if(u && isTeacherScope(u) && state.mySchedule && state.mySchedule.length){
-    const taught=new Set(state.mySchedule.map(s=>s.subject+'|'+classDigit(s.classLevel)));
+  const src=(u && isTeacherScope(u)) ? myAssignedSrc() : null;
+  if(src){
+    const taught=new Set(src.map(s=>s.subject+'|'+classDigit(s.classLevel)));
     subs=subs.filter(s=>taught.has(s.name+'|'+classDigit(s.classLevel)));
   }
   subs.sort((a,b)=>String(a.classLevel).localeCompare(String(b.classLevel))||String(a.code).localeCompare(String(b.code)));
@@ -2239,6 +2263,7 @@ async function doLogin(){
     state.currentUser=u;
     try{ localStorage.setItem('kps_session', JSON.stringify(u)); }catch(e){}
     state.mySchedule = (isTeacherScope(u)) ? await GAS.call('getSchedule',{teacher:u.name}) : [];
+    state.mySubjects = (isTeacherScope(u)) ? await GAS.call('getTeacherSubjects',{teacher:u.name}) : [];
     const ls=document.getElementById('loginScreen'); ls.classList.add('hidden'); ls.classList.remove('flex');
     applyRole();
     await bootstrap();
@@ -2264,7 +2289,7 @@ async function saveChangePin(){
 }
 
 function logout(){
-  state.currentUser=null; state.mySchedule=[];
+  state.currentUser=null; state.mySchedule=[]; state.mySubjects=[];
   try{ localStorage.removeItem('kps_session'); }catch(e){}
   showLoginScreen();
 }
@@ -3727,9 +3752,10 @@ function renderScheduleGrid(rows, showTeacher){
    ============================================================ */
 const TD_TYPES=[['plan','กำหนดการสอน'],['lesson','แผนการสอน']];
 function myTaughtList(){
-  const sch=state.mySchedule||[];
+  // ลำดับความสำคัญ: วิชาที่แอดมินมอบหมาย → ตารางสอน
+  let src = (state.mySubjects && state.mySubjects.length) ? state.mySubjects : (state.mySchedule||[]);
   const seen=new Set(), out=[];
-  sch.forEach(s=>{
+  src.forEach(s=>{
     const cls=String(s.classLevel||'').trim(), sub=String(s.subject||'').trim();
     if(!cls||!sub) return;
     const k=cls+'|'+sub; if(seen.has(k)) return; seen.add(k);
@@ -3753,7 +3779,7 @@ async function initTeachDoc(){
           ? '<div class="text-xs text-slate-400 mt-3 leading-relaxed">ชื่อครูที่พบในตารางสอน:<br>'+tnames.map(esc).join(' • ')+'<br><br>ชื่อของท่านในระบบ: <b>'+esc(u.name)+'</b><br>หากสะกดไม่ตรงกัน ให้แอดมินแก้ชื่อในตารางสอน หรือบัญชีครูให้ตรงกัน</div>'
           : '<div class="text-xs text-slate-400 mt-3">ยังไม่มีตารางสอนในระบบ — ให้แอดมินนำเข้าตารางสอนก่อน</div>';
       }catch(e){}
-      el.innerHTML='<div class="card p-6 text-center text-slate-400">ไม่พบวิชาที่ท่านรับผิดชอบในตารางสอน'+hint+'</div>';
+      el.innerHTML='<div class="card p-6 text-center text-slate-400">ยังไม่มีวิชาที่ท่านรับผิดชอบ<div class="text-xs mt-2">ให้แอดมินไปที่ <b>แอดมิน → 🧩 มอบหมายวิชาให้ครู</b> เพื่อกำหนดวิชาที่ท่านรับผิดชอบ (หรือเพิ่มท่านในตารางสอน)</div></div>';
       return;
     }
     const find=(cls,sub,type)=>docs.find(d=>String(d.classLevel)===cls&&String(d.subject)===sub&&d.docType===type);
@@ -3828,6 +3854,58 @@ async function loadTeachSum(){
 }
 
 /* ============================================================
+   มอบหมายวิชาให้ครู (แอดมิน)
+   ============================================================ */
+async function initAssign(){
+  if(!state.teachers || !state.teachers.length){ try{ state.teachers=await GAS.call('getTeachers'); }catch(e){} }
+  if(!state.subjects || !state.subjects.length){ try{ await loadSubjects(); }catch(e){} }
+  const sel=document.getElementById('as_teacher'); const cur=sel.value;
+  const names=(state.teachers||[]).filter(t=>t.role!=='admin').map(t=>t.name);
+  sel.innerHTML='<option value="">— เลือกครู —</option>'+names.map(n=>`<option>${esc(n)}</option>`).join('');
+  if(cur) sel.value=cur;
+  document.getElementById('as_list').innerHTML='เลือกครูก่อน';
+}
+// รายการวิชา×ห้องทั้งหมด (ทุกห้องที่มีนักเรียนในระดับชั้นของวิชา)
+function allSubjectRoomOptions(){
+  const out=[];
+  (state.subjects||[]).slice()
+    .sort((a,b)=>String(a.classLevel).localeCompare(String(b.classLevel))||String(a.code).localeCompare(String(b.code)))
+    .forEach(s=>{
+      const d=classDigit(s.classLevel);
+      const rooms=[...new Set(state.students.filter(st=>classDigit(st.classLevel)===d).map(st=>st.classLevel).filter(Boolean))].sort();
+      rooms.forEach(room=>out.push({classLevel:room, subject:s.name, code:s.code}));
+    });
+  return out;
+}
+async function loadAssign(){
+  const name=document.getElementById('as_teacher').value;
+  const box=document.getElementById('as_list');
+  if(!name){ box.innerHTML='เลือกครูก่อน'; return; }
+  try{ showLoading(true);
+    const assigned=await GAS.call('getTeacherSubjects',{teacher:name});
+    const set=new Set(assigned.map(a=>a.classLevel+'|'+a.subject));
+    const opts=allSubjectRoomOptions();
+    if(!opts.length){ box.innerHTML='<span class="text-slate-400">ยังไม่มีรายวิชา/นักเรียนในระบบ</span>'; return; }
+    box.innerHTML=opts.map(o=>{
+      const k=o.classLevel+'|'+o.subject; const ck=set.has(k)?'checked':'';
+      return `<label class="flex items-center gap-2 p-1 rounded hover:bg-slate-50">
+        <input type="checkbox" class="as-chk" data-cls="${esc(o.classLevel)}" data-sub="${esc(o.subject)}" ${ck}>
+        <span><b class="text-teal-700">${esc(o.classLevel)}</b> ${esc(o.subject)}</span></label>`;
+    }).join('');
+  }catch(e){ box.innerHTML='<span class="text-rose-500">'+esc(e.message)+'</span>'; }
+  finally{ showLoading(false); }
+}
+async function saveAssign(){
+  const name=document.getElementById('as_teacher').value;
+  if(!name){ toast('เลือกครูก่อน','error'); return; }
+  const items=[...document.querySelectorAll('#as_list .as-chk:checked')].map(c=>({classLevel:c.dataset.cls, subject:c.dataset.sub}));
+  try{ showLoading(true);
+    await GAS.call('setTeacherSubjects',{teacher:name, items});
+    toast('บันทึกวิชาที่รับผิดชอบแล้ว ('+items.length+' รายการ)');
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
+
+/* ============================================================
    START
    ============================================================ */
 async function startApp(){
@@ -3837,6 +3915,7 @@ async function startApp(){
       const u=JSON.parse(saved);
       state.currentUser=u;
       try{ state.mySchedule=(isTeacherScope(u))? await GAS.call('getSchedule',{teacher:u.name}):[]; }catch(e){ state.mySchedule=[]; }
+      try{ state.mySubjects=(isTeacherScope(u))? await GAS.call('getTeacherSubjects',{teacher:u.name}):[]; }catch(e){ state.mySubjects=[]; }
       const ls=document.getElementById('loginScreen'); ls.classList.add('hidden'); ls.classList.remove('flex');
       applyRole(); await bootstrap(); switchTab('home');
       return;
