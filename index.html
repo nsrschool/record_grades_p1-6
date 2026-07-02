@@ -248,16 +248,25 @@ document.querySelectorAll('.subbtn').forEach(function(b){ b.onclick=function(){ 
 /* ============ BOOTSTRAP ============ */
 window.addEventListener('DOMContentLoaded', function(){
   showLoading(true);
-  google.script.run.withSuccessHandler(function(s){
-    state.settings=s||{}; applySettings();
-    google.script.run.withSuccessHandler(function(st){
-      state.students=st||[]; fillClassFilter();
-      $('statusDot').className='w-2 h-2 rounded-full bg-emerald-300 blink';
-      $('statusText').textContent='☁️ เชื่อมต่อกับ Google Sheets (Online Mode)';
-      switchTab('home'); document.querySelector('.navbtn').classList.add('tab-active');
-      showLoading(false);
-    }).withFailureHandler(function(e){ showLoading(false); toast(e.message||e,'error'); }).getStudents();
-  }).withFailureHandler(function(e){ showLoading(false); toast('เชื่อมต่อไม่สำเร็จ: '+(e.message||e),'error'); }).getSettings();
+  var done=false;
+  var safety=setTimeout(function(){ if(!done){ showLoading(false); toast('โหลดช้าผิดปกติ ลองรีเฟรชอีกครั้ง','error'); } }, 20000);
+  google.script.run
+    .withSuccessHandler(function(data){
+      done=true; clearTimeout(safety);
+      try{
+        state.settings=(data&&data.settings)||{}; state.students=(data&&data.students)||[];
+        applySettings(); fillClassFilter();
+        $('statusDot').className='w-2 h-2 rounded-full bg-emerald-300 blink';
+        $('statusText').textContent='☁️ เชื่อมต่อกับ Google Sheets (Online Mode)';
+        switchTab('home'); document.querySelector('.navbtn').classList.add('tab-active');
+      }catch(err){ toast('แสดงผลผิดพลาด: '+(err.message||err),'error'); }
+      finally{ showLoading(false); }
+    })
+    .withFailureHandler(function(e){
+      done=true; clearTimeout(safety); showLoading(false);
+      toast('เชื่อมต่อไม่สำเร็จ: '+(e.message||e),'error');
+    })
+    .getBootstrap();
 });
 
 function applySettings(){
