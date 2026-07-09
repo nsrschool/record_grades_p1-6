@@ -1207,19 +1207,17 @@
       <div class="flex flex-wrap items-center gap-3">
         <h3 class="font-bold text-teal-700">📂 ติดตามการส่งเอกสารการสอน</h3>
       <div class="flex flex-wrap items-center gap-2 ml-auto">
-        <input id="ts_search" oninput="renderTeachSumTable()" placeholder="🔍 ค้นหาครู/วิชา" class="inp text-sm" style="max-width:180px">
-        <select id="ts_filter" onchange="renderTeachSumTable()" class="inp text-sm" style="max-width:150px">
-          <option value="all">ทั้งหมด</option>
-          <option value="pending">ยังไม่ส่ง</option>
-          <option value="done">ส่งครบแล้ว</option>
-        </select>
+        <input id="ts_search" oninput="renderTeachSumList()" placeholder="🔍 ค้นหาครู/วิชา" class="inp text-sm" style="max-width:180px">
+        <label class="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap cursor-pointer">
+          <input type="checkbox" id="ts_pending" onchange="renderTeachSumList()"> เฉพาะที่ยังไม่ครบ</label>
         <button onclick="exportTeachSumPending()" class="btn bg-emerald-600 text-white px-3 py-1.5 text-sm whitespace-nowrap">📊 Export ครูที่ยังไม่ส่ง</button>
         <button onclick="loadTeachSum()" class="btn bg-white border border-slate-200 px-3 py-1.5 text-sm">🔄 รีเฟรช</button>
       </div>
       </div>
-      <div id="ts_cards" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3"></div>
+      <p class="text-xs text-slate-400 mt-1">ภาพรวมการส่งงานของครูทุกคน • คลิกชื่อครูเพื่อดูรายวิชา</p>
+      <div id="ts_cards" class="flex flex-wrap gap-2 mt-3"></div>
     </div>
-    <div id="ts_area" class="card p-4 overflow-x-auto text-sm text-slate-400">กำลังโหลด…</div>
+    <div id="ts_area" class="card p-2 sm:p-4 text-sm text-slate-400">กำลังโหลด…</div>
   </section>
 
   <!-- ---------- TAB: SCHEDULE (ตารางสอน) ---------- -->
@@ -4770,20 +4768,88 @@ async function loadTeachSum(){
     const d=await GAS.call('getTeachingSummary');
     state._teachSum=d;
     state._assignments=d.assignments||state._assignments;
-    const card=(label,done,total,tp,color)=>`
-      <div class="rounded-xl p-3 ${color} cursor-pointer hover:shadow transition" onclick="showTsTeacherList('${tp}')" title="คลิกดูรายชื่อครู">
-        <div class="text-2xl font-bold">${done}<span class="text-sm font-normal text-slate-400">/${total}</span></div>
-        <div class="text-xs">${label}</div>
-        <div class="text-[10px] mt-0.5 underline opacity-70">ดูรายชื่อ ›</div>
-      </div>`;
+    state._tsOpen=state._tsOpen||new Set();
+    // ชิปสรุปภาพรวม (แบบระบบ ม.1-3)
+    const bt=d.byTeacher||[];
+    const allDone=bt.filter(t=>t.plan>=t.subjects&&t.lesson>=t.subjects&&t.exam_mid>=t.subjects&&t.exam_final>=t.subjects).length;
+    const chip=(txt,cls)=>`<span class="px-3 py-1 rounded-full text-xs font-medium ${cls}">${txt}</span>`;
+    const tchip=(label,tp,cls)=>{
+      const t=d.typeSummary&&d.typeSummary[tp]?d.typeSummary[tp]:{doneTeachers:[],pendingTeachers:[]};
+      return chip(label+': ส่งครบ '+t.doneTeachers.length+' • ค้าง '+t.pendingTeachers.length, cls);
+    };
     document.getElementById('ts_cards').innerHTML=
-      card('กำหนดการสอน ส่งแล้ว',d.planDone,d.total,'plan','bg-emerald-50 text-emerald-700')+
-      card('แผนการสอน ส่งแล้ว',d.lessonDone,d.total,'lesson','bg-teal-50 text-teal-700')+
-      card('ข้อสอบกลางปี ส่งแล้ว',d.examMidDone,d.total,'exam_mid','bg-sky-50 text-sky-700')+
-      card('ข้อสอบปลายปี ส่งแล้ว',d.examFinalDone,d.total,'exam_final','bg-indigo-50 text-indigo-700');
-    renderTeachSumTable();
+      chip('ครู '+bt.length+' คน','bg-slate-100 text-slate-700')+
+      chip('ส่งครบทุกอย่าง '+allDone+' คน','bg-emerald-100 text-emerald-700')+
+      chip('ยังไม่ครบ '+(bt.length-allDone)+' คน','bg-rose-100 text-rose-600')+
+      tchip('กำหนดการสอน','plan','bg-teal-50 text-teal-700')+
+      tchip('แผนการสอน','lesson','bg-violet-50 text-violet-700')+
+      tchip('ข้อสอบกลางปี','exam_mid','bg-sky-50 text-sky-700')+
+      tchip('ข้อสอบปลายปี','exam_final','bg-orange-50 text-orange-700');
+    renderTeachSumList();
   }catch(e){ area.innerHTML='<div class="text-rose-500">'+esc(e.message)+'</div>'; }
   finally{ showLoading(false); }
+}
+// เปิด/ปิดรายละเอียดของครู
+function tsToggle(name){
+  state._tsOpen=state._tsOpen||new Set();
+  if(state._tsOpen.has(name)) state._tsOpen.delete(name); else state._tsOpen.add(name);
+  renderTeachSumList();
+}
+// รายการแบบจัดกลุ่มรายครู — คลิกชื่อครูเพื่อขยายดูรายวิชา
+function renderTeachSumList(){
+  const area=document.getElementById('ts_area');
+  const d=state._teachSum;
+  if(!d || !d.rows.length){ area.innerHTML='<div class="text-center text-slate-400 py-6">ยังไม่มีข้อมูล (ต้องมีตารางสอน/มอบหมายวิชาก่อน)</div>'; return; }
+  const q=(document.getElementById('ts_search').value||'').trim().toLowerCase();
+  const pendingOnly=document.getElementById('ts_pending').checked;
+  // จัดกลุ่มรายวิชาเข้าครู
+  const byT={};
+  d.rows.forEach(r=>{ (byT[r.teacher]=byT[r.teacher]||[]).push(r); });
+  const TYPES=[['plan','กำหนดการสอน'],['lesson','แผนการสอน'],['exam_mid','ข้อสอบกลางปี'],['exam_final','ข้อสอบปลายปี']];
+  let teachers=Object.keys(byT).sort();
+  teachers=teachers.filter(name=>{
+    const subs=byT[name];
+    const complete=TYPES.every(([tp])=>subs.every(r=>r[tp]));
+    if(pendingOnly && complete) return false;
+    if(q && !(name.toLowerCase().includes(q)||subs.some(r=>String(r.subject).toLowerCase().includes(q)))) return false;
+    return true;
+  });
+  if(!teachers.length){ area.innerHTML='<div class="text-center text-slate-400 py-6">ไม่พบรายการตามเงื่อนไข</div>'; return; }
+  const cell=info=>info
+    ? `<a href="https://drive.google.com/file/d/${esc(info.fileId)}/view" target="_blank" onclick="event.stopPropagation()" class="inline-block bg-emerald-100 text-emerald-700 rounded-full px-3 py-0.5 text-xs font-medium whitespace-nowrap">✓ ดู</a>`
+    : '<span class="inline-block bg-rose-50 text-rose-500 rounded-full px-3 py-0.5 text-xs whitespace-nowrap">ยังไม่ส่ง</span>';
+  const blocks=teachers.map(name=>{
+    const subs=byT[name].slice().sort((a,b)=>String(a.classLevel).localeCompare(String(b.classLevel))||String(a.subject).localeCompare(String(b.subject)));
+    const complete=TYPES.every(([tp])=>subs.every(r=>r[tp]));
+    const open=q?true:(state._tsOpen&&state._tsOpen.has(name));
+    // ชิปสรุปรายประเภทของครูคนนี้ เช่น "กำหนดการสอน 2/3"
+    const chips=TYPES.map(([tp,label])=>{
+      const done=subs.filter(r=>r[tp]).length;
+      const cls=done>=subs.length?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700';
+      return `<span class="px-3 py-1 rounded-full text-xs font-medium ${cls} whitespace-nowrap">${label} ${done}/${subs.length}</span>`;
+    }).join(' ');
+    const detail=!open?'':`<div class="overflow-x-auto pb-1"><table class="w-full text-sm mt-1 mb-2" style="min-width:760px">
+      <thead><tr class="text-left text-slate-400 border-b">
+        <th class="px-2 py-1.5">ชั้น</th><th class="px-2">รายวิชา</th>
+        <th class="px-2 text-center">กำหนดการสอน</th><th class="px-2 text-center">แผนการสอน</th>
+        <th class="px-2 text-center">ข้อสอบกลางปี</th><th class="px-2 text-center">ข้อสอบปลายปี</th>
+      </tr></thead><tbody>${subs.map(r=>`<tr class="border-b last:border-0">
+        <td class="px-2 py-1.5"><span class="inline-block bg-emerald-50 text-emerald-700 rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap">${esc(r.classLevel)}</span></td>
+        <td class="px-2 py-1.5 text-slate-600">${esc(r.subject)}</td>
+        <td class="px-2 py-1.5 text-center">${cell(r.plan)}</td>
+        <td class="px-2 py-1.5 text-center">${cell(r.lesson)}</td>
+        <td class="px-2 py-1.5 text-center">${cell(r.exam_mid)}</td>
+        <td class="px-2 py-1.5 text-center">${cell(r.exam_final)}</td>
+      </tr>`).join('')}</tbody></table></div>`;
+    return `<div class="border-b last:border-0 border-slate-100">
+      <div class="flex flex-wrap items-center gap-2 py-2.5 px-2 cursor-pointer hover:bg-slate-50 rounded-lg" onclick="tsToggle('${esc(name).replace(/'/g,"\\'")}')">
+        <span class="text-slate-400 text-xs">${open?'▼':'▶'}</span>
+        <span class="font-semibold text-slate-700 whitespace-nowrap">🧑‍🏫 ${esc(name)}</span>
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold ${complete?'bg-emerald-100 text-emerald-700':'bg-rose-100 text-rose-600'}">${complete?'ครบแล้ว':'ยังไม่ครบ'}</span>
+        ${chips}
+      </div>${detail}</div>`;
+  }).join('');
+  area.innerHTML=`<div class="text-xs text-slate-400 mb-1 px-2">แสดง ${teachers.length} จาก ${Object.keys(byT).length} คน</div>`+blocks;
 }
 // Modal รายชื่อครู ส่งแล้ว/ยังไม่ส่ง ตามประเภท
 function showTsTeacherList(tp){
@@ -4813,45 +4879,6 @@ function showTsTeacherList(tp){
     </div>
   </div>`;
   document.body.insertAdjacentHTML('beforeend',html);
-}
-function tsFilteredRows(){
-  const d=state._teachSum; if(!d) return [];
-  const q=(document.getElementById('ts_search').value||'').trim().toLowerCase();
-  const f=document.getElementById('ts_filter').value;
-  return d.rows.filter(r=>{
-    const done=r.plan&&r.lesson&&r.exam_mid&&r.exam_final;
-    if(f==='pending'&&done) return false;
-    if(f==='done'&&!done) return false;
-    if(q && !(String(r.teacher).toLowerCase().includes(q)||String(r.subject).toLowerCase().includes(q))) return false;
-    return true;
-  });
-}
-function renderTeachSumTable(){
-  const area=document.getElementById('ts_area');
-  const d=state._teachSum;
-  if(!d || !d.rows.length){ area.innerHTML='<div class="text-center text-slate-400 py-6">ยังไม่มีข้อมูล (ต้องมีตารางสอน/มอบหมายวิชาก่อน)</div>'; return; }
-  const rows=tsFilteredRows();
-  if(!rows.length){ area.innerHTML='<div class="text-center text-slate-400 py-6">ไม่พบรายการตามเงื่อนไข</div>'; return; }
-  const cell=info=>info
-    ? `<a href="https://drive.google.com/file/d/${esc(info.fileId)}/view" target="_blank" class="text-teal-600 underline">✅ ดูไฟล์</a>`
-    : '<span class="text-rose-400">✗ ยังไม่ส่ง</span>';
-  const body=rows.map((r,i)=>`<tr class="border-b">
-    <td class="px-2 py-1 text-center text-slate-400">${i+1}</td>
-    <td class="px-2 py-1 whitespace-nowrap">${esc(r.teacher)}</td>
-    <td class="px-2 py-1 whitespace-nowrap">${esc(r.subject)}</td>
-    <td class="px-2 py-1 text-center">${esc(r.classLevel)}</td>
-    <td class="px-2 py-1 text-center">${cell(r.plan)}</td>
-    <td class="px-2 py-1 text-center">${cell(r.lesson)}</td>
-    <td class="px-2 py-1 text-center">${cell(r.exam_mid)}</td>
-    <td class="px-2 py-1 text-center">${cell(r.exam_final)}</td>
-  </tr>`).join('');
-  area.innerHTML=`<div class="text-xs text-slate-400 mb-2">แสดง ${rows.length} จาก ${d.rows.length} รายการ</div>
-    <table class="w-full text-sm" style="min-width:860px">
-    <thead><tr class="text-left text-slate-400 border-b">
-      <th class="px-2 py-2">#</th><th class="px-2">ครู</th><th class="px-2">วิชา</th>
-      <th class="px-2 text-center">ระดับชั้น</th><th class="px-2 text-center">กำหนดการสอน</th><th class="px-2 text-center">แผนการสอน</th>
-      <th class="px-2 text-center">ข้อสอบกลางปี</th><th class="px-2 text-center">ข้อสอบปลายปี</th>
-    </tr></thead><tbody>${body}</tbody></table>`;
 }
 function exportTeachSumPending(){
   const d=state._teachSum; if(!d||!d.rows.length){ toast('ยังไม่มีข้อมูล','error'); return; }
