@@ -5447,6 +5447,16 @@ async function delSchCell(id){
    ประวัตินักเรียน (ครูประจำชั้นกรอก + แอดมินนำเข้า DMC)
    ============================================================ */
 function pfIsAdmin(){ const u=state.currentUser; return u&&(u.role==='admin'||u.role==='director'); }
+// แปลงวันเกิดทุกทรงให้เป็น "6 พฤษภาคม 2557" — รองรับ "2557-05-06 00:00:00" (Sheets แปลงเอง),
+// "06/05/2557" (จากไฟล์ DMC, ปี พ.ศ.), ISO ค.ศ. และข้อความไทยที่แปลงแล้ว
+function thBirthDate(v){
+  v=String(v||'').trim(); if(!v) return '';
+  let m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m){ const y=Number(m[1]); return Number(m[3])+' '+TH_MONTHS[Number(m[2])]+' '+(y>2300?y:y+543); }
+  m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m){ const y=Number(m[3]); return Number(m[1])+' '+TH_MONTHS[Number(m[2])]+' '+(y>2300?y:y+543); }
+  return v; // เป็นข้อความไทยอยู่แล้ว
+}
 async function initProfiles(){
   const u=state.currentUser;
   if(!state.students||!state.students.length){ try{ await loadStudents(); }catch(e){} }
@@ -5542,7 +5552,7 @@ function openProfile(studentID){
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
         ${F('citizenId','เลขบัตรประชาชน',p.citizenId,ro)}
         ${F('gender','เพศ',p.gender,ro)}
-        ${F('birthDate','วันเกิด',p.birthDate,ro)}
+        ${F('birthDate','วันเกิด',thBirthDate(p.birthDate),ro)}
         ${F('weight','น้ำหนัก (กก.)',p.weight,ro)}
         ${F('height','ส่วนสูง (ซม.)',p.height,ro)}
         ${F('bloodType','กลุ่มเลือด',p.bloodType,ro)}
@@ -5624,7 +5634,7 @@ function printPfRecord(studentID){
       <table style="flex:1;border-collapse:collapse;font-size:15px">
         ${row('ชื่อ-นามสกุล', s.fullName)} ${row('ชื่อเล่น', p.nickname)}
         ${row('ชั้น / เลขที่', s.classLevel+' / '+s.number)} ${row('เลขประจำตัวนักเรียน', s.studentCode)}
-        ${row('เลขบัตรประชาชน', p.citizenId)} ${row('วันเกิด', p.birthDate)}
+        ${row('เลขบัตรประชาชน', p.citizenId)} ${row('วันเกิด', thBirthDate(p.birthDate))}
         ${row('น้ำหนัก / ส่วนสูง', (p.weight||'-')+' กก. / '+(p.height||'-')+' ซม.')} ${row('กลุ่มเลือด', p.bloodType)}
         ${row('ศาสนา / เชื้อชาติ / สัญชาติ', [p.religion,p.race,p.nationality].filter(Boolean).join(' / '))}
       </table>
@@ -5664,7 +5674,7 @@ function printStudentCards(){
         </div>
         <div><b style="font-size:12.5px">${esc(s.fullName)}</b>${p.nickname?` <span style="color:#666">(${esc(p.nickname)})</span>`:''}</div>
         <div>ชั้น ${esc(s.classLevel)} เลขที่ ${esc(s.number)}${p.bloodType?` • กรุ๊ปเลือด ${esc(p.bloodType)}`:''}</div>
-        <div style="color:#555;font-size:10px">${p.birthDate?'เกิด '+esc(p.birthDate):''}${p.phone?' • 📞 '+esc(p.phone):''}</div>
+        <div style="color:#555;font-size:10px">${p.birthDate?'เกิด '+esc(thBirthDate(p.birthDate)):''}${p.phone?' • 📞 '+esc(p.phone):''}</div>
         <div style="color:#555;font-size:10px">ปีการศึกษา ${esc(set.academicYear||'')}</div>
         <div style="margin-top:2mm;font-size:9.5px;text-align:right;color:#333">ลงชื่อ.............................<br>(${esc(set.directorName||'ผู้อำนวยการ')})<br>ผู้อำนวยการ</div>
       </div>
@@ -5711,7 +5721,7 @@ function importDMCFile(ev){
           studentCode:String(r[idxCode]).trim(),
           citizenId:idxCid>=0?String(r[idxCid]||'').trim():'',
           gender:g(r,'เพศ')==='ช'?'ชาย':(g(r,'เพศ')==='ญ'?'หญิง':g(r,'เพศ')),
-          birthDate:g(r,'วันเกิด'), weight:g(r,'น้ำหนัก'), height:g(r,'ส่วนสูง'),
+          birthDate:thBirthDate(g(r,'วันเกิด')), weight:g(r,'น้ำหนัก'), height:g(r,'ส่วนสูง'),
           bloodType:clean(g(r,'กลุ่มเลือด')), religion:g(r,'ศาสนา'), race:g(r,'เชื้อชาติ'), nationality:g(r,'สัญชาติ'),
           address:addr,
           guardianName:name('คำนำหน้าชื่อผู้ปกครอง','ชื่อผู้ปกครอง','นามสกุลผู้ปกครอง'),
