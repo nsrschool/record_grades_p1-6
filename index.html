@@ -158,6 +158,8 @@
     <button data-tab="scores"   data-role="staff"   class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">📝 บันทึกผลการเรียน</button>
     <button data-tab="teachdoc" data-role="staff"   class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">📤 ส่งเอกสารการสอน</button>
     <button data-tab="subdoc"   data-role="staff"   class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">📚 คำอธิบาย/โครงสร้างวิชา</button>
+    <button data-tab="profile"  data-role="staff"   class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">🪪 ประวัตินักเรียน</button>
+    <button data-tab="former"   data-role="director" class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">🗃️ นักเรียนจำหน่าย</button>
     <button data-tab="teachsum" data-role="director" class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">📂 ติดตามเอกสารการสอน</button>
     <button data-tab="scoretrack" data-role="director" class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">📈 ติดตามการกรอกคะแนน</button>
     <button data-tab="supervise" data-role="director" class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">🔍 นิเทศ/เยี่ยมชั้นเรียน</button>
@@ -530,6 +532,7 @@
       <button data-ssub="scoreprog" class="ssubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📝 การบันทึกคะแนน</button>
       <button data-ssub="docsum"    class="ssubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📤 การส่งงาน</button>
       <button data-ssub="riskx"     class="ssubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">⚠️ นักเรียนเสี่ยง</button>
+      <button data-ssub="studstat"  class="ssubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🧑‍🎓 สถิตินักเรียน</button>
       <button data-ssub="grades"    class="ssubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📈 ผลการเรียน</button>
     </div>
 
@@ -590,6 +593,22 @@
         <div id="xr_summary" class="flex flex-wrap gap-2 mt-3"></div>
       </div>
       <div id="xr_area" class="card p-4 overflow-x-auto text-sm text-slate-400">กด "ตรวจสอบ" เพื่อดูรายชื่อ (ทุกห้อง) — ตัวกรองละเอียดอยู่ที่เมนู ⚠️ นักเรียนเสี่ยง</div>
+    </div>
+
+    <!-- ssub: สถิตินักเรียน -->
+    <div id="ssub-studstat" class="ssubpane hidden">
+      <div class="card p-4 mb-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <h3 class="font-bold text-teal-700">🧑‍🎓 สถิตินักเรียน</h3>
+          <span class="text-xs text-slate-400">ข้อมูลจากรายชื่อ + ไฟล์ DMC (ศาสนา/กรุ๊ปเลือด/ความด้อยโอกาส ต้องนำเข้า DMC ก่อน)</span>
+          <div class="ml-auto flex gap-2">
+            <button onclick="loadStudStat(true)" class="btn bg-white border border-slate-200 px-3 py-1.5 text-sm">🔄 รีเฟรช</button>
+            <button onclick="exportStudStat()" class="btn bg-emerald-600 text-white px-3 py-1.5 text-sm">📥 Excel</button>
+          </div>
+        </div>
+        <div id="stst_cards" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3"></div>
+      </div>
+      <div id="stst_area" class="text-sm text-slate-400"><div class="card p-4">กำลังโหลด…</div></div>
     </div>
 
     <!-- ssub: ผลการเรียน (เนื้อหาเดิม) -->
@@ -815,6 +834,17 @@
           <input type="file" id="scheduleFile" accept=".xlsx,.xls" class="hidden" onchange="importScheduleFile(event)">
         </div>
         <div id="scheduleSummary" class="text-xs text-slate-500 mt-3"></div>
+      </div>
+      <div class="card p-4 mb-4">
+        <div class="flex flex-wrap items-end gap-3">
+          <div>
+            <h3 class="font-bold text-teal-700">✏️ แก้ไขตารางสอนรายครู</h3>
+            <p class="text-xs text-slate-400 mt-0.5">คลิกคาบที่มีเพื่อ แก้ไข/ย้าย/ลบ • คลิก ➕ ในช่องว่างเพื่อเพิ่มคาบ • ระบบตรวจการชน (ครูซ้ำคาบ/ห้องซ้ำคาบ) ให้อัตโนมัติ</p>
+          </div>
+          <div class="ml-auto"><label class="text-xs text-slate-500">เลือกครู</label>
+            <select id="se_teacher" class="inp mt-1" onchange="loadSchEdit()"><option value="">— เลือกครู —</option></select></div>
+        </div>
+        <div id="se_area" class="overflow-x-auto mt-3 text-sm text-slate-400">เลือกครูเพื่อแสดงตาราง</div>
       </div>
       <div class="card p-4">
         <h3 class="font-bold text-teal-700 mb-2">ตารางสอนในระบบ <span id="schCount" class="text-xs font-normal text-slate-400"></span></h3>
@@ -1135,6 +1165,45 @@
     </div>
   </section>
 
+  <!-- ---------- TAB: PROFILE (ประวัตินักเรียน) ---------- -->
+  <section id="tab-profile" class="tabpane hidden">
+    <div class="card p-4 mb-4">
+      <div class="flex flex-wrap items-end gap-3">
+        <div>
+          <h3 class="font-bold text-teal-700">🪪 ประวัตินักเรียน</h3>
+          <p class="text-xs text-slate-400 mt-0.5" id="pf_hint">ครูประจำชั้นกรอก รูปถ่าย ชื่อเล่น เบอร์ผู้ปกครอง ฯลฯ — ข้อมูลหลักนำเข้าจากไฟล์ DMC โดยแอดมิน</p>
+        </div>
+        <div class="flex flex-wrap items-end gap-2 ml-auto">
+          <div><label class="text-xs text-slate-500">ห้อง</label>
+            <select id="pf_class" class="inp mt-1" onchange="loadProfiles()"><option value="">— เลือกห้อง —</option></select></div>
+          <input id="pf_search" oninput="renderProfiles()" placeholder="🔍 ค้นหาชื่อ/ชื่อเล่น" class="inp text-sm" style="max-width:160px">
+          <button id="pf_dmcBtn" onclick="document.getElementById('pf_dmcFile').click()" class="btn bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 text-sm hidden">📤 นำเข้าไฟล์ DMC (.xlsx)</button>
+          <input type="file" id="pf_dmcFile" accept=".xlsx,.xls" class="hidden" onchange="importDMCFile(event)">
+          <button id="pf_cardBtn" onclick="printStudentCards()" class="btn bg-violet-500 hover:bg-violet-600 text-white px-3 py-2 text-sm">🪪 พิมพ์บัตรนักเรียน</button>
+          <button onclick="loadProfiles(true)" class="btn bg-white border border-slate-200 px-3 py-2 text-sm">🔄 รีเฟรช</button>
+        </div>
+      </div>
+    </div>
+    <div id="pf_area" class="text-sm text-slate-400"><div class="card p-6 text-center">เลือกห้องเพื่อแสดงรายชื่อนักเรียน</div></div>
+  </section>
+
+  <!-- ---------- TAB: FORMER (นักเรียนจำหน่าย) ---------- -->
+  <section id="tab-former" class="tabpane hidden">
+    <div class="card p-4 mb-4">
+      <div class="flex flex-wrap items-center gap-3">
+        <div>
+          <h3 class="font-bold text-teal-700">🗃️ นักเรียนจำหน่าย / ย้ายออก</h3>
+          <p class="text-xs text-slate-400 mt-0.5">ประวัตินักเรียนที่ถูกลบออกจากระบบ — ข้อมูลคะแนน/เช็คชื่อ/เกรดยังอยู่ครบ ดูย้อนหลังและพิมพ์ได้</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 ml-auto">
+          <input id="fm_search" oninput="renderFormer()" placeholder="🔍 ค้นหาชื่อ/เลขประจำตัว" class="inp text-sm" style="max-width:180px">
+          <button onclick="loadFormer(true)" class="btn bg-white border border-slate-200 px-3 py-1.5 text-sm">🔄 รีเฟรช</button>
+        </div>
+      </div>
+    </div>
+    <div id="fm_area" class="card p-4 overflow-x-auto text-sm text-slate-400">กำลังโหลด…</div>
+  </section>
+
   <!-- ---------- TAB: SCORETRACK (ผู้บริหารติดตามการกรอกคะแนน) ---------- -->
   <section id="tab-scoretrack" class="tabpane hidden">
     <div class="card p-4 mb-4">
@@ -1225,9 +1294,21 @@
     <div class="card p-4 mb-4">
       <div class="flex flex-wrap gap-3 items-end">
         <h3 class="font-bold text-teal-700">🗓️ ตารางสอน</h3>
-        <div id="sch_pickWrap" class="hidden ml-auto">
-          <label class="text-xs text-slate-500">เลือกครู</label>
-          <select id="sch_teacher" class="inp mt-1" onchange="loadScheduleView()"></select>
+        <div class="flex flex-wrap items-end gap-2 ml-auto">
+          <div id="sch_modeWrap" class="hidden"><label class="text-xs text-slate-500">มุมมอง</label>
+            <select id="sch_mode" class="inp mt-1" onchange="onSchMode()">
+              <option value="teacher">รายครู</option>
+              <option value="class">รายห้อง</option>
+            </select></div>
+          <div id="sch_pickWrap" class="hidden">
+            <label class="text-xs text-slate-500">เลือกครู</label>
+            <select id="sch_teacher" class="inp mt-1" onchange="loadScheduleView()"></select>
+          </div>
+          <div id="sch_classWrap" class="hidden">
+            <label class="text-xs text-slate-500">เลือกห้อง</label>
+            <select id="sch_class" class="inp mt-1" onchange="loadScheduleByClass()"></select>
+          </div>
+          <button onclick="printScheduleView()" class="btn bg-sky-500 hover:bg-sky-600 text-white px-3 py-2 text-sm">🖨️ พิมพ์ตาราง</button>
         </div>
       </div>
       <p id="sch_hint" class="text-xs text-slate-400 mt-1"></p>
@@ -1271,6 +1352,15 @@
           <li>เมนู <b>📚 คำอธิบาย/โครงสร้างวิชา</b>: ครูอัปโหลด คำอธิบายรายวิชา, โครงสร้างรายวิชา, แบบวิเคราะห์ผู้เรียนรายบุคคล ของวิชาที่รับผิดชอบ — ฝังในเล่ม ปพ.5 หน้า "เอกสารประกอบรายวิชา" อัตโนมัติ ส่วนกำหนดการสอนรายภาคดึงจากเมนูส่งเอกสารการสอนมาแสดงรวมให้ ไม่ต้องอัปซ้ำ</li>
           <li>เมนู <b>🔍 นิเทศ/เยี่ยมชั้นเรียน</b>: ผู้บริหาร/แอดมินบันทึกผลนิเทศรายครู (คะแนน 0-100 → ระดับคุณภาพอัตโนมัติ) มีสรุปรายครู พิมพ์แบบบันทึกรายครั้ง และ Export Excel — ครูเห็นเฉพาะบันทึกของตนเอง</li>
           <li>เมนู <b>⚠️ นักเรียนเสี่ยง</b>: กด 📄 บันทึก / ✉️ เชิญ ท้ายรายชื่อ ระบบสร้าง <b>บันทึกข้อความรายงานผู้บริหาร</b> และ <b>หนังสือเชิญผู้ปกครอง</b> เติมข้อมูลนักเรียนให้อัตโนมัติ พร้อมพิมพ์ทันที (พิมพ์ทีเดียวทุกคนได้) — แอดมินแก้ข้อความแบบฟอร์มได้ที่ 🛠️ แอดมิน → 📝 ฟอร์มนักเรียนเสี่ยง</li>
+        </ol>
+      </div>
+      <div>
+        <h3 class="font-semibold text-teal-600">ประวัตินักเรียน & จำหน่าย & ตารางสอน (ใหม่)</h3>
+        <ol class="list-decimal ml-5 mt-1 space-y-1 text-slate-600">
+          <li><b>🪪 ประวัตินักเรียน</b>: แอดมินนำเข้าไฟล์ DMC (.xlsx) เติมข้อมูลหลักอัตโนมัติ • ครูประจำชั้นกรอกรูปถ่าย (≤5MB ระบบย่อเหลือ 600px) ชื่อเล่น เบอร์ผู้ปกครอง ฯลฯ • พิมพ์ระเบียนประวัติและ 🪪 บัตรนักเรียนทั้งห้องได้ (8 ใบ/A4)</li>
+          <li><b>ลบนักเรียน (แอดมิน)</b> = จำหน่ายไปเก็บที่เมนู 🗃️ นักเรียนจำหน่าย — คะแนน/เช็คชื่อ/เกรดไม่หาย ดูย้อนหลัง พิมพ์รายงาน และกู้คืนได้ • เลขที่ในห้องขยับให้อัตโนมัติพร้อมพรีวิวก่อนยืนยัน</li>
+          <li><b>✏️ แก้ไขตารางสอน (แอดมิน)</b>: 🛠️ แอดมิน → ตารางสอน → เลือกครู → คลิกคาบเพื่อแก้/ย้าย/ลบ หรือ ➕ เพิ่มคาบ ระบบเตือนการชนอัตโนมัติ • เมนู 🗓️ ตารางสอน เลือกดูรายครู/รายห้อง และ 🖨️ พิมพ์ A4 แนวนอนได้</li>
+          <li><b>🧑‍🎓 สถิตินักเรียน</b>: 📊 รายงานสรุป → แท็บสถิตินักเรียน (ชาย/หญิงรายห้อง ศาสนา กรุ๊ปเลือด ความด้อยโอกาส + Excel)</li>
         </ol>
       </div>
       <div>
@@ -1536,6 +1626,8 @@ function switchTab(name){
   if(name==='schedule') initSchedule();
   if(name==='teachdoc') initTeachDoc();
   if(name==='subdoc') initSubDoc();
+  if(name==='profile') initProfiles();
+  if(name==='former') loadFormer(true);
   if(name==='teachsum') loadTeachSum();
   if(name==='scoretrack') loadScoreProgress();
   if(name==='supervise') initSupervise();
@@ -1553,13 +1645,14 @@ function switchSsub(name){
   document.querySelectorAll('.ssubbtn').forEach(b=>b.classList.toggle('tab-active', b.dataset.ssub===name));
   if(name==='attend' && !state._amLoaded){ state._amLoaded=true; loadAttMatrix(); }
   if(name==='docsum' && !state._xdLoaded){ state._xdLoaded=true; loadExecDocs(); }
+  if(name==='studstat' && !state._ststLoaded){ state._ststLoaded=true; loadStudStat(); }
   if(name==='grades' && !state._gradesLoaded){ state._gradesLoaded=true; loadStats(); }
 }
 function switchAsub(name){
   document.querySelectorAll('.asubpane').forEach(p=>p.classList.add('hidden'));
   document.getElementById('asub-'+name).classList.remove('hidden');
   document.querySelectorAll('.asubbtn').forEach(b=>b.classList.toggle('tab-active', b.dataset.asub===name));
-  if(name==='schedule') loadSchedule();
+  if(name==='schedule'){ loadSchedule(); initSchEdit(); }
   if(name==='teachers') renderTeachers();
   if(name==='assign') initAssign();
   if(name==='tasks') initTasks();
@@ -1746,10 +1839,43 @@ async function saveEditStudent(){
   try{ showLoading(true); await GAS.call('updateStudent',p); closeModal('editStdModal'); await loadStudents(); toast('บันทึกแล้ว'); }
   catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
-async function delStudent(id){
-  if(!confirm('ยืนยันลบนักเรียนคนนี้?')) return;
-  try{ showLoading(true); await GAS.call('deleteStudent',{id}); await loadStudents(); toast('ลบแล้ว'); }
-  catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+// ลบ = จำหน่าย (เก็บประวัติใน 🗃️ นักเรียนจำหน่าย ข้อมูลคะแนน/เช็คชื่อไม่หาย)
+function delStudent(id){
+  const s=state.students.find(x=>String(x.ID)===String(id)); if(!s) return;
+  const shift=state.students.filter(x=>String(x.classLevel)===String(s.classLevel)&&Number(x.number)>Number(s.number))
+    .sort((a,b)=>Number(a.number)-Number(b.number));
+  const preview=shift.length
+    ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-xs text-amber-700 mt-2"><b>เลขที่จะขยับอัตโนมัติ ${shift.length} คน:</b><br>${shift.slice(0,8).map(x=>esc(x.fullName)+' '+x.number+'→'+(Number(x.number)-1)).join('<br>')}${shift.length>8?'<br>…และอีก '+(shift.length-8)+' คน':''}</div>`
+    : '<div class="text-xs text-slate-400 mt-2">ไม่มีเลขที่ต้องขยับ (เป็นเลขที่ท้ายห้อง)</div>';
+  const html=`
+  <div id="delStdModal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onclick="if(event.target.id==='delStdModal')this.remove()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-5">
+      <h3 class="font-bold text-rose-600 mb-1">🗃️ จำหน่ายนักเรียนออกจากระบบ</h3>
+      <p class="text-sm text-slate-600">${esc(s.fullName)} <span class="text-xs text-slate-400">(${esc(s.classLevel)} เลขที่ ${esc(s.number)})</span></p>
+      <p class="text-[11px] text-slate-400 mt-1">ข้อมูลคะแนน เช็คชื่อ เกรด และประวัติจะถูกเก็บไว้ ดูย้อนหลัง/พิมพ์ได้ที่เมนู 🗃️ นักเรียนจำหน่าย และกู้คืนได้</p>
+      <label class="text-xs text-slate-500 mt-3 block">เหตุผลการจำหน่าย</label>
+      <select id="delStdReason" class="inp mt-1">
+        <option>ย้ายโรงเรียน</option><option>จบการศึกษา</option><option>ลาออก</option><option>อื่นๆ</option>
+      </select>
+      <input id="delStdNote" class="inp mt-2" placeholder="รายละเอียดเพิ่มเติม (ไม่บังคับ)">
+      ${preview}
+      <div class="flex gap-2 mt-4">
+        <button onclick="confirmDelStudent('${esc(id)}')" class="btn bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 text-sm">🗃️ ยืนยันจำหน่าย</button>
+        <button onclick="document.getElementById('delStdModal').remove()" class="btn bg-white border border-slate-200 px-4 py-2 text-sm">ยกเลิก</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+async function confirmDelStudent(id){
+  const reason=[document.getElementById('delStdReason').value, document.getElementById('delStdNote').value.trim()].filter(Boolean).join(' - ');
+  document.getElementById('delStdModal').remove();
+  try{ showLoading(true);
+    await GAS.call('deleteStudent',{id, reason, by:state.currentUser?state.currentUser.name:''});
+    state._former=null; state._pfCache={};
+    await loadStudents();
+    toast('จำหน่ายแล้ว — เลขที่ในห้องขยับให้อัตโนมัติ');
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 
 /* ---- TEMPLATE + IMPORT (SheetJS) ---- */
@@ -2752,6 +2878,66 @@ async function loadExecRisk(){
   finally{ showLoading(false); }
 }
 
+// ---------- สถิตินักเรียน ----------
+async function loadStudStat(force){
+  const el=document.getElementById('stst_area');
+  try{ showLoading(true);
+    if(force||!state._studStat) state._studStat=await GAS.call('getStudentStats');
+    const d=state._studStat, t=d.totals;
+    document.getElementById('stst_cards').innerHTML=[
+      ['นักเรียนทั้งหมด', t.total+' คน', 'bg-slate-50 text-slate-700'],
+      ['ชาย / หญิง', t.male+' / '+t.female, 'bg-teal-50 text-teal-700'],
+      ['มีข้อมูล DMC', t.withDMC+'/'+t.total, t.withDMC>=t.total?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700'],
+      ['มีรูปถ่าย', t.withPhoto+'/'+t.total, t.withPhoto>=t.total?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700'],
+    ].map(([l,v,c])=>`<div class="rounded-xl p-3 ${c}"><div class="text-xl font-bold">${v}</div><div class="text-xs">${l}</div></div>`).join('');
+    const kvTable=(title,obj,color)=>{
+      const keys=Object.keys(obj).sort((a,b)=>obj[b]-obj[a]);
+      return `<div class="card p-4"><h4 class="font-bold ${color} text-sm mb-2">${title}</h4>
+        ${keys.length?`<table class="w-full text-sm">${keys.map(k=>`<tr class="border-b last:border-0">
+          <td class="py-1 pr-2">${esc(k)}</td><td class="py-1 text-right font-semibold">${obj[k]} คน</td>
+          <td class="py-1 pl-2 text-right text-xs text-slate-400">${d.totals.total?Math.round(obj[k]/d.totals.total*100):0}%</td></tr>`).join('')}</table>`
+        :'<div class="text-xs text-slate-400">ยังไม่มีข้อมูล — นำเข้าไฟล์ DMC ก่อน</div>'}</div>`;
+    };
+    el.innerHTML=`
+      <div class="card p-4 mb-4 overflow-x-auto">
+        <h4 class="font-bold text-teal-700 text-sm mb-2">จำนวนนักเรียนรายห้อง (ชาย/หญิง)</h4>
+        <table class="w-full text-sm" style="min-width:420px">
+          <thead><tr class="text-left text-slate-400 border-b">
+            <th class="px-2 py-1.5">ห้อง</th><th class="px-2 text-center">ชาย</th><th class="px-2 text-center">หญิง</th><th class="px-2 text-center">รวม</th>
+          </tr></thead><tbody>
+          ${d.byClass.map(c=>`<tr class="border-b last:border-0">
+            <td class="px-2 py-1.5"><span class="badge bg-teal-100 text-teal-700">${esc(c.classLevel)}</span></td>
+            <td class="px-2 py-1.5 text-center">${c.male}</td>
+            <td class="px-2 py-1.5 text-center">${c.female}</td>
+            <td class="px-2 py-1.5 text-center font-semibold">${c.total}</td></tr>`).join('')}
+          <tr class="bg-slate-50 font-bold"><td class="px-2 py-1.5">รวมทั้งโรงเรียน</td>
+            <td class="px-2 py-1.5 text-center">${t.male}</td><td class="px-2 py-1.5 text-center">${t.female}</td>
+            <td class="px-2 py-1.5 text-center">${t.total}</td></tr>
+          </tbody></table>
+      </div>
+      <div class="grid sm:grid-cols-3 gap-4">
+        ${kvTable('🛐 ศาสนา', d.religion, 'text-violet-600')}
+        ${kvTable('🩸 กรุ๊ปเลือด', d.blood, 'text-rose-600')}
+        ${kvTable('🤝 ความด้อยโอกาส', d.disadvantage, 'text-amber-600')}
+      </div>`;
+  }catch(e){ el.innerHTML='<div class="card p-4 text-rose-500">'+esc(e.message)+'</div>'; }
+  finally{ showLoading(false); }
+}
+function exportStudStat(){
+  const d=state._studStat; if(!d){ toast('ยังไม่มีข้อมูล','error'); return; }
+  const wb=XLSX.utils.book_new();
+  const s1=[['ห้อง','ชาย','หญิง','รวม']];
+  d.byClass.forEach(c=>s1.push([c.classLevel,c.male,c.female,c.total]));
+  s1.push(['รวม',d.totals.male,d.totals.female,d.totals.total]);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s1),'รายห้อง');
+  const kv=(title,obj)=>{ const a=[[title,'จำนวน']]; Object.keys(obj).sort((x,y)=>obj[y]-obj[x]).forEach(k=>a.push([k,obj[k]])); return a; };
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(kv('ศาสนา',d.religion)),'ศาสนา');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(kv('กรุ๊ปเลือด',d.blood)),'กรุ๊ปเลือด');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(kv('ความด้อยโอกาส',d.disadvantage)),'ความด้อยโอกาส');
+  XLSX.writeFile(wb,'สถิตินักเรียน_'+todayISO()+'.xlsx');
+  toast('ส่งออกแล้ว');
+}
+
 /* ============================================================
    หน้าแรก (HOME)
    ============================================================ */
@@ -2952,6 +3138,8 @@ const TAB_META=[
   ['scores','📝 บันทึกผลการเรียน','staff'],
   ['teachdoc','📤 ส่งเอกสารการสอน','staff'],
   ['subdoc','📚 คำอธิบาย/โครงสร้างวิชา','staff'],
+  ['profile','🪪 ประวัตินักเรียน','staff'],
+  ['former','🗃️ นักเรียนจำหน่าย','director'],
   ['teachsum','📂 ติดตามเอกสารการสอน','director'],
   ['scoretrack','📈 ติดตามการกรอกคะแนน','director'],
   ['supervise','🔍 นิเทศ/เยี่ยมชั้นเรียน','director'],
@@ -4520,30 +4708,100 @@ const SCH_DAYS=['จันทร์','อังคาร','พุธ','พฤห
 async function initSchedule(){
   const u=state.currentUser;
   const pickWrap=document.getElementById('sch_pickWrap');
+  document.getElementById('sch_modeWrap').classList.remove('hidden');
+  // เติมรายชื่อห้อง
+  const cSel=document.getElementById('sch_class');
+  const classes=[...new Set(state.students.map(s=>s.classLevel))].sort();
+  cSel.innerHTML=classes.map(c=>`<option>${esc(c)}</option>`).join('');
   if(isTeacherScope(u)){
     pickWrap.classList.add('hidden');
     document.getElementById('sch_hint').textContent='ตารางสอนของ '+u.name;
+    state._schView={mode:'teacher', title:'ตารางสอน ครู'+u.name, rows:state.mySchedule||[], showTeacher:false};
     renderScheduleGrid(state.mySchedule||[], false);
+    if(document.getElementById('sch_mode').value==='class') onSchMode();
   }else{
     // แอดมิน/ผู้บริหาร เลือกครูได้
-    pickWrap.classList.remove('hidden');
-    document.getElementById('sch_hint').textContent='เลือกครูเพื่อดูตารางสอน (ผู้บริหาร/แอดมินเห็นได้ทุกคน)';
+    document.getElementById('sch_hint').textContent='เลือกดูรายครูหรือรายห้อง แล้วกด 🖨️ พิมพ์ตาราง (A4 แนวนอน) ได้เลย';
     let teachers=state.teachers||[];
     if(!teachers.length){ try{ teachers=state.teachers=await GAS.call('getTeachers'); }catch(e){} }
     const sel=document.getElementById('sch_teacher'); const cur=sel.value;
     const names=teachers.filter(t=>t.role!=='admin').map(t=>t.name);
     sel.innerHTML=names.map(n=>`<option>${esc(n)}</option>`).join('')||'<option value="">(ไม่มีครู)</option>';
     if(cur) sel.value=cur;
-    loadScheduleView();
+    onSchMode();
   }
+}
+function onSchMode(){
+  const u=state.currentUser;
+  const mode=document.getElementById('sch_mode').value;
+  const teacherMode=mode==='teacher';
+  document.getElementById('sch_classWrap').classList.toggle('hidden', teacherMode);
+  if(isTeacherScope(u)){
+    document.getElementById('sch_pickWrap').classList.add('hidden');
+    if(teacherMode){ state._schView={mode:'teacher', title:'ตารางสอน ครู'+u.name, rows:state.mySchedule||[], showTeacher:false}; renderScheduleGrid(state.mySchedule||[], false); }
+    else loadScheduleByClass();
+  }else{
+    document.getElementById('sch_pickWrap').classList.toggle('hidden', !teacherMode);
+    if(teacherMode) loadScheduleView(); else loadScheduleByClass();
+  }
+}
+async function loadScheduleByClass(){
+  const cls=document.getElementById('sch_class').value;
+  if(!cls){ document.getElementById('sch_area').innerHTML='<span class="text-slate-400">ไม่มีห้อง</span>'; return; }
+  try{ showLoading(true);
+    const rows=await GAS.call('getScheduleByClass',{classLevel:cls});
+    state._schView={mode:'class', title:'ตารางเรียน ห้อง '+cls, rows, showTeacher:true};
+    renderScheduleGrid(rows, true);
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 async function loadScheduleView(){
   const name=document.getElementById('sch_teacher').value;
   if(!name){ document.getElementById('sch_area').innerHTML='<span class="text-slate-400">ไม่มีครู</span>'; return; }
   try{ showLoading(true);
     const rows=await GAS.call('getSchedule',{teacher:name});
+    state._schView={mode:'teacher', title:'ตารางสอน ครู'+name, rows, showTeacher:false};
     renderScheduleGrid(rows, true);
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
+// พิมพ์ตารางสอน (A4 แนวนอน) ตามมุมมองที่แสดงอยู่
+function printScheduleView(){
+  const v=state._schView;
+  if(!v||!v.rows||!v.rows.length){ toast('ยังไม่มีตารางให้พิมพ์','error'); return; }
+  const set=state.settings||{};
+  let maxP=8; v.rows.forEach(r=>{ const p=Number(r.period)||0; if(p>maxP) maxP=p; });
+  const map={};
+  v.rows.forEach(r=>{ const d=String(r.day||'').trim(), p=Number(r.period)||0; ((map[d]=map[d]||{})[p]=map[d][p]||[]).push(r); });
+  const td='border:1px solid #333;padding:4px 5px;vertical-align:top;';
+  let head=`<tr><th style="${td}background:#eee;width:80px">วัน / คาบ</th>`;
+  for(let p=1;p<=maxP;p++) head+=`<th style="${td}background:#eee">คาบ ${p}</th>`;
+  head+='</tr>';
+  let body='';
+  SCH_DAYS.forEach(d=>{
+    body+=`<tr><td style="${td}background:#f7f7f7;font-weight:700">${d}</td>`;
+    for(let p=1;p<=maxP;p++){
+      const cell=(map[d]&&map[d][p])||[];
+      body+=`<td style="${td}font-size:12px;text-align:center">`+cell.map(c=>
+        (v.mode==='class'
+          ? `<div><b>${esc(c.subject||'')}</b><br><span style="color:#555">ครู${esc(c.teacher||'')}</span></div>`
+          : `<div><b>${esc(c.classLevel||'')}</b><br>${esc(c.subject||'')}</div>`)
+      ).join('<hr style="border:none;border-top:1px dashed #bbb;margin:2px 0">')+'</td>';
+    }
+    body+='</tr>';
+  });
+  const html=`<div class="page">
+    <div style="text-align:center">
+      ${set.logoURL?`<img src="${esc(set.logoURL)}" style="height:52px">`:''}
+      <div style="font-size:18px;font-weight:700">${esc(v.title)}</div>
+      <div style="font-size:14px">${esc(set.schoolName||'')} • ภาคเรียนที่/ปีการศึกษา ${esc(set.academicYear||'')}</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:13px">${head}${body}</table>
+    <table style="width:100%;margin-top:34px;text-align:center;font-size:14px"><tr>
+      <td>ลงชื่อ .................................................<br>ผู้จัดตารางสอน</td>
+      <td>ลงชื่อ .................................................<br>(${esc(set.directorName||'')})<br>ผู้อำนวยการ${esc(set.schoolName||'โรงเรียน')}</td>
+    </tr></table>
+  </div>
+  <style>@page{size:A4 landscape;margin:12mm;}</style>`;
+  openPrintWindow(v.title, html);
 }
 function renderScheduleGrid(rows, showTeacher){
   const el=document.getElementById('sch_area');
@@ -5079,6 +5337,521 @@ function previewRiskForm(kind){
   const html=kind==='invite'?riskInvitePage(demo):riskMemoPage(demo);
   state.settings.riskMemoTemplate=bak;
   openPrintWindow('ตัวอย่างแบบฟอร์ม', html);
+}
+
+/* ============================================================
+   แอดมินแก้ไขตารางสอนรายครู (เพิ่ม/ย้าย/ลบคาบ + ตรวจการชน)
+   ============================================================ */
+const SE_MAX_PERIOD=8;
+async function initSchEdit(){
+  if(!state.teachers || !state.teachers.length){ try{ state.teachers=await GAS.call('getTeachers'); }catch(e){} }
+  const sel=document.getElementById('se_teacher'); const cur=sel.value;
+  const names=(state.teachers||[]).filter(t=>t.role!=='admin').map(t=>t.name);
+  sel.innerHTML='<option value="">— เลือกครู —</option>'+names.map(n=>`<option>${esc(n)}</option>`).join('');
+  if(cur){ sel.value=cur; }
+}
+async function loadSchEdit(){
+  const name=document.getElementById('se_teacher').value;
+  const el=document.getElementById('se_area');
+  if(!name){ el.innerHTML='เลือกครูเพื่อแสดงตาราง'; return; }
+  try{ showLoading(true);
+    state._seRows=await GAS.call('getSchedule',{teacher:name});
+    renderSchEditGrid();
+  }catch(e){ el.innerHTML='<div class="text-rose-500">'+esc(e.message)+'</div>'; }
+  finally{ showLoading(false); }
+}
+function renderSchEditGrid(){
+  const el=document.getElementById('se_area');
+  const rows=state._seRows||[];
+  let maxP=SE_MAX_PERIOD; rows.forEach(r=>{ const p=Number(r.period)||0; if(p>maxP) maxP=p; });
+  const map={};
+  rows.forEach(r=>{ const d=String(r.day||'').trim(), p=Number(r.period)||0; ((map[d]=map[d]||{})[p]=map[d][p]||[]).push(r); });
+  let head='<tr><th class="border border-slate-300 bg-slate-100 px-2 py-1">วัน\\คาบ</th>';
+  for(let p=1;p<=maxP;p++) head+=`<th class="border border-slate-300 bg-slate-100 px-2 py-1">${p}</th>`;
+  head+='</tr>';
+  let body='';
+  SCH_DAYS.forEach(d=>{
+    body+=`<tr><td class="border border-slate-300 bg-slate-50 px-2 py-1 font-medium whitespace-nowrap">${d}</td>`;
+    for(let p=1;p<=maxP;p++){
+      const cell=(map[d]&&map[d][p])||[];
+      body+='<td class="border border-slate-300 px-1 py-1 align-top text-xs" style="min-width:86px">'+
+        cell.map(c=>`<div class="mb-1 rounded-lg bg-teal-50 border border-teal-200 px-1.5 py-1 cursor-pointer hover:bg-teal-100" onclick="openSchCell('${esc(c.ID)}')" title="คลิกเพื่อแก้ไข/ย้าย/ลบ">
+            <span class="font-semibold text-teal-700">${esc(c.classLevel||'')}</span><br>${esc(c.subject||'')}</div>`).join('')+
+        `<button onclick="openSchCell('','${d}',${p})" class="w-full text-slate-300 hover:text-teal-600 hover:bg-teal-50 rounded text-sm" title="เพิ่มคาบ">➕</button></td>`;
+    }
+    body+='</tr>';
+  });
+  el.innerHTML=`<table class="border-collapse w-full" style="min-width:640px">${head}${body}</table>`;
+}
+function openSchCell(id, day, period){
+  const teacher=document.getElementById('se_teacher').value;
+  if(!teacher){ toast('เลือกครูก่อน','error'); return; }
+  const r=id?(state._seRows||[]).find(x=>String(x.ID)===String(id)):null;
+  const classes=[...new Set(state.students.map(s=>s.classLevel))].sort();
+  const subNames=[...new Set((state.subjects||[]).map(s=>String(s.name).trim()))].sort();
+  let pOpts=''; for(let p=1;p<=SE_MAX_PERIOD;p++) pOpts+=`<option ${String(p)===String(r?r.period:period)?'selected':''}>${p}</option>`;
+  const html=`
+  <div id="seModal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onclick="if(event.target.id==='seModal')this.remove()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5">
+      <h3 class="font-bold text-teal-700 mb-1">${r?'✏️ แก้ไข/ย้ายคาบสอน':'➕ เพิ่มคาบสอน'}</h3>
+      <p class="text-xs text-slate-400 mb-3">ครู${esc(teacher)}</p>
+      <div class="grid grid-cols-2 gap-2">
+        <div><label class="text-xs text-slate-500">วัน</label>
+          <select id="se_day" class="inp mt-1">${SCH_DAYS.map(d=>`<option ${d===(r?String(r.day).trim():day)?'selected':''}>${d}</option>`).join('')}</select></div>
+        <div><label class="text-xs text-slate-500">คาบ</label><select id="se_period" class="inp mt-1">${pOpts}</select></div>
+        <div><label class="text-xs text-slate-500">ห้อง</label>
+          <select id="se_class" class="inp mt-1">${classes.map(c=>`<option ${c===(r?r.classLevel:'')?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
+        <div><label class="text-xs text-slate-500">วิชา</label>
+          <input id="se_subject" class="inp mt-1" list="se_subList" value="${esc(r?r.subject:'')}" placeholder="เช่น คณิตศาสตร์">
+          <datalist id="se_subList">${subNames.map(n=>`<option value="${esc(n)}">`).join('')}</datalist></div>
+      </div>
+      <input type="hidden" id="se_id" value="${esc(id||'')}">
+      <div class="flex flex-wrap gap-2 mt-4">
+        <button onclick="saveSchCell(false)" class="btn bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 text-sm">💾 บันทึก</button>
+        ${r?`<button onclick="delSchCell('${esc(id)}')" class="btn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 text-sm">🗑️ ลบคาบนี้</button>`:''}
+        <button onclick="document.getElementById('seModal').remove()" class="btn bg-white border border-slate-200 px-4 py-2 text-sm">ยกเลิก</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+async function saveSchCell(force){
+  const teacher=document.getElementById('se_teacher').value;
+  const p={ id:document.getElementById('se_id').value||'', teacher,
+    day:document.getElementById('se_day').value, period:document.getElementById('se_period').value,
+    classLevel:document.getElementById('se_class').value, subject:document.getElementById('se_subject').value.trim(), force };
+  if(!p.subject){ toast('กรุณาระบุวิชา','error'); return; }
+  try{ showLoading(true);
+    state._seRows=await GAS.call('saveSchedulePeriod',p);
+    const m=document.getElementById('seModal'); if(m) m.remove();
+    toast(p.id?'บันทึกการแก้ไขแล้ว':'เพิ่มคาบแล้ว');
+    renderSchEditGrid();
+  }catch(e){
+    const msg=String(e.message||'');
+    if(msg.indexOf('CONFLICT|')===0){
+      if(confirm('⚠️ พบการชนของตารางสอน:\n\n'+msg.slice(9)+'\n\nยืนยันบันทึกทั้งที่ชนหรือไม่?')){ saveSchCell(true); return; }
+    } else toast(msg,'error');
+  } finally{ showLoading(false); }
+}
+async function delSchCell(id){
+  if(!confirm('ยืนยันลบคาบสอนนี้?')) return;
+  const teacher=document.getElementById('se_teacher').value;
+  try{ showLoading(true);
+    state._seRows=await GAS.call('deleteSchedulePeriod',{id, teacher});
+    const m=document.getElementById('seModal'); if(m) m.remove();
+    toast('ลบคาบแล้ว'); renderSchEditGrid();
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
+
+/* ============================================================
+   ประวัตินักเรียน (ครูประจำชั้นกรอก + แอดมินนำเข้า DMC)
+   ============================================================ */
+function pfIsAdmin(){ const u=state.currentUser; return u&&(u.role==='admin'||u.role==='director'); }
+async function initProfiles(){
+  const u=state.currentUser;
+  if(!state.students||!state.students.length){ try{ await loadStudents(); }catch(e){} }
+  let classes=[...new Set(state.students.map(s=>s.classLevel))].sort();
+  // ครูทั่วไป: เห็นเฉพาะห้องประจำชั้นตนเอง
+  if(u && isTeacherScope(u)){
+    if(!u.homeroomClass){
+      document.getElementById('pf_area').innerHTML='<div class="card p-6 text-center text-slate-400">คุณยังไม่ได้เป็นครูประจำชั้นห้องใด<br><span class="text-xs">แอดมินกำหนดได้ที่ 🛠️ แอดมิน → 👥 จัดการครู (ช่องห้องประจำชั้น)</span></div>';
+      classes=[];
+    } else classes=classes.filter(c=>c===u.homeroomClass);
+  }
+  const sel=document.getElementById('pf_class');
+  sel.innerHTML=(classes.length>1?'<option value="">— เลือกห้อง —</option>':'')+classes.map(c=>`<option>${esc(c)}</option>`).join('');
+  document.getElementById('pf_dmcBtn').classList.toggle('hidden', !(u&&u.role==='admin'));
+  document.getElementById('pf_hint').textContent = (u&&u.role==='admin')
+    ? 'แอดมิน: นำเข้าไฟล์ DMC เพื่อเติมข้อมูลหลักอัตโนมัติ (จับคู่ด้วยเลขประจำตัวนักเรียน) และแก้ไขได้ทุกช่อง'
+    : 'ครูประจำชั้นกรอก รูปถ่าย ชื่อเล่น เบอร์ผู้ปกครอง โรคประจำตัว หมายเหตุ — ข้อมูลหลักนำเข้าจากไฟล์ DMC โดยแอดมิน';
+  if(classes.length===1){ sel.value=classes[0]; loadProfiles(); }
+}
+async function loadProfiles(force){
+  const cls=document.getElementById('pf_class').value;
+  const area=document.getElementById('pf_area');
+  if(!cls){ area.innerHTML='<div class="card p-6 text-center text-slate-400">เลือกห้องเพื่อแสดงรายชื่อนักเรียน</div>'; return; }
+  try{ showLoading(true);
+    state._pfCache=state._pfCache||{};
+    if(force || !state._pfCache[cls]) state._pfCache[cls]=await GAS.call('getStudentProfiles',{classLevel:cls});
+    renderProfiles();
+  }catch(e){ area.innerHTML='<div class="card p-4 text-rose-500">'+esc(e.message)+'</div>'; }
+  finally{ showLoading(false); }
+}
+function pfPhotoHTML(p,size){
+  size=size||'w-14 h-16';
+  return p.photoURL
+    ? `<img src="${esc(p.photoURL)}" class="${size} object-cover rounded-lg border border-slate-200 bg-slate-50">`
+    : `<div class="${size} rounded-lg border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center text-slate-300 text-xl">👤</div>`;
+}
+function renderProfiles(){
+  const cls=document.getElementById('pf_class').value;
+  const area=document.getElementById('pf_area');
+  const list=(state._pfCache&&state._pfCache[cls])||[];
+  const q=(document.getElementById('pf_search').value||'').trim().toLowerCase();
+  const rows=list.filter(p=>!q||(p.student.fullName+' '+(p.nickname||'')+' '+(p.student.studentCode||'')).toLowerCase().includes(q));
+  if(!rows.length){ area.innerHTML='<div class="card p-6 text-center text-slate-400">ไม่พบนักเรียน</div>'; return; }
+  const filled=list.filter(p=>p.citizenId).length, photo=list.filter(p=>p.photoURL).length;
+  area.innerHTML=`<div class="card p-4">
+    <div class="flex flex-wrap gap-2 mb-3">
+      <span class="badge bg-slate-100 text-slate-700">นักเรียน ${list.length} คน</span>
+      <span class="badge ${filled>=list.length?'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-700'}">มีข้อมูล DMC ${filled}/${list.length}</span>
+      <span class="badge ${photo>=list.length?'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-700'}">มีรูปถ่าย ${photo}/${list.length}</span>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">${rows.map(p=>{
+      const s=p.student;
+      return `<div class="border border-slate-200 rounded-xl p-3 flex items-center gap-3 hover:bg-teal-50/40 cursor-pointer" onclick="openProfile('${esc(s.ID)}')">
+        ${pfPhotoHTML(p)}
+        <div class="min-w-0">
+          <div class="font-semibold text-slate-700 truncate">${esc(s.number)}. ${esc(s.fullName)}</div>
+          <div class="text-xs text-slate-400 truncate">${p.nickname?'ชื่อเล่น: '+esc(p.nickname):'<span class="text-amber-500">ยังไม่กรอกชื่อเล่น</span>'} • ${esc(s.studentCode||'')}</div>
+          <div class="text-[10px] mt-0.5">${p.citizenId?'<span class="text-emerald-600">✓ DMC</span>':'<span class="text-rose-400">✗ ยังไม่มีข้อมูล DMC</span>'} ${p.phone?' • 📞 '+esc(p.phone):''}</div>
+        </div></div>`;
+    }).join('')}</div></div>`;
+}
+// ฟอร์มแก้ไขประวัติรายคน
+function openProfile(studentID){
+  const cls=document.getElementById('pf_class').value;
+  const p=((state._pfCache&&state._pfCache[cls])||[]).find(x=>String(x.student.ID)===String(studentID));
+  if(!p) return;
+  const s=p.student, admin=pfIsAdmin();
+  const F=(id,label,val,ro)=>`<div><label class="text-xs text-slate-500">${label}</label>
+    <input id="pfm_${id}" class="inp mt-1 ${ro?'bg-slate-50 text-slate-500':''}" value="${esc(val||'')}" ${ro?'readonly':''}></div>`;
+  const ro=!admin; // ช่องข้อมูล DMC: ครูอ่านอย่างเดียว แอดมินแก้ได้
+  const html=`
+  <div id="pfModal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-3" onclick="if(event.target.id==='pfModal')this.remove()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-5">
+      <div class="flex items-start justify-between mb-3">
+        <h3 class="font-bold text-teal-700">🪪 ${esc(s.fullName)} <span class="text-xs font-normal text-slate-400">${esc(s.classLevel)} เลขที่ ${esc(s.number)} • เลขประจำตัว ${esc(s.studentCode||'-')}</span></h3>
+        <button onclick="document.getElementById('pfModal').remove()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+      </div>
+      <div class="flex flex-wrap gap-4 mb-4 items-start">
+        <div class="text-center">
+          <div id="pfm_photoBox">${pfPhotoHTML(p,'w-28 h-36')}</div>
+          <label class="btn bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 text-xs mt-2 inline-block cursor-pointer">📷 อัปโหลดรูป
+            <input type="file" accept="image/*" class="hidden" onchange="uploadPfPhoto(event,'${esc(s.ID)}')"></label>
+          <div class="text-[10px] text-slate-400 mt-1">ไฟล์ ≤ 5MB<br>ระบบย่อเหลือ 600px ให้เอง</div>
+        </div>
+        <div class="flex-1 grid grid-cols-2 gap-2 min-w-[240px]">
+          ${F('nickname','ชื่อเล่น ⭐',p.nickname)}
+          ${F('phone','เบอร์โทรผู้ปกครอง ⭐',p.phone)}
+          ${F('health','โรคประจำตัว/แพ้ยา-อาหาร ⭐',p.health)}
+          ${F('note','หมายเหตุ ⭐',p.note)}
+        </div>
+      </div>
+      <div class="text-xs font-semibold text-slate-500 mb-1.5">ข้อมูลจาก DMC ${admin?'(แอดมินแก้ไขได้)':'(อ่านอย่างเดียว — แอดมินแก้ไข/นำเข้า)'}</div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        ${F('citizenId','เลขบัตรประชาชน',p.citizenId,ro)}
+        ${F('gender','เพศ',p.gender,ro)}
+        ${F('birthDate','วันเกิด',p.birthDate,ro)}
+        ${F('weight','น้ำหนัก (กก.)',p.weight,ro)}
+        ${F('height','ส่วนสูง (ซม.)',p.height,ro)}
+        ${F('bloodType','กลุ่มเลือด',p.bloodType,ro)}
+        ${F('religion','ศาสนา',p.religion,ro)}
+        ${F('race','เชื้อชาติ',p.race,ro)}
+        ${F('nationality','สัญชาติ',p.nationality,ro)}
+        <div class="col-span-2 sm:col-span-3">${F('address','ที่อยู่',p.address,ro)}</div>
+        ${F('guardianName','ชื่อผู้ปกครอง',p.guardianName,ro)}
+        ${F('guardianJob','อาชีพผู้ปกครอง',p.guardianJob,ro)}
+        ${F('guardianRelation','เกี่ยวข้องเป็น',p.guardianRelation,ro)}
+        ${F('fatherName','ชื่อบิดา',p.fatherName,ro)}
+        ${F('fatherJob','อาชีพบิดา',p.fatherJob,ro)}
+        ${F('motherName','ชื่อมารดา',p.motherName,ro)}
+        ${F('motherJob','อาชีพมารดา',p.motherJob,ro)}
+        ${F('disadvantage','ความด้อยโอกาส',p.disadvantage,ro)}
+      </div>
+      <div class="flex flex-wrap gap-2 mt-4">
+        <button onclick="savePfModal('${esc(s.ID)}')" class="btn bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 text-sm">💾 บันทึกประวัติ</button>
+        <button onclick="printPfRecord('${esc(s.ID)}')" class="btn bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 text-sm">🖨️ พิมพ์ระเบียนประวัติ</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+const PF_TEACHER_FIELDS=['nickname','phone','health','note'];
+const PF_DMC_FIELDS=['citizenId','gender','birthDate','weight','height','bloodType','religion','race','nationality','address','guardianName','guardianJob','guardianRelation','fatherName','fatherJob','motherName','motherJob','disadvantage'];
+async function savePfModal(studentID){
+  const p={studentID, updatedBy:state.currentUser?state.currentUser.name:''};
+  PF_TEACHER_FIELDS.forEach(k=>{ p[k]=document.getElementById('pfm_'+k).value.trim(); });
+  if(pfIsAdmin()) PF_DMC_FIELDS.forEach(k=>{ p[k]=document.getElementById('pfm_'+k).value.trim(); });
+  try{ showLoading(true);
+    await GAS.call('saveStudentProfile',p);
+    toast('บันทึกประวัติแล้ว');
+    document.getElementById('pfModal').remove();
+    loadProfiles(true);
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
+// อัปโหลดรูป: ต้นทาง ≤5MB → ย่อด้านยาวเหลือ 600px JPEG 80%
+function uploadPfPhoto(ev, studentID){
+  const file=ev.target.files[0]; if(!file) return;
+  if(file.size>5*1024*1024){ toast('ไฟล์รูปใหญ่เกิน 5MB','error'); ev.target.value=''; return; }
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=async ()=>{
+      const max=600, scale=Math.min(1, max/Math.max(img.width,img.height));
+      const c=document.createElement('canvas'); c.width=Math.round(img.width*scale); c.height=Math.round(img.height*scale);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      const dataURL=c.toDataURL('image/jpeg',0.8);
+      try{ showLoading(true);
+        const res=await GAS.call('uploadStudentPhoto',{studentID, base64:dataURL, fileName:'photo_'+studentID+'.jpg', updatedBy:state.currentUser?state.currentUser.name:''});
+        toast('อัปโหลดรูปแล้ว');
+        const box=document.getElementById('pfm_photoBox');
+        if(box) box.innerHTML=`<img src="${esc(res.photoURL)}" class="w-28 h-36 object-cover rounded-lg border border-slate-200">`;
+        loadProfiles(true);
+      }catch(err){ toast(err.message,'error'); } finally{ showLoading(false); ev.target.value=''; }
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+// พิมพ์ระเบียนประวัติรายคน
+function printPfRecord(studentID){
+  const cls=document.getElementById('pf_class').value;
+  const p=((state._pfCache&&state._pfCache[cls])||[]).find(x=>String(x.student.ID)===String(studentID));
+  if(!p) return;
+  const s=p.student, set=state.settings||{};
+  const row=(l,v)=>`<tr><td style="width:32%;padding:3px 6px;color:#555"><b>${l}</b></td><td style="padding:3px 6px;border-bottom:1px dotted #bbb">${esc(v||'-')}</td></tr>`;
+  const html=`<div class="page">
+    <div style="text-align:center">
+      ${set.logoURL?`<img src="${esc(set.logoURL)}" style="height:60px">`:''}
+      <div style="font-size:20px;font-weight:700">ระเบียนประวัตินักเรียน</div>
+      <div>${esc(set.schoolName||'')} ปีการศึกษา ${esc(set.academicYear||'')}</div>
+    </div>
+    <div style="display:flex;gap:16px;margin-top:14px;align-items:flex-start">
+      <div style="width:110px;flex:none">
+        ${p.photoURL?`<img src="${esc(p.photoURL)}" style="width:110px;height:140px;object-fit:cover;border:1px solid #999">`:`<div style="width:110px;height:140px;border:1px solid #999;display:flex;align-items:center;justify-content:center;color:#999">รูปถ่าย</div>`}
+      </div>
+      <table style="flex:1;border-collapse:collapse;font-size:15px">
+        ${row('ชื่อ-นามสกุล', s.fullName)} ${row('ชื่อเล่น', p.nickname)}
+        ${row('ชั้น / เลขที่', s.classLevel+' / '+s.number)} ${row('เลขประจำตัวนักเรียน', s.studentCode)}
+        ${row('เลขบัตรประชาชน', p.citizenId)} ${row('วันเกิด', p.birthDate)}
+        ${row('น้ำหนัก / ส่วนสูง', (p.weight||'-')+' กก. / '+(p.height||'-')+' ซม.')} ${row('กลุ่มเลือด', p.bloodType)}
+        ${row('ศาสนา / เชื้อชาติ / สัญชาติ', [p.religion,p.race,p.nationality].filter(Boolean).join(' / '))}
+      </table>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:15px;margin-top:10px">
+      ${row('ที่อยู่', p.address)}
+      ${row('ผู้ปกครอง', [p.guardianName,p.guardianJob?'อาชีพ '+p.guardianJob:'',p.guardianRelation?'เกี่ยวข้องเป็น '+p.guardianRelation:''].filter(Boolean).join(' • '))}
+      ${row('บิดา', [p.fatherName,p.fatherJob?'อาชีพ '+p.fatherJob:''].filter(Boolean).join(' • '))}
+      ${row('มารดา', [p.motherName,p.motherJob?'อาชีพ '+p.motherJob:''].filter(Boolean).join(' • '))}
+      ${row('เบอร์โทรผู้ปกครอง', p.phone)} ${row('โรคประจำตัว/แพ้ยา-อาหาร', p.health)}
+      ${row('ความด้อยโอกาส', p.disadvantage)} ${row('หมายเหตุ', p.note)}
+    </table>
+    <table style="width:100%;margin-top:36px;text-align:center;font-size:15px"><tr>
+      <td>ลงชื่อ .................................................<br>ครูประจำชั้น</td>
+      <td>ลงชื่อ .................................................<br>(${esc(set.directorName||'')})<br>ผู้อำนวยการ${esc(set.schoolName||'โรงเรียน')}</td>
+    </tr></table>
+  </div>`;
+  openPrintWindow('ระเบียนประวัติ '+s.fullName, html);
+}
+// พิมพ์บัตรนักเรียนทั้งห้อง (8 ใบ/หน้า A4 พร้อมเส้นตัด)
+function printStudentCards(){
+  const cls=document.getElementById('pf_class').value;
+  const list=(state._pfCache&&state._pfCache[cls])||[];
+  if(!cls||!list.length){ toast('เลือกห้องและโหลดรายชื่อก่อน','error'); return; }
+  const set=state.settings||{};
+  const card=p=>{
+    const s=p.student;
+    return `<div style="width:86mm;height:54mm;border:1px dashed #999;border-radius:3mm;padding:3mm;box-sizing:border-box;display:flex;gap:3mm;overflow:hidden;background:linear-gradient(135deg,#f0fdfa 0%,#fff 55%)">
+      <div style="flex:none;text-align:center">
+        ${p.photoURL?`<img src="${esc(p.photoURL)}" style="width:22mm;height:28mm;object-fit:cover;border:1px solid #0d9488;border-radius:2mm">`:`<div style="width:22mm;height:28mm;border:1px solid #0d9488;border-radius:2mm;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:10px">รูปถ่าย</div>`}
+        <div style="font-size:9px;color:#555;margin-top:1mm">เลขประจำตัว<br><b style="font-size:11px">${esc(s.studentCode||'-')}</b></div>
+      </div>
+      <div style="flex:1;min-width:0;font-size:11px;line-height:1.45">
+        <div style="display:flex;align-items:center;gap:2mm;border-bottom:1.5px solid #0d9488;padding-bottom:1mm;margin-bottom:1.5mm">
+          ${set.logoURL?`<img src="${esc(set.logoURL)}" style="height:8mm">`:''}
+          <div style="font-weight:700;color:#0f766e;font-size:10.5px">บัตรประจำตัวนักเรียน<br><span style="font-weight:400;font-size:9.5px">${esc(set.schoolName||'')}</span></div>
+        </div>
+        <div><b style="font-size:12.5px">${esc(s.fullName)}</b>${p.nickname?` <span style="color:#666">(${esc(p.nickname)})</span>`:''}</div>
+        <div>ชั้น ${esc(s.classLevel)} เลขที่ ${esc(s.number)}${p.bloodType?` • กรุ๊ปเลือด ${esc(p.bloodType)}`:''}</div>
+        <div style="color:#555;font-size:10px">${p.birthDate?'เกิด '+esc(p.birthDate):''}${p.phone?' • 📞 '+esc(p.phone):''}</div>
+        <div style="color:#555;font-size:10px">ปีการศึกษา ${esc(set.academicYear||'')}</div>
+        <div style="margin-top:2mm;font-size:9.5px;text-align:right;color:#333">ลงชื่อ.............................<br>(${esc(set.directorName||'ผู้อำนวยการ')})<br>ผู้อำนวยการ</div>
+      </div>
+    </div>`;
+  };
+  const pages=[];
+  for(let i=0;i<list.length;i+=8){
+    pages.push(`<div class="page" style="display:grid;grid-template-columns:repeat(2,86mm);gap:4mm;justify-content:center">${list.slice(i,i+8).map(card).join('')}</div>`);
+  }
+  openPrintWindow('บัตรนักเรียน '+cls, pages.join('')+'<style>@page{size:A4;margin:10mm;}</style>');
+}
+// นำเข้าไฟล์ DMC (แอดมิน) — หัวตารางอยู่แถวที่ 2
+function importDMCFile(ev){
+  const file=ev.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    try{ showLoading(true);
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const aoa=XLSX.utils.sheet_to_json(ws,{header:1, raw:false, defval:''});
+      // หาแถวหัวตาราง (แถวที่มี "เลขประจำตัวนักเรียน" และ "ชั้น")
+      let hi=-1;
+      for(let i=0;i<Math.min(aoa.length,5);i++){ if(aoa[i].some(c=>String(c).includes('ชื่อโรงเรียน'))){ hi=i; break; } }
+      if(hi<0) throw new Error('ไม่พบหัวตาราง DMC (ต้องมีคอลัมน์ ชื่อโรงเรียน/เลขประจำตัวนักเรียน)');
+      const H=aoa[hi].map(h=>String(h).trim());
+      const col=(name)=>H.findIndex(h=>h===name);
+      // เลขประจำตัวนักเรียน ปรากฏ 2 ครั้ง: ครั้งแรก=เลขบัตร ปชช. (คอลัมน์ C), ครั้งหลัง=รหัสนักเรียน
+      const idxCid=H.indexOf('เลขประจำตัวนักเรียน');
+      const idxCode=H.indexOf('เลขประจำตัวนักเรียน', idxCid+1);
+      const g=(r,name)=>{ const i=col(name); return i>=0?String(r[i]||'').trim():''; };
+      const clean=v=>v==='-'?'':v;
+      const rows=[];
+      let kg=0;
+      for(let i=hi+1;i<aoa.length;i++){
+        const r=aoa[i]; if(!r || !String(r[idxCode]||'').trim()) continue;
+        const grade=g(r,'ชั้น');
+        if(grade.indexOf('อ.')===0){ kg++; continue; } // ข้ามอนุบาล
+        const name=(pre,mid,last)=>[clean(g(r,pre)),clean(g(r,mid))].filter(Boolean).join('')+(clean(g(r,last))?' '+clean(g(r,last)):'');
+        const addr=['บ้านเลขที่ '+(clean(g(r,'บ้านเลขที่'))||'-'),
+          clean(g(r,'หมู่'))?'หมู่ '+g(r,'หมู่'):'', clean(g(r,'ถนน/ซอย'))?'ถ.'+g(r,'ถนน/ซอย'):'',
+          clean(g(r,'ตำบล'))?'ต.'+g(r,'ตำบล'):'', clean(g(r,'อำเภอ'))?'อ.'+g(r,'อำเภอ'):'',
+          clean(g(r,'จังหวัด'))?'จ.'+g(r,'จังหวัด'):''].filter(Boolean).join(' ');
+        rows.push({
+          studentCode:String(r[idxCode]).trim(),
+          citizenId:idxCid>=0?String(r[idxCid]||'').trim():'',
+          gender:g(r,'เพศ')==='ช'?'ชาย':(g(r,'เพศ')==='ญ'?'หญิง':g(r,'เพศ')),
+          birthDate:g(r,'วันเกิด'), weight:g(r,'น้ำหนัก'), height:g(r,'ส่วนสูง'),
+          bloodType:clean(g(r,'กลุ่มเลือด')), religion:g(r,'ศาสนา'), race:g(r,'เชื้อชาติ'), nationality:g(r,'สัญชาติ'),
+          address:addr,
+          guardianName:name('คำนำหน้าชื่อผู้ปกครอง','ชื่อผู้ปกครอง','นามสกุลผู้ปกครอง'),
+          guardianJob:clean(g(r,'อาชีพของผู้ปกครอง')),
+          guardianRelation:clean(g(r,'ความเกี่ยวข้องของผู้ปกครอง')),
+          fatherName:name('คำนำหน้าชื่อบิดา','ชื่อบิดา','นามสกุลบิดา'),
+          fatherJob:clean(g(r,'อาชีพของบิดา')),
+          motherName:name('คำนำหน้าชื่อมารดา','ชื่อมารดา','นามสกุลมารดา'),
+          motherJob:clean(g(r,'อาชีพของมารดา')),
+          disadvantage:clean(g(r,'ความด้อยโอกาส'))
+        });
+      }
+      if(!rows.length) throw new Error('ไม่พบข้อมูลนักเรียน ป.1-6 ในไฟล์');
+      if(!confirm('พบข้อมูล '+rows.length+' แถว (ข้ามอนุบาล '+kg+' แถว)\nนำเข้าและจับคู่ด้วยเลขประจำตัวนักเรียน?')){ ev.target.value=''; showLoading(false); return; }
+      const res=await GAS.call('importDMC',{rows});
+      toast('นำเข้าสำเร็จ: จับคู่ได้ '+res.matched+' คน • ไม่พบในระบบ '+res.skipped+' คน');
+      state._pfCache={};
+      loadProfiles(true);
+    }catch(err){ toast(err.message,'error'); }
+    finally{ showLoading(false); ev.target.value=''; }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ============================================================
+   นักเรียนจำหน่าย (แอดมิน+ผู้บริหาร)
+   ============================================================ */
+async function loadFormer(force){
+  const el=document.getElementById('fm_area');
+  try{ showLoading(true);
+    if(force||!state._former) state._former=await GAS.call('getFormerStudents');
+    renderFormer();
+  }catch(e){ el.innerHTML='<div class="text-rose-500">'+esc(e.message)+'</div>'; }
+  finally{ showLoading(false); }
+}
+function renderFormer(){
+  const el=document.getElementById('fm_area');
+  const q=(document.getElementById('fm_search').value||'').trim().toLowerCase();
+  const list=(state._former||[]).filter(r=>!q||(r.fullName+' '+(r.studentCode||'')).toLowerCase().includes(q));
+  if(!list.length){ el.innerHTML='<div class="text-center text-slate-400 py-6">ยังไม่มีนักเรียนจำหน่าย</div>'; return; }
+  const admin=state.currentUser&&state.currentUser.role==='admin';
+  el.innerHTML=`<div class="text-xs text-slate-400 mb-2">ทั้งหมด ${list.length} คน</div>
+  <table class="w-full text-sm" style="min-width:820px">
+    <thead><tr class="text-left text-slate-400 border-b">
+      <th class="px-2 py-2">เลขประจำตัว</th><th class="px-2">ชื่อ-นามสกุล</th><th class="px-2 text-center">ห้องเดิม</th><th class="px-2 text-center">เลขที่เดิม</th>
+      <th class="px-2 text-center">วันที่จำหน่าย</th><th class="px-2">เหตุผล</th><th class="px-2">ผู้ดำเนินการ</th><th class="px-2 text-center">จัดการ</th>
+    </tr></thead><tbody>${list.map(r=>`<tr class="border-b last:border-0">
+      <td class="px-2 py-1.5">${esc(r.studentCode)}</td>
+      <td class="px-2 py-1.5 font-medium text-slate-700 whitespace-nowrap">${esc(r.fullName)}</td>
+      <td class="px-2 py-1.5 text-center"><span class="badge bg-slate-100 text-slate-600">${esc(r.classLevel)}</span></td>
+      <td class="px-2 py-1.5 text-center">${esc(r.number)}</td>
+      <td class="px-2 py-1.5 text-center whitespace-nowrap">${thDate(r.removedDate)}</td>
+      <td class="px-2 py-1.5">${esc(r.reason)}</td>
+      <td class="px-2 py-1.5 whitespace-nowrap">${esc(r.removedBy)}</td>
+      <td class="px-2 py-1.5 text-center whitespace-nowrap">
+        <button onclick="viewFormerRecord('${esc(r.ID)}')" class="text-sky-600 text-xs mr-2">📋 ผลการเรียน</button>
+        ${admin?`<button onclick="restoreFormer('${esc(r.ID)}','${esc(r.classLevel)}')" class="text-emerald-600 text-xs">↩️ กู้คืน</button>`:''}
+      </td></tr>`).join('')}</tbody></table>`;
+}
+async function restoreFormer(id, cls){
+  const to=prompt('กู้คืนเข้าห้อง (เลขที่จะต่อท้ายห้องอัตโนมัติ):', cls);
+  if(to===null) return;
+  try{ showLoading(true);
+    const r=await GAS.call('restoreFormerStudent',{id, classLevel:to.trim()||cls});
+    toast('กู้คืนแล้ว: '+r.classLevel+' เลขที่ '+r.number);
+    state._former=null; state.students=[];
+    await loadFormer(true);
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
+// ดู/พิมพ์ผลการเรียนย้อนหลังของนักเรียนจำหน่าย
+async function viewFormerRecord(id){
+  const r=(state._former||[]).find(x=>String(x.ID)===String(id)); if(!r) return;
+  try{ showLoading(true);
+    const d=await GAS.call('getStudentRecord',{studentID:id});
+    const att=d.attendance;
+    const gradeRows=d.grades.length?d.grades.map((g,i)=>`<tr class="border-b last:border-0">
+        <td class="px-2 py-1 text-center text-slate-400">${i+1}</td>
+        <td class="px-2 py-1">${esc(g.code)}</td><td class="px-2 py-1">${esc(g.name)}</td>
+        <td class="px-2 py-1 text-center">${esc(g.classLevel)}</td>
+        <td class="px-2 py-1 text-center">${g.percent!==''?esc(g.percent):'—'}</td>
+        <td class="px-2 py-1 text-center">${esc(g.level68||'—')}</td>
+        <td class="px-2 py-1 text-center font-semibold">${esc(g.grade51||'—')}</td>
+      </tr>`).join('')
+      :'<tr><td colspan="7" class="px-2 py-4 text-center text-slate-400">ไม่มีข้อมูลผลการเรียน</td></tr>';
+    const html=`
+    <div id="fmModal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-3" onclick="if(event.target.id==='fmModal')this.remove()">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-5">
+        <div class="flex items-start justify-between mb-1">
+          <h3 class="font-bold text-teal-700">📋 ${esc(r.fullName)} <span class="text-xs font-normal text-slate-400">${esc(r.classLevel)} • จำหน่าย ${thDate(r.removedDate)}</span></h3>
+          <button onclick="document.getElementById('fmModal').remove()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+        </div>
+        <div class="flex flex-wrap gap-2 my-2">
+          <span class="badge bg-emerald-100 text-emerald-700">มา ${att.present}</span>
+          <span class="badge bg-rose-100 text-rose-600">ขาด ${att.absent}</span>
+          <span class="badge bg-amber-100 text-amber-700">ลา ${att.leave}</span>
+          <span class="badge bg-sky-100 text-sky-700">สาย ${att.late}</span>
+        </div>
+        <table class="w-full text-sm"><thead><tr class="text-left text-slate-400 border-b">
+          <th class="px-2 py-1">#</th><th class="px-2">รหัส</th><th class="px-2">รายวิชา</th><th class="px-2 text-center">ชั้น</th>
+          <th class="px-2 text-center">ร้อยละ</th><th class="px-2 text-center">ระดับ 68</th><th class="px-2 text-center">เกรด 51</th>
+        </tr></thead><tbody>${gradeRows}</tbody></table>
+        <button onclick="printFormerRecord('${esc(r.ID)}')" class="btn bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 text-sm mt-3">🖨️ พิมพ์แบบรายงานผลการเรียน</button>
+      </div>
+    </div>`;
+    state._fmRecord={r, d};
+    document.body.insertAdjacentHTML('beforeend',html);
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
+function printFormerRecord(id){
+  const c=state._fmRecord; if(!c||String(c.r.ID)!==String(id)) return;
+  const set=state.settings||{}, r=c.r, d=c.d, att=d.attendance;
+  const rows=d.grades.map((g,i)=>`<tr>
+    <td style="border:1px solid #333;padding:3px 6px;text-align:center">${i+1}</td>
+    <td style="border:1px solid #333;padding:3px 6px">${esc(g.code)}</td>
+    <td style="border:1px solid #333;padding:3px 6px">${esc(g.name)}</td>
+    <td style="border:1px solid #333;padding:3px 6px;text-align:center">${g.percent!==''?esc(g.percent):'-'}</td>
+    <td style="border:1px solid #333;padding:3px 6px;text-align:center">${esc(g.level68||'-')}</td>
+    <td style="border:1px solid #333;padding:3px 6px;text-align:center">${esc(g.grade51||'-')}</td></tr>`).join('');
+  const html=`<div class="page">
+    <div style="text-align:center">
+      ${set.logoURL?`<img src="${esc(set.logoURL)}" style="height:60px">`:''}
+      <div style="font-size:19px;font-weight:700">แบบรายงานผลการเรียน (ข้อมูลย้อนหลัง ณ วันจำหน่าย)</div>
+      <div>${esc(set.schoolName||'')} ปีการศึกษา ${esc(set.academicYear||'')}</div>
+    </div>
+    <p style="margin-top:12px"><b>ชื่อ-นามสกุล:</b> ${esc(r.fullName)} &nbsp; <b>ชั้น:</b> ${esc(r.classLevel)} &nbsp; <b>เลขที่:</b> ${esc(r.number)} &nbsp; <b>เลขประจำตัว:</b> ${esc(r.studentCode||'-')}</p>
+    <p><b>จำหน่ายเมื่อ:</b> ${thLongDate(r.removedDate)} &nbsp; <b>เหตุผล:</b> ${esc(r.reason||'-')}</p>
+    <p><b>สรุปเวลาเรียน:</b> มา ${att.present} • ขาด ${att.absent} • ลา ${att.leave} • สาย ${att.late} วัน</p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:6px">
+      <tr style="background:#eee">
+        <th style="border:1px solid #333;padding:4px">#</th><th style="border:1px solid #333;padding:4px">รหัสวิชา</th>
+        <th style="border:1px solid #333;padding:4px">รายวิชา</th><th style="border:1px solid #333;padding:4px">ร้อยละ</th>
+        <th style="border:1px solid #333;padding:4px">ระดับ (2568)</th><th style="border:1px solid #333;padding:4px">เกรด (2551)</th></tr>
+      ${rows||'<tr><td colspan="6" style="border:1px solid #333;padding:8px;text-align:center;color:#888">ไม่มีข้อมูลผลการเรียน</td></tr>'}
+    </table>
+    <table style="width:100%;margin-top:40px;text-align:center;font-size:15px"><tr>
+      <td>ลงชื่อ .................................................<br>นายทะเบียน/ผู้รายงาน</td>
+      <td>ลงชื่อ .................................................<br>(${esc(set.directorName||'')})<br>ผู้อำนวยการ${esc(set.schoolName||'โรงเรียน')}</td>
+    </tr></table>
+  </div>`;
+  openPrintWindow('รายงานผลการเรียน '+r.fullName, html);
 }
 
 /* ============================================================
