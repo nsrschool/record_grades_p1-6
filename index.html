@@ -655,7 +655,6 @@
     <!-- sub-tabs -->
     <div class="flex gap-2 mb-4 overflow-x-auto nav-scroll pb-1">
       <button data-sub="school"  class="subbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🏫 ข้อมูลสถานศึกษา</button>
-      <button data-sub="students" class="subbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🧑‍🎓 จัดการรายชื่อนักเรียน</button>
       <button data-sub="mapping"  class="subbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🎚️ ตารางแปลงเกรด</button>
     </div>
 
@@ -733,7 +732,45 @@
     </div>
 
     <!-- sub: students -->
-    <div id="sub-students" class="subpane hidden">
+    <!-- sub: mapping -->
+    <div id="sub-mapping" class="subpane hidden">
+      <div class="card p-4">
+        <h2 class="font-bold text-teal-700 mb-1">ตารางแปลงเกรด (ร้อยละ → ระดับ 68 → เกรด 51)</h2>
+        <p class="text-xs text-slate-400 mb-3">อิงตารางที่ ๕ ของแนวปฏิบัติการเทียบผลการเรียน — แก้ไขได้ตามบริบทโรงเรียน</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead><tr class="text-left text-slate-400 border-b">
+              <th class="py-2 px-2">ร้อยละต่ำสุด</th><th class="px-2">ร้อยละสูงสุด</th>
+              <th class="px-2">ระดับ 68</th><th class="px-2">เกรด 51</th><th class="px-2">ตัวอักษร</th><th class="px-2"></th>
+            </tr></thead>
+            <tbody id="mappingBody"></tbody>
+          </table>
+        </div>
+        <div class="flex justify-between mt-4">
+          <button onclick="addMappingRow()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 text-xs">➕ เพิ่มแถว</button>
+          <button onclick="saveMapping()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 text-sm">💾 บันทึกตารางแปลงเกรด</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- TAB: ADMIN ---------- -->
+  <section id="tab-admin" class="tabpane hidden">
+    <div class="flex gap-2 mb-4 overflow-x-auto nav-scroll pb-1">
+      <button data-asub="roster"   class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🧑‍🎓 จัดการนักเรียน</button>
+      <button data-asub="schedule" class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📅 นำเข้าตารางสอน</button>
+      <button data-asub="teachers" class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">👤 จัดการครู / PIN</button>
+      <button data-asub="assign"   class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🧩 มอบหมายวิชาให้ครู</button>
+      <button data-asub="tasks"    class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📌 กำหนดงานส่ง</button>
+      <button data-asub="riskform" class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📝 ฟอร์มนักเรียนเสี่ยง</button>
+      <button data-asub="perms"    class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🔐 จัดการสิทธิ์</button>
+      <button data-asub="docs"     class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📄 คำอธิบายรายวิชา</button>
+      <button data-asub="backup"   class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">💾 สำรองข้อมูลอัตโนมัติ</button>
+      <button data-asub="locks"    class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🔒 อนุมัติ/ล็อกผล</button>
+    </div>
+
+    <!-- asub: roster -->
+    <div id="asub-roster" class="asubpane hidden">
       <div class="card p-4 mb-4">
         <h2 class="font-bold text-teal-700 mb-3">นำเข้า / เพิ่มรายชื่อนักเรียน</h2>
         <div class="flex flex-wrap gap-2 mb-4">
@@ -773,49 +810,9 @@
           </table>
         </div>
       </div>
-    </div>
 
-    <!-- sub: mapping -->
-    <div id="sub-mapping" class="subpane hidden">
       <div class="card p-4">
-        <h2 class="font-bold text-teal-700 mb-1">ตารางแปลงเกรด (ร้อยละ → ระดับ 68 → เกรด 51)</h2>
-        <p class="text-xs text-slate-400 mb-3">อิงตารางที่ ๕ ของแนวปฏิบัติการเทียบผลการเรียน — แก้ไขได้ตามบริบทโรงเรียน</p>
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead><tr class="text-left text-slate-400 border-b">
-              <th class="py-2 px-2">ร้อยละต่ำสุด</th><th class="px-2">ร้อยละสูงสุด</th>
-              <th class="px-2">ระดับ 68</th><th class="px-2">เกรด 51</th><th class="px-2">ตัวอักษร</th><th class="px-2"></th>
-            </tr></thead>
-            <tbody id="mappingBody"></tbody>
-          </table>
-        </div>
-        <div class="flex justify-between mt-4">
-          <button onclick="addMappingRow()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 text-xs">➕ เพิ่มแถว</button>
-          <button onclick="saveMapping()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 text-sm">💾 บันทึกตารางแปลงเกรด</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ---------- TAB: ADMIN ---------- -->
-  <section id="tab-admin" class="tabpane hidden">
-    <div class="flex gap-2 mb-4 overflow-x-auto nav-scroll pb-1">
-      <button data-asub="roster"   class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🧑‍🎓 นำเข้ารายชื่อนักเรียน</button>
-      <button data-asub="schedule" class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📅 นำเข้าตารางสอน</button>
-      <button data-asub="teachers" class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">👤 จัดการครู / PIN</button>
-      <button data-asub="assign"   class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🧩 มอบหมายวิชาให้ครู</button>
-      <button data-asub="tasks"    class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📌 กำหนดงานส่ง</button>
-      <button data-asub="riskform" class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📝 ฟอร์มนักเรียนเสี่ยง</button>
-      <button data-asub="perms"    class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🔐 จัดการสิทธิ์</button>
-      <button data-asub="docs"     class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">📄 คำอธิบายรายวิชา</button>
-      <button data-asub="backup"   class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">💾 สำรองข้อมูลอัตโนมัติ</button>
-      <button data-asub="locks"    class="asubbtn btn px-3 py-1.5 text-sm bg-white border border-slate-200 whitespace-nowrap">🔒 อนุมัติ/ล็อกผล</button>
-    </div>
-
-    <!-- asub: roster -->
-    <div id="asub-roster" class="asubpane hidden">
-      <div class="card p-4">
-        <h3 class="font-bold text-teal-700 mb-1">นำเข้ารายชื่อนักเรียน (ทั้งโรงเรียน)</h3>
+        <h3 class="font-bold text-amber-600 mb-1">🔁 นำเข้าแบบแทนที่ทั้งหมด (ตั้งต้นปีการศึกษาใหม่)</h3>
         <p class="text-xs text-slate-400 mb-3">ไฟล์ Excel คอลัมน์: A=ชั้น(ป.1/1) • B=เลขที่ • C=เลขประจำตัว • D=คำนำหน้า • E=ชื่อ • F=นามสกุล<br><b class="text-rose-500">การนำเข้าจะแทนที่รายชื่อเดิมทั้งหมด</b> และเรียงเลขที่ทุกห้องให้ต่อเนื่องอัตโนมัติ</p>
         <div class="flex flex-wrap gap-2">
           <button onclick="downloadRosterTemplate()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 text-xs">📥 ดาวน์โหลดฟอร์ม (A-F)</button>
@@ -1722,6 +1719,7 @@ function switchAsub(name){
   document.getElementById('asub-'+name).classList.remove('hidden');
   document.querySelectorAll('.asubbtn').forEach(b=>b.classList.toggle('tab-active', b.dataset.asub===name));
   if(name==='schedule'){ loadSchedule(); initSchEdit(); }
+  if(name==='roster') renderStudents();
   if(name==='teachers') renderTeachers();
   if(name==='assign') initAssign();
   if(name==='tasks') initTasks();
@@ -3452,6 +3450,36 @@ function attSummary(students, draft){
   students.forEach(s=>{ const st=draft[s.ID]||'มา'; c[st]=(c[st]||0)+1; });
   return ATT_STATUSES.map(([st])=>st+' '+c[st]).join(' • ');
 }
+// แถบสรุปสด 4 สี + ปุ่มลัด (แบบเดียวกับหน้าเสาธง) — ใช้ร่วมกันทั้ง 2 โหมด
+function attBarHTML(students, draft, kind){
+  const c={'มา':0,'ขาด':0,'ลา':0,'สาย':0};
+  students.forEach(s=>{ const v=draft[s.ID]||'มา'; c[v]=(c[v]||0)+1; });
+  const box=(label,n,cls)=>`<div class="rounded-xl border-2 ${cls} py-1.5 text-center flex-1 min-w-[64px]"><div class="text-[11px]">${label}</div><div class="text-xl font-bold leading-tight">${n}</div></div>`;
+  const quick = kind==='period'
+    ? `<button onclick="setAllAtt('period','มา')" class="btn bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 text-xs">✅ ทุกคนมา</button>
+       <button onclick="setAllAtt('period','flag')" class="btn bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 text-xs">🚩 ใช้ตามหน้าเสาธง</button>`
+    : `<button onclick="setAllAtt('flag','มา')" class="btn bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 text-xs">✅ ทุกคนมา</button>`;
+  return `<div class="flex gap-2 mb-2">${box('มา',c['มา'],'bg-emerald-50 border-emerald-300 text-emerald-700')}
+      ${box('ขาด',c['ขาด'],'bg-rose-50 border-rose-300 text-rose-700')}
+      ${box('ลา',c['ลา'],'bg-amber-50 border-amber-300 text-amber-700')}
+      ${box('มาสาย',c['สาย'],'bg-violet-50 border-violet-300 text-violet-700')}</div>
+    <div class="flex flex-wrap gap-2 mb-1">${quick}</div>`;
+}
+function setAllAtt(kind, mode){
+  if(kind==='flag'){
+    state.flagStudents.forEach(s=>state.flagDraft[s.ID]='มา');
+    renderFlagList(); toast('ตั้งทุกคนเป็น "มา" แล้ว — แตะแก้รายคนได้');
+  }else{
+    if(mode==='flag'){
+      state.periodStudents.forEach(s=>state.periodDraft[s.ID]=state.periodFlagMap[s.ID]||'มา');
+      toast('ใช้สถานะตามหน้าเสาธงแล้ว');
+    }else{
+      state.periodStudents.forEach(s=>state.periodDraft[s.ID]='มา');
+      toast('ตั้งทุกคนเป็น "มา" แล้ว — แตะแก้รายคนได้');
+    }
+    renderPeriodList();
+  }
+}
 
 /* ---- หน้าเสาธง ---- */
 async function loadFlag(){
@@ -3477,7 +3505,7 @@ function renderFlagList(){
   document.getElementById('flagList').innerHTML = state.flagStudents.length
     ? state.flagStudents.map(s=>attRow(s, state.flagDraft[s.ID], 'flag')).join('')
     : '<p class="text-center text-slate-400 py-4">ไม่มีนักเรียนในห้องนี้</p>';
-  document.getElementById('flagSummary').textContent=attSummary(state.flagStudents, state.flagDraft);
+  document.getElementById('flagSummary').innerHTML=attBarHTML(state.flagStudents, state.flagDraft, 'flag');
 }
 async function saveFlag(){
   const date=val('att_flag_date'), cls=document.getElementById('att_flag_class').value;
@@ -3532,7 +3560,7 @@ function renderPeriodList(){
   document.getElementById('periodList').innerHTML = state.periodStudents.length
     ? state.periodStudents.map(s=>attRow(s, state.periodDraft[s.ID], 'period', state.periodFlagMap[s.ID]||'')).join('')
     : '<p class="text-center text-slate-400 py-4">ไม่มีนักเรียนในห้องนี้</p>';
-  document.getElementById('periodSummary').textContent=attSummary(state.periodStudents, state.periodDraft);
+  document.getElementById('periodSummary').innerHTML=attBarHTML(state.periodStudents, state.periodDraft, 'period');
 }
 async function savePeriod(){
   const date=val('att_period_date'); const slot=state.periodSlot; if(!slot) return;
