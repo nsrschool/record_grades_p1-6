@@ -376,10 +376,12 @@
     <div id="att-flag" class="attpane hidden">
       <div class="card p-4 mb-4">
         <div class="flex flex-wrap gap-3 items-end">
-          <div><label class="text-xs text-slate-500">วันที่</label><input type="date" id="att_flag_date" class="inp mt-1"></div>
-          <div><label class="text-xs text-slate-500">ชั้น/ห้อง</label><select id="att_flag_class" class="inp mt-1"></select></div>
+          <div><label class="text-xs text-slate-500">วันที่</label><input type="date" id="att_flag_date" class="inp mt-1" onchange="flagCalSync()"></div>
+          <div><label class="text-xs text-slate-500">ชั้น/ห้อง</label><select id="att_flag_class" class="inp mt-1" onchange="renderFlagCal()"></select></div>
           <button onclick="loadFlag()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 text-sm">โหลดรายชื่อ</button>
+          <span id="flagCheckedBadge" class="hidden badge bg-emerald-100 text-emerald-700 self-center">☑️ เช็คชื่อแล้ว</span>
         </div>
+        <div id="flagCal" class="mt-3"></div>
       </div>
       <div id="flagListWrap" class="card p-4 hidden">
         <div id="flagSummary" class="text-xs text-slate-500 mb-2"></div>
@@ -393,11 +395,12 @@
     <div id="att-period" class="attpane hidden">
       <div class="card p-4 mb-4">
         <div class="flex flex-wrap gap-3 items-end">
-          <div><label class="text-xs text-slate-500">วันที่</label><input type="date" id="att_period_date" class="inp mt-1" onchange="fillPeriodSlots()"></div>
+          <div><label class="text-xs text-slate-500">วันที่</label><input type="date" id="att_period_date" class="inp mt-1" onchange="fillPeriodSlots();periodCalSync()"></div>
           <div class="flex-1 min-w-[200px]"><label class="text-xs text-slate-500">คาบเรียน</label><select id="att_period_slot" class="inp mt-1"></select></div>
           <button onclick="loadPeriod()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 text-sm">โหลดรายชื่อ</button>
         </div>
         <p class="text-[11px] text-slate-400 mt-2">💡 ไม่บังคับเช็ค — คาบที่ไม่ได้เช็ค ระบบจะใช้ผลหน้าเสาธงนับเวลาเรียนให้อัตโนมัติ</p>
+        <div id="periodCal" class="mt-3"></div>
       </div>
       <div id="periodListWrap" class="card p-4 hidden">
         <div id="periodSummary" class="text-xs text-slate-500 mb-2"></div>
@@ -428,6 +431,10 @@
         <h3 class="font-bold text-teal-700 mb-2">📊 สรุปการมาเรียนรายคน</h3>
         <div class="flex flex-wrap gap-3 items-end mb-3">
           <div><label class="text-xs text-slate-500">ชั้น/ห้อง</label><select id="sum_class" class="inp mt-1"></select></div>
+          <div class="flex gap-1 self-end pb-0.5">
+            <button onclick="setSumRange('year')" class="btn bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 text-xs whitespace-nowrap">📅 ทั้งปี</button>
+            <button onclick="setSumRange('month')" class="btn bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 text-xs whitespace-nowrap">เดือนนี้</button>
+          </div>
           <div><label class="text-xs text-slate-500">ตั้งแต่</label><input type="date" id="sum_from" class="inp mt-1"></div>
           <div><label class="text-xs text-slate-500">ถึง</label><input type="date" id="sum_to" class="inp mt-1"></div>
           <button onclick="loadAttSummary()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 text-sm">สรุป</button>
@@ -1737,7 +1744,8 @@ function switchAtt(name){
   document.querySelectorAll('.attpane').forEach(p=>p.classList.add('hidden'));
   document.getElementById('att-'+name).classList.remove('hidden');
   document.querySelectorAll('.attbtn').forEach(b=>b.classList.toggle('tab-active', b.dataset.att===name));
-  if(name==='period') fillPeriodSlots();
+  if(name==='flag') renderFlagCal();
+  if(name==='period'){ fillPeriodSlots(); renderPeriodCal(); }
   if(name==='summary') initAttReport();
   if(name==='register') initRegister();
 }
@@ -1753,6 +1761,13 @@ document.querySelectorAll('.absubbtn').forEach(b=>b.onclick=()=>switchAbsub(b.da
    BOOTSTRAP
    ============================================================ */
 const BOOT_SNAP_KEY='nsr_boot_v1';
+// อัปเดต snapshot บางส่วนหลังข้อมูลเปลี่ยน — เปิดแอปครั้งหน้าเห็นข้อมูลล่าสุดทันที
+function patchBootSnap(key, val){
+  try{
+    const snap=JSON.parse(localStorage.getItem(BOOT_SNAP_KEY)||'null');
+    if(snap && snap.data){ snap.data[key]=val; snap.t=Date.now(); localStorage.setItem(BOOT_SNAP_KEY, JSON.stringify(snap)); }
+  }catch(e){}
+}
 function applyBootData(data){
   state.settings=data.settings||{};
   try{ state.tabAccess = state.settings.tabAccess ? JSON.parse(state.settings.tabAccess) : null; }catch(e){ state.tabAccess=null; }
@@ -1821,7 +1836,7 @@ async function saveSettings(){
   s.schoolName=val('set_schoolName'); s.slogan=val('set_slogan'); s.academicYear=val('set_academicYear');
   s.area=val('set_area'); s.directorName=val('set_directorName'); s.deputyName=val('set_deputyName'); s.remark=val('set_remark');
   s.reportDate=val('set_reportDate'); s.address=val('set_address'); s.academicHead=val('set_academicHead');
-  try{ showLoading(true); await GAS.call('saveSettings', s); applySettingsToUI(); toast('บันทึกข้อมูลสถานศึกษาแล้ว'); }
+  try{ showLoading(true); await GAS.call('saveSettings', s); applySettingsToUI(); patchBootSnap('settings', state.settings); toast('บันทึกข้อมูลสถานศึกษาแล้ว'); }
   catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 function val(id){ return document.getElementById(id).value.trim(); }
@@ -1856,7 +1871,7 @@ function uploadImg(ev, settingKey, previewId){
 /* ============================================================
    STUDENTS
    ============================================================ */
-async function loadStudents(){ state.students=await GAS.call('getStudents'); renderStudents(); }
+async function loadStudents(){ state.students=await GAS.call('getStudents'); renderStudents(); patchBootSnap('students', state.students); }
 
 function renderStudents(){
   // เติมตัวเลือกห้อง (จากข้อมูลจริง) ให้ตัวกรองและฟอร์มเพิ่ม
@@ -1989,7 +2004,7 @@ function importStudents(ev){
 /* ============================================================
    SUBJECTS
    ============================================================ */
-async function loadSubjects(){ state.subjects=await GAS.call('getSubjects'); renderSubjects(); }
+async function loadSubjects(){ state.subjects=await GAS.call('getSubjects'); renderSubjects(); patchBootSnap('subjects', state.subjects); }
 
 function renderSubjects(){
   const f=document.getElementById('su_filter').value;
@@ -3427,11 +3442,12 @@ function thaiWeekday(iso){ if(!iso) return ''; const d=new Date(iso+'T00:00:00')
 function byNumber(a,b){ return Number(a.number)-Number(b.number); }
 
 async function initAttendance(){
+  if(state._attKeys) delete state._attKeys[todayISO().slice(0,7)]; // รีเฟรชสถานะเดือนนี้ทุกครั้งที่เข้าเมนู
   if(!val('att_flag_date')) document.getElementById('att_flag_date').value=todayISO();
   if(!val('att_period_date')) document.getElementById('att_period_date').value=todayISO();
   fillFlagClasses();
   // แอดมินต้องมีตารางสอนทั้งหมดเพื่อเลือกคาบ
-  if(state.currentUser && state.currentUser.role==='admin' && (!state.schedule || !state.schedule.length)){
+  if(state.currentUser && (state.currentUser.role==='admin'||state.currentUser.role==='director') && (!state.schedule || !state.schedule.length)){
     try{ state.schedule=await GAS.call('getSchedule',{}); }catch(e){}
   }
   switchAtt('flag');
@@ -3443,6 +3459,129 @@ function fillFlagClasses(){
   let classes=[...new Set(state.students.map(s=>s.classLevel).filter(Boolean))].sort();
   if(u && isTeacherScope(u) && u.homeroomClass) classes=classes.filter(c=>c===u.homeroomClass);
   sel.innerHTML = classes.length ? classes.map(c=>`<option>${esc(c)}</option>`).join('') : '<option value="">(ไม่มีห้องประจำชั้น)</option>';
+}
+
+/* ============================================================
+   แถบปฏิทินสถานะการเช็คชื่อรายเดือน (เสาธง + รายคาบ)
+   ============================================================ */
+const TH_M_ABBR=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+// โหลดรายการ (วัน|ห้อง|คาบ) ที่เช็คแล้วของเดือนนั้น (cache ต่อเดือน)
+async function attMonthKeys(month){
+  state._attKeys=state._attKeys||{};
+  if(!state._attKeys[month]){
+    try{ state._attKeys[month]=new Set(await GAS.call('getAttMonthKeys',{month})); }
+    catch(e){ return new Set(); }
+  }
+  return state._attKeys[month];
+}
+function attKeyAdd(date, cls, period){
+  const m=String(date).slice(0,7);
+  if(state._attKeys && state._attKeys[m]) state._attKeys[m].add(date+'|'+String(cls).trim()+'|'+String(period));
+}
+// ตัวสร้างแถบปฏิทิน (ใช้ร่วมกัน 2 โหมด)
+function calStripHTML(o){
+  const [y,m]=o.month.split('-').map(Number);
+  const days=new Date(y,m,0).getDate();
+  let tiles='';
+  for(let d=1;d<=days;d++){
+    const date=o.month+'-'+String(d).padStart(2,'0');
+    const sel=date===o.selDate?' ring-2 ring-teal-500 ring-offset-1':'';
+    tiles+=`<button onclick="${o.onpick}('${date}')" class="w-11 h-11 rounded-xl text-sm font-bold ${o.status(date)}${sel}">${d}</button>`;
+  }
+  return `<div class="flex items-center gap-2 mb-2">
+      <button onclick="${o.onnav}(-1)" class="btn bg-slate-100 hover:bg-slate-200 px-3 py-1.5 text-sm">‹</button>
+      <span class="font-bold text-teal-700">${TH_M_ABBR[m]} ${y+543}</span>
+      <button onclick="${o.onnav}(1)" class="btn bg-slate-100 hover:bg-slate-200 px-3 py-1.5 text-sm">›</button>
+    </div>
+    <div class="flex flex-wrap gap-1.5">${tiles}</div>
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[11px] text-slate-500">${o.legend}</div>`;
+}
+const CAL_CLS={
+  green:'bg-emerald-500 text-white',
+  yellow:'bg-amber-400 text-white',
+  white:'bg-white border border-slate-300 text-slate-600',
+  gray:'bg-slate-100 text-slate-400',
+  holiday:'bg-rose-50 border border-rose-200 text-rose-500'
+};
+function calDot(cls,label){ return `<span class="inline-flex items-center gap-1"><span class="w-3.5 h-3.5 rounded ${cls} inline-block"></span>${label}</span>`; }
+
+/* ---- เสาธง ---- */
+function flagCalSync(){ const d=val('att_flag_date'); if(d){ state._flagCalMonth=d.slice(0,7); } renderFlagCal(); }
+function flagCalNav(dir){
+  const [y,m]=(state._flagCalMonth||todayISO().slice(0,7)).split('-').map(Number);
+  const nd=new Date(y, m-1+dir, 1);
+  state._flagCalMonth=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0');
+  renderFlagCal();
+}
+async function renderFlagCal(){
+  const el=document.getElementById('flagCal'); if(!el) return;
+  const cls=document.getElementById('att_flag_class').value;
+  const selDate=val('att_flag_date')||todayISO();
+  const month=state._flagCalMonth||(state._flagCalMonth=selDate.slice(0,7));
+  el.innerHTML='<div class="text-xs text-slate-400">⏳ กำลังโหลดสถานะการเช็คชื่อ…</div>';
+  const keys=await attMonthKeys(month);
+  el.innerHTML=calStripHTML({
+    month, selDate, onpick:'flagCalPick', onnav:'flagCalNav',
+    status:(date)=>{
+      if(!isSchoolDay(date)) return CAL_CLS.holiday;
+      if(cls && keys.has(date+'|'+cls+'|0')) return CAL_CLS.green;
+      return CAL_CLS.white;
+    },
+    legend:calDot(CAL_CLS.green,'เช็คแล้ว')+calDot(CAL_CLS.white,'ยังไม่เช็ค')+'<span class="text-rose-500 font-semibold">เลขสีแดง = วันหยุด</span>'
+  });
+  // badge "เช็คชื่อแล้ว" ของวัน+ห้องที่เลือก
+  const badge=document.getElementById('flagCheckedBadge');
+  if(badge) badge.classList.toggle('hidden', !(cls && keys.has(selDate+'|'+cls+'|0')));
+}
+function flagCalPick(date){
+  document.getElementById('att_flag_date').value=date;
+  state._flagCalMonth=date.slice(0,7);
+  renderFlagCal();
+  if(document.getElementById('att_flag_class').value && isSchoolDay(date)) loadFlag();
+}
+
+/* ---- รายคาบ ---- */
+function periodCalSync(){ const d=val('att_period_date'); if(d){ state._periodCalMonth=d.slice(0,7); } renderPeriodCal(); }
+function periodCalNav(dir){
+  const [y,m]=(state._periodCalMonth||todayISO().slice(0,7)).split('-').map(Number);
+  const nd=new Date(y, m-1+dir, 1);
+  state._periodCalMonth=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0');
+  renderPeriodCal();
+}
+// คาบที่ "ควรมี" ของวันนั้น ตามตารางสอน (ครู = ของตัวเอง / แอดมิน-ผู้บริหาร = ทุกคน)
+function periodSlotsOf(date){
+  const wd=thaiWeekday(date);
+  const u=state.currentUser;
+  const src=(u && isTeacherScope(u)) ? (state.mySchedule||[]) : (state.schedule||[]);
+  return src.filter(s=>s.day===wd);
+}
+async function renderPeriodCal(){
+  const el=document.getElementById('periodCal'); if(!el) return;
+  const selDate=val('att_period_date')||todayISO();
+  const month=state._periodCalMonth||(state._periodCalMonth=selDate.slice(0,7));
+  el.innerHTML='<div class="text-xs text-slate-400">⏳ กำลังโหลดสถานะการเช็คชื่อ…</div>';
+  const keys=await attMonthKeys(month);
+  el.innerHTML=calStripHTML({
+    month, selDate, onpick:'periodCalPick', onnav:'periodCalNav',
+    status:(date)=>{
+      if(!isSchoolDay(date)) return CAL_CLS.holiday;
+      const slots=periodSlotsOf(date);
+      if(!slots.length) return CAL_CLS.gray;
+      const done=slots.filter(s=>keys.has(date+'|'+String(s.classLevel).trim()+'|'+String(s.period))).length;
+      if(done>=slots.length) return CAL_CLS.green;
+      if(done>0) return CAL_CLS.yellow;
+      return CAL_CLS.white;
+    },
+    legend:calDot(CAL_CLS.green,'เช็คครบทุกคาบ')+calDot(CAL_CLS.yellow,'เช็คบางคาบ')+
+      calDot(CAL_CLS.white,'มีคาบแต่ยังไม่เช็ค')+calDot(CAL_CLS.gray,'ไม่มีคาบสอน')+
+      '<span class="text-rose-500 font-semibold">เลขสีแดง = วันหยุด</span>'
+  });
+}
+function periodCalPick(date){
+  document.getElementById('att_period_date').value=date;
+  state._periodCalMonth=date.slice(0,7);
+  fillPeriodSlots();
+  renderPeriodCal();
 }
 
 /* ---- แถวเช็คชื่อ (ใช้ร่วมกัน) ---- */
@@ -3526,6 +3665,7 @@ async function saveFlag(){
   try{ showLoading(true);
     await GAS.call('saveAttendance',{date, classLevel:cls, period:0, checkedBy:state.currentUser.name, records});
     toast('บันทึกเช็คชื่อหน้าเสาธงแล้ว');
+    attKeyAdd(date, cls, '0'); renderFlagCal();
     showAttResult({classLevel:cls, date, subtitle:'', students:state.flagStudents, draft:state.flagDraft});
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
@@ -3580,6 +3720,7 @@ async function savePeriod(){
   try{ showLoading(true);
     await GAS.call('saveAttendance',{date, classLevel:slot.classLevel, period:slot.period, checkedBy:state.currentUser.name, records});
     toast('บันทึกเช็คชื่อคาบ '+slot.period+' แล้ว');
+    attKeyAdd(date, slot.classLevel, String(slot.period)); renderPeriodCal();
     showAttResult({classLevel:slot.classLevel, date, subtitle:'คาบ '+slot.period+' • '+(slot.subject||''), students:state.periodStudents, draft:state.periodDraft});
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
@@ -3590,13 +3731,18 @@ async function savePeriod(){
 Object.assign(state, { attSummary:null });
 
 function monthStartISO(){ const d=new Date(); return new Date(d.getFullYear(),d.getMonth(),1).toLocaleDateString('en-CA'); }
+function setSumRange(mode){
+  document.getElementById('sum_from').value = mode==='month' ? monthStartISO() : academicYearRange().from;
+  document.getElementById('sum_to').value = todayISO();
+  if(document.getElementById('sum_class').value) loadAttSummary();
+}
 
 function initAttReport(){
   const u=state.currentUser, admin=u && u.role==='admin';
   // dashboard เฉพาะแอดมิน
   document.getElementById('dashCard').style.display=admin?'':'none';
   if(!val('dash_date')) document.getElementById('dash_date').value=todayISO();
-  if(!val('sum_from')) document.getElementById('sum_from').value=monthStartISO();
+  if(!val('sum_from')){ const r=academicYearRange(); document.getElementById('sum_from').value=r.from; }
   if(!val('sum_to')) document.getElementById('sum_to').value=todayISO();
   // ชั้นใน dropdown
   const sel=document.getElementById('sum_class');
@@ -5677,6 +5823,7 @@ async function saveExamForm(force){
     classLevel:document.getElementById('exf_class').value, subject:document.getElementById('exf_subject').value.trim(),
     proctor1:document.getElementById('exf_p1').value, proctor2:document.getElementById('exf_p2').value, force };
   if(p.proctor1 && p.proctor1===p.proctor2){ toast('กรรมการคนที่ 1 และ 2 ต้องไม่ซ้ำกัน','error'); return; }
+  state._examCache=state._examCache||{};
   try{ showLoading(true);
     state._examCache[type]=await GAS.call('saveExamSlot',p);
     toast(p.id?'บันทึกการแก้ไขแล้ว':'เพิ่มรายการสอบแล้ว');
@@ -5705,6 +5852,7 @@ function editExamSlot(id){
 async function delExamSlot(id){
   if(!confirm('ยืนยันลบรายการสอบนี้?')) return;
   const type=document.getElementById('ex_type').value;
+  state._examCache=state._examCache||{};
   try{ showLoading(true);
     state._examCache[type]=await GAS.call('deleteExamSlot',{id, examType:type});
     toast('ลบแล้ว'); renderExam();
