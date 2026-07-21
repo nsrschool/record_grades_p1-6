@@ -3464,6 +3464,7 @@ function fillFlagClasses(){
 /* ============================================================
    แถบปฏิทินสถานะการเช็คชื่อรายเดือน (เสาธง + รายคาบ)
    ============================================================ */
+const APP_BUILD='v21.07-D'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
 const TH_M_ABBR=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 // โหลดรายการ (วัน|ห้อง|คาบ) ที่เช็คแล้วของเดือนนั้น (cache ต่อเดือน)
 async function attMonthKeys(month){
@@ -3541,10 +3542,23 @@ async function renderFlagCal(){
       return CAL_CLS.white;
     },
     legend:calDot(CAL_CLS.green,'เช็คแล้ว')+calDot(CAL_CLS.white,'ยังไม่เช็ค')+'<span class="text-rose-500 font-semibold">เลขสีแดง = วันหยุด</span>'
-  });
+  })+flagCalDiag(keys, month, cls, calErr);
   // badge "เช็คชื่อแล้ว" ของวัน+ห้องที่เลือก
   const badge=document.getElementById('flagCheckedBadge');
   if(badge) badge.classList.toggle('hidden', !(cls && keys.has(selDate+'|'+cls+'|0')));
+}
+// บรรทัดวินิจฉัย: บอกจำนวนข้อมูลจริงของเดือน เพื่อชี้สาเหตุได้ทันทีจากภาพหน้าจอ
+function flagCalDiag(keys, month, cls, calErr){
+  if(calErr) return `<div class="text-[10px] text-slate-400 mt-1">เวอร์ชันหน้าเว็บ: ${APP_BUILD}</div>`;
+  const flagKeys=[...keys].filter(k=>k.endsWith('|0'));
+  const monthDates=new Set(flagKeys.map(k=>k.split('|')[0])).size;
+  const roomDays=cls?flagKeys.filter(k=>k.split('|')[1]===cls).length:0;
+  let extra='';
+  if(monthDates>0 && cls && roomDays===0){
+    const rooms=[...new Set(flagKeys.map(k=>k.split('|')[1]))].slice(0,6);
+    extra=`<div class="text-[11px] text-amber-600 mt-0.5">⚠️ เดือนนี้มีข้อมูลแต่ไม่ตรงห้อง "${esc(cls)}" — ห้องที่พบในข้อมูล: ${rooms.map(esc).join(', ')}</div>`;
+  }
+  return `<div class="text-[10px] text-slate-400 mt-1.5">📊 เดือนนี้เช็คหน้าเสาธงแล้ว ${monthDates} วัน (ทุกห้องรวมกัน) • ห้องที่เลือก ${roomDays} วัน • เวอร์ชันหน้าเว็บ: ${APP_BUILD}</div>`+extra;
 }
 function flagCalPick(date){
   document.getElementById('att_flag_date').value=date;
@@ -3589,7 +3603,7 @@ async function renderPeriodCal(){
     legend:calDot(CAL_CLS.green,'เช็คครบทุกคาบ')+calDot(CAL_CLS.yellow,'เช็คบางคาบ')+
       calDot(CAL_CLS.white,'มีคาบแต่ยังไม่เช็ค')+calDot(CAL_CLS.gray,'ไม่มีคาบสอน')+
       '<span class="text-rose-500 font-semibold">เลขสีแดง = วันหยุด</span>'
-  });
+  })+`<div class="text-[10px] text-slate-400 mt-1.5">📊 เดือนนี้มีการเช็ครายคาบ ${[...keys].filter(k=>!k.endsWith('|0')).length} รายการ • เวอร์ชันหน้าเว็บ: ${APP_BUILD}</div>`;
 }
 function periodCalPick(date){
   document.getElementById('att_period_date').value=date;
