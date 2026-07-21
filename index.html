@@ -1752,31 +1752,43 @@ document.querySelectorAll('.absubbtn').forEach(b=>b.onclick=()=>switchAbsub(b.da
 /* ============================================================
    BOOTSTRAP
    ============================================================ */
+const BOOT_SNAP_KEY='nsr_boot_v1';
+function applyBootData(data){
+  state.settings=data.settings||{};
+  try{ state.tabAccess = state.settings.tabAccess ? JSON.parse(state.settings.tabAccess) : null; }catch(e){ state.tabAccess=null; }
+  if(state.currentUser) applyRole();
+  state.mapping=data.mapping||[];
+  state.students=data.students||[];
+  state.subjects=data.subjects||[];
+  state.calendar=data.calendar||[];
+  state.locks=data.locks||[];
+  applySettingsToUI();
+  applyFavicon();
+  renderStudents(); renderSubjects(); renderMapping();
+}
 async function bootstrap(){
   // เติม dropdown กลุ่มสาระ
   ['su_area','es_area'].forEach(id=>{
     const sel=document.getElementById(id);
     sel.innerHTML='<option value="">— กลุ่มสาระ —</option>'+LEARNING_AREAS.map(a=>`<option>${a}</option>`).join('');
   });
+  // 1) เปิดติดจอทันทีจาก snapshot ล่าสุดในเครื่อง (ถ้ามี) แล้วค่อยซิงค์ของจริงเบื้องหลัง
+  let hasSnap=false;
   try{
-    showLoading(true);
+    const snap=JSON.parse(localStorage.getItem(BOOT_SNAP_KEY)||'null');
+    if(snap && snap.data){ applyBootData(snap.data); setStatus(true); renderHome(); hasSnap=true; }
+  }catch(e){}
+  try{
+    if(!hasSnap) showLoading(true);
+    // 2) โหลดของจริง — รวมทุกอย่างใน call เดียว (settings+mapping+students+subjects+calendar+locks)
     const data=await GAS.call('getBootstrap');
-    state.settings=data.settings||{};
-    try{ state.tabAccess = state.settings.tabAccess ? JSON.parse(state.settings.tabAccess) : null; }catch(e){ state.tabAccess=null; }
-    if(state.currentUser) applyRole();  // ใช้สิทธิ์ที่ตั้งค่าหลังโหลด settings
-    state.mapping=data.mapping||[];
-    applySettingsToUI();
-    applyFavicon();
+    applyBootData(data);
+    try{ localStorage.setItem(BOOT_SNAP_KEY, JSON.stringify({t:Date.now(), data})); }catch(e){}
     setStatus(true);
-    await Promise.all([loadStudents(), loadSubjects()]);
-    try{ state.calendar=await GAS.call('getCalendar'); }catch(e){ state.calendar=[]; }
-    try{ state.locks=await GAS.call('getLocks'); }catch(e){ state.locks=[]; }
-    renderMapping();
     await seedDemoIfEmpty();
     renderHome();
   }catch(e){
-    setStatus(false);
-    toast(e.message,'error');
+    if(!hasSnap){ setStatus(false); toast(e.message,'error'); }
   }finally{ showLoading(false); }
 }
 function setStatus(ok){
