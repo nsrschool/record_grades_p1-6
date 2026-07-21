@@ -3468,11 +3468,23 @@ const TH_M_ABBR=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.'
 // โหลดรายการ (วัน|ห้อง|คาบ) ที่เช็คแล้วของเดือนนั้น (cache ต่อเดือน)
 async function attMonthKeys(month){
   state._attKeys=state._attKeys||{};
-  if(!state._attKeys[month]){
-    try{ state._attKeys[month]=new Set(await GAS.call('getAttMonthKeys',{month})); }
-    catch(e){ return new Set(); }
-  }
+  if(!state._attKeys[month]) state._attKeys[month]=new Set(await GAS.call('getAttMonthKeys',{month}));
   return state._attKeys[month];
+}
+// แบนเนอร์เตือนเมื่อโหลดสถานะไม่สำเร็จ (แทนการแสดงขาวหมดจนดูเหมือนข้อมูลหาย)
+function attCalErrBanner(err, kind){
+  const hint=String(err).includes('ไม่พบ action')
+    ? '<br><b>สาเหตุ: Code.gs บนเซิร์ฟเวอร์ยังเป็นเวอร์ชันเก่า</b> — ไปที่ Apps Script → Deploy → Manage deployments → ✏️ → New version → Deploy แล้วกดลองใหม่'
+    : '<br>ตรวจสอบอินเทอร์เน็ตแล้วกดลองใหม่';
+  return `<div class="bg-amber-50 border border-amber-200 text-amber-700 rounded-xl p-3 text-xs mb-2">
+    ⚠️ โหลดสถานะการเช็คชื่อไม่สำเร็จ — <b>ข้อมูลเช็คชื่อไม่ได้หายไป</b> เป็นเพียงแถบแสดงสถานะที่ดึงข้อมูลไม่ได้ (ดูข้อมูลจริงได้ที่ 📊 สรุป/รายงาน)${hint}
+    <button onclick="attCalRetry('${kind}')" class="btn bg-amber-500 text-white px-3 py-1 text-xs ml-2">🔄 ลองใหม่</button>
+    <div class="text-[10px] text-amber-500 mt-1">รายละเอียด: ${esc(String(err))}</div></div>`;
+}
+function attCalRetry(kind){
+  const month=kind==='flag'?state._flagCalMonth:state._periodCalMonth;
+  if(state._attKeys && month) delete state._attKeys[month];
+  kind==='flag'?renderFlagCal():renderPeriodCal();
 }
 function attKeyAdd(date, cls, period){
   const m=String(date).slice(0,7);
@@ -3519,8 +3531,9 @@ async function renderFlagCal(){
   const selDate=val('att_flag_date')||todayISO();
   const month=state._flagCalMonth||(state._flagCalMonth=selDate.slice(0,7));
   el.innerHTML='<div class="text-xs text-slate-400">⏳ กำลังโหลดสถานะการเช็คชื่อ…</div>';
-  const keys=await attMonthKeys(month);
-  el.innerHTML=calStripHTML({
+  let keys=new Set(), calErr='';
+  try{ keys=await attMonthKeys(month); }catch(e){ calErr=e.message||String(e); }
+  el.innerHTML=(calErr?attCalErrBanner(calErr,'flag'):'')+calStripHTML({
     month, selDate, onpick:'flagCalPick', onnav:'flagCalNav',
     status:(date)=>{
       if(!isSchoolDay(date)) return CAL_CLS.holiday;
@@ -3560,8 +3573,9 @@ async function renderPeriodCal(){
   const selDate=val('att_period_date')||todayISO();
   const month=state._periodCalMonth||(state._periodCalMonth=selDate.slice(0,7));
   el.innerHTML='<div class="text-xs text-slate-400">⏳ กำลังโหลดสถานะการเช็คชื่อ…</div>';
-  const keys=await attMonthKeys(month);
-  el.innerHTML=calStripHTML({
+  let keys=new Set(), calErr='';
+  try{ keys=await attMonthKeys(month); }catch(e){ calErr=e.message||String(e); }
+  el.innerHTML=(calErr?attCalErrBanner(calErr,'period'):'')+calStripHTML({
     month, selDate, onpick:'periodCalPick', onnav:'periodCalNav',
     status:(date)=>{
       if(!isSchoolDay(date)) return CAL_CLS.holiday;
