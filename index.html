@@ -1034,6 +1034,17 @@
         </div>
       </div>
       <div class="card p-4 mb-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <h3 class="font-bold text-teal-700">🩺 สุขภาพข้อมูล</h3>
+          <span id="hc_badge" class="badge bg-slate-100 text-slate-500">ยังไม่เคยตรวจ</span>
+          <div class="ml-auto flex gap-2">
+            <button onclick="runHealth()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 text-sm">🩺 ตรวจเดี๋ยวนี้</button>
+          </div>
+        </div>
+        <p class="text-[11px] text-slate-400 mt-1">ระบบตรวจอัตโนมัติทุกวันอาทิตย์ 20:00 (แถวกำพร้า/ข้อมูลซ้ำ/เช็คชื่อวันหยุด/ชื่อห้องเพี้ยน/สรุปเพี้ยน/สำรองเก่า) — การซ่อมทุกแบบ<b>ย้ายเข้าชีต "สำรอง_Orphan"</b> กู้กลับได้ ไม่ลบทิ้ง</p>
+        <div id="hc_area" class="text-sm text-slate-500 mt-2">กำลังโหลดผลตรวจล่าสุด…</div>
+      </div>
+      <div class="card p-4 mb-4">
         <h3 class="font-bold text-teal-700 mb-2">💾 สำรองข้อมูลอัตโนมัติลง Google Drive</h3>
         <div class="flex flex-wrap gap-3 items-end">
           <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="bk_enable" class="w-4 h-4"> เปิดสำรองอัตโนมัติทุกวัน</label>
@@ -1751,7 +1762,7 @@ function switchAsub(name){
   if(name==='riskform') initRiskForm();
   if(name==='perms') initPerms();
   if(name==='docs') initDocsAdmin();
-  if(name==='backup'){ initBackup(); loadEdgeStatus(); }
+  if(name==='backup'){ initBackup(); loadEdgeStatus(); loadHealth(); }
   if(name==='locks') renderLocksAdmin();
 }
 document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
@@ -2693,6 +2704,7 @@ function reportPageHTML(s, rs){
 async function loadStats(){
   try{ showLoading(true);
     const s=await GAS.call('getStats');
+    state._statsAt=s._processedAt||'';
     document.getElementById('statCards').innerHTML=[
       ['นักเรียน', s.studentCount, 'text-teal-700'],
       ['รายวิชา', s.subjectCount, 'text-blue-700'],
@@ -2706,7 +2718,8 @@ async function loadStats(){
       return `<div class="mb-2"><div class="flex justify-between text-xs mb-0.5"><span>${k}</span><span class="font-semibold">${v}</span></div>
         <div class="bg-slate-100 rounded-full h-3"><div class="h-3 rounded-full bg-gradient-to-r from-teal-400 to-teal-600" style="width:${w}%"></div></div></div>`;
     }).join('');
-    document.getElementById('statBars').innerHTML=html||'<p class="text-xs text-slate-400">ยังไม่มีข้อมูลเกรด</p>';
+    document.getElementById('statBars').innerHTML=(html||'<p class="text-xs text-slate-400">ยังไม่มีข้อมูลเกรด</p>')
+      +(state._statsAt?`<div class="text-[10px] text-slate-400 mt-2">ประมวลผลเมื่อ ${esc(state._statsAt)} น. (สดสุดทุก 5 นาที)</div>`:'');
     initGradeCharts();
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
@@ -2871,6 +2884,7 @@ async function loadScoreProgress(force){
 function renderScoreProgress(){
   const el=document.getElementById('sp_area');
   const d=state._spData; if(!d) return;
+  const procLine=d._processedAt?`<div class="text-[10px] text-slate-400 mt-2">ประมวลผลเมื่อ ${esc(d._processedAt)} น. (สดสุดทุก 5 นาที)</div>`:'';
   const q=(document.getElementById('sp_search').value||'').trim().toLowerCase();
   const f=document.getElementById('sp_filter').value;
   const rows=d.rows.filter(r=>{
@@ -2909,7 +2923,7 @@ function renderScoreProgress(){
       <th class="px-2 py-2">#</th><th class="px-2">รายวิชา</th><th class="px-2 text-center">ชั้น</th><th class="px-2">ครูผู้สอน</th>
       <th class="px-2 text-center">หน่วย</th><th class="px-2 text-center">นร.มีคะแนน</th><th class="px-2 text-center">ช่องคะแนน</th>
       <th class="px-2">ความคืบหน้า</th><th class="px-2 text-center">สถานะ</th><th class="px-2 text-center">ตัดเกรดแล้ว</th><th class="px-2 text-center">รายละเอียด</th>
-    </tr></thead><tbody>${body}</tbody></table>`;
+    </tr></thead><tbody>${body}</tbody></table>`+procLine;
 }
 // Modal เจาะลึกรายวิชา: ความคืบหน้ารายหน่วย + นร.ที่คะแนนยังไม่ครบ
 async function spDetail(subjectID){
@@ -3553,9 +3567,57 @@ async function publishEdgeNow(){
 }
 
 /* ============================================================
+   🩺 สุขภาพข้อมูล (แอดมิน)
+   ============================================================ */
+const HC_FIX_LABEL={dup_att:'🔧 ย้ายแถวเช็คชื่อซ้ำออก', dup_scores:'🔧 ย้ายแถวคะแนนซ้ำออก',
+  orphans:'🔧 ย้ายแถวกำพร้าออก', rebuild_summary:'🔄 สร้างสรุปเวลาเรียนใหม่'};
+function hcSevIcon(s){ return s==='red'?'🔴':(s==='yellow'?'🟡':'ℹ️'); }
+async function loadHealth(){
+  const area=document.getElementById('hc_area'); if(!area) return;
+  try{
+    const r=await GAS.call('getHealthStatus');
+    renderHealth(r);
+  }catch(e){ area.innerHTML='<span class="text-rose-500">'+esc(e.message)+'</span>'; }
+}
+function renderHealth(r){
+  const area=document.getElementById('hc_area'), badge=document.getElementById('hc_badge');
+  if(!r){ area.innerHTML='ยังไม่เคยตรวจ — กด "🩺 ตรวจเดี๋ยวนี้" หรือรอรอบอัตโนมัติวันอาทิตย์'; return; }
+  badge.className='badge '+(r.red?'bg-rose-100 text-rose-600':(r.yellow?'bg-amber-100 text-amber-700':'bg-emerald-100 text-emerald-700'));
+  badge.textContent=(r.red||r.yellow)?('พบ '+(r.red+r.yellow)+' ประเด็น'):'สุขภาพดี ✅';
+  const fixes=new Set();
+  area.innerHTML=`<div class="text-xs text-slate-400 mb-1.5">ตรวจล่าสุด: ${esc(r.at||'')}</div>`+
+    ((r.issues&&r.issues.length)?r.issues.map(i=>{
+      if(i.fix) fixes.add(i.fix);
+      return `<div class="border-b last:border-0 border-slate-100 py-1.5">
+        <div class="text-slate-700">${hcSevIcon(i.sev)} ${esc(i.title)} <span class="badge bg-slate-100 text-slate-500">${i.count}</span></div>
+        ${i.examples&&i.examples.length?`<div class="text-[11px] text-slate-400 ml-5">ตัวอย่าง: ${i.examples.map(esc).join(' • ')}</div>`:''}
+      </div>`;
+    }).join(''):'<div class="text-emerald-600">✅ ไม่พบปัญหาในการตรวจรอบล่าสุด</div>')+
+    (fixes.size?`<div class="flex flex-wrap gap-2 mt-2">${[...fixes].map(f=>
+      `<button onclick="runHealthFix('${f}')" class="btn bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 text-xs">${HC_FIX_LABEL[f]||f}</button>`).join('')}</div>`:'');
+}
+async function runHealth(){
+  try{ showLoading(true);
+    let r=await GAS.call('runHealthCheck',{});
+    let guard=0;
+    while(r && r.partial && guard<5){ toast('ข้อมูลเยอะ กำลังตรวจต่อ ('+r.done+'/'+r.total+')…'); r=await GAS.call('runHealthCheck',{resume:1}); guard++; }
+    renderHealth(r); toast('ตรวจเสร็จแล้ว');
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
+async function runHealthFix(type){
+  const label=HC_FIX_LABEL[type]||type;
+  if(!confirm(label+'\n\nแถวที่ถูกย้ายจะไปอยู่ชีต "สำรอง_Orphan" (กู้กลับได้) ดำเนินการ?')) return;
+  try{ showLoading(true);
+    const r=await GAS.call('runHealthFix',{type});
+    toast(type==='rebuild_summary'?('สร้างสรุปใหม่ '+r.rebuilt+' รายการ'):('ย้ายแล้ว '+r.moved+' แถว → สำรอง_Orphan'));
+    runHealth();
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
+
+/* ============================================================
    แถบปฏิทินสถานะการเช็คชื่อรายเดือน (เสาธง + รายคาบ)
    ============================================================ */
-const APP_BUILD='v22.07-E'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
+const APP_BUILD='v26.08-F'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
 const TH_M_ABBR=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 // โหลดรายการ (วัน|ห้อง|คาบ) ที่เช็คแล้วของเดือนนั้น (cache ต่อเดือน)
 async function attMonthKeys(month){
@@ -6112,8 +6174,10 @@ async function loadProfiles(force){
 }
 function pfPhotoHTML(p,size){
   size=size||'w-14 h-16';
+  // การ์ดรายชื่อใช้ภาพย่อ w200 โหลดไวบนมือถือ (หน้าต่างประวัติ/งานพิมพ์ยังใช้ภาพใหญ่เท่าเดิม)
+  const thumb=p.photoURL?String(p.photoURL).replace(/sz=w\d+/,'sz=w200'):'';
   return p.photoURL
-    ? `<img src="${esc(p.photoURL)}" class="${size} object-cover rounded-lg border border-slate-200 bg-slate-50">`
+    ? `<img src="${esc(thumb)}" loading="lazy" class="${size} object-cover rounded-lg border border-slate-200 bg-slate-50">`
     : `<div class="${size} rounded-lg border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center text-slate-300 text-xl">👤</div>`;
 }
 function renderProfiles(){
@@ -6480,7 +6544,7 @@ function renderSAR(){
         <span class="badge bg-amber-100 text-amber-700">เสี่ยง ${ca.sdqResults['เสี่ยง']||0}</span>
         <span class="badge bg-rose-100 text-rose-600">มีปัญหา ${ca.sdqResults['มีปัญหา']||0}</span>
       </div>
-      <p class="text-[10px] text-slate-400 mt-2">ประมวลผล ณ ${thLongDate(d.generatedAt)}</p>
+      <p class="text-[10px] text-slate-400 mt-2">ประมวลผล ณ ${thLongDate(d.generatedAt)}${d._processedAt?' เวลา '+esc(d._processedAt)+' น. (สดสุดทุก 5 นาที)':''}</p>
     </div>
   </div>`;
 }
