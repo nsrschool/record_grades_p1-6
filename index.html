@@ -10,6 +10,9 @@
      วาง URL ที่ได้จากการ Deploy Apps Script เป็น Web app (ลงท้าย /exec)
      ============================================================ */
   window.WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwAih8yJtqPp5j0kIv5oF6VU8jrqqFqJJq4iGdl5pMMaHYaLG37Ut3_y5OwDKB_OrexEg/exec';
+  /* ไฟล์ข้อมูล Edge (เผยแพร่จากเมนู NSR → 🚀 เผยแพร่ Edge)
+     ถ้า index.html กับ data.json อยู่ repo เดียวกันบน GitHub Pages ใช้ 'data.json' ได้เลย */
+  window.EDGE_DATA_URL = 'data.json';
 </script>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -307,8 +310,8 @@ window.addEventListener('DOMContentLoaded', function(){
       $('statusText').textContent='📦 แสดงข้อมูลล่าสุดในเครื่อง • กำลังซิงก์…';
     }
   }catch(e){}
-  // 2) ดึงของจริงเบื้องหลัง
-  loadData();
+  // 2) โหลดจาก Edge (data.json บน CDN — เร็วมาก) ก่อน แล้วค่อยซิงก์ GAS
+  loadEdgeData().finally(function(){ loadData(); });
   // เฟส 2: กลับมาที่แท็บ → ซิงก์อัตโนมัติถ้าข้อมูลเก่าเกิน 2 นาที
   document.addEventListener('visibilitychange', function(){
     if(document.visibilityState==='visible' && state.lastSync && (Date.now()-state.lastSync)>120000){
@@ -316,6 +319,24 @@ window.addEventListener('DOMContentLoaded', function(){
     }
   });
 });
+/* โหลดข้อมูลจากไฟล์ Edge (เผยแพร่ไว้บน GitHub Pages) — เร็วกว่า GAS มาก */
+function loadEdgeData(){
+  var url=(window.EDGE_DATA_URL||'').trim();
+  if(!url) return Promise.resolve();
+  return fetch(url+(url.indexOf('?')<0?'?t=':'&t=')+Date.now(), {cache:'no-store'})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(d){
+      if(!d || !d.settings) return;
+      // ใช้เฉพาะเมื่อยังไม่มีข้อมูลสดกว่า (GAS จะทับทีหลังเสมอ)
+      if(!state.lastSync){
+        state.settings=d.settings; state.students=d.students||[]; state.loaded=true;
+        applySettings(); fillClassFilter(); renderHome();
+        if(document.querySelector('.subbtn.tab-active')) renderStudents();
+        $('statusText').textContent='⚡ แสดงข้อมูลจาก Edge ('+(d.publishedAt||'')+') • กำลังซิงก์…';
+      }
+    })
+    .catch(function(){});
+}
 function loadData(){
   $('statusDot').className='w-2 h-2 rounded-full bg-amber-300 blink';
   if(!state.loaded) $('statusText').textContent='⏳ กำลังโหลดข้อมูลจาก Google Sheets…';
