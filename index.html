@@ -1991,6 +1991,11 @@ function applyBootData(data){
   state.subjects=data.subjects||[];
   state.calendar=data.calendar||[];
   state.locks=data.locks||[];
+  // รายชื่อครู: มาจาก getBootstrap/snapshot (Edge ไม่มี → คงชุดเดิม ไม่ล้างเป็น 0)
+  if(Array.isArray(data.teachers)){
+    state.teachers=data.teachers;
+    if(document.getElementById('teachersBody')) renderTeachers();
+  }
   applySettingsToUI();
   applyFavicon();
   renderStudents(); renderSubjects(); renderMapping();
