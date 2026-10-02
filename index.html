@@ -551,6 +551,7 @@
       </div>
       <p class="text-xs text-slate-400 mt-2">💡 พิมพ์ใบรายงานจบช่วงชั้นได้ที่ ป.3 และ ป.6 • แต่ละคน 1 หน้า A4 • แสดงทั้งหลักสูตร 2568 และ 2551</p>
     </div>
+    <div id="rp_cfgWarn" class="hidden card p-3 mb-4 bg-amber-50 border border-amber-200 text-amber-800 text-sm report-controls flex flex-wrap items-center gap-2"></div>
     <!-- ---------- ตั้งค่ารายวิชาในใบรายงาน (แอดมิน) ---------- -->
     <details id="rp_cfgCard" class="card p-4 mb-4 report-controls hidden">
       <summary class="font-bold text-teal-700 cursor-pointer">⚙️ ตั้งค่ารายวิชาหลักสูตร 2551 ที่แสดงในใบรายงาน (แอดมิน)</summary>
@@ -2997,19 +2998,36 @@ function fillReportClasses(){
 /* ---- ตั้งค่ารายวิชาใบรายงาน 2551 + การนับความสามารถ 2568 (ตรรกะเดียวกับ Code.gs) ---- */
 function gradeKeyJS(c){ c=String(c||''); const d=c.replace(/[^0-9]/g,'').charAt(0); const m=c.match(/[ก-ฮ]+/); return (m?m[0].charAt(0):'')+d; }
 function gradeLabelJS(k){ return k ? k.charAt(0)+'.'+k.slice(1) : ''; }
+// กลุ่มความสามารถ + ชื่อวิชาหลัก (ตรงกับ Code.gs: abilityGroups_ / CORE_*)
+const CORE_JS={
+  LANG:['ภาษาไทย','ภาษาอังกฤษ'], MATH:['คณิตศาสตร์'],
+  SCI:['วิทยาศาสตร์และสิ่งแวดล้อม','วิทยาศาสตร์และเทคโนโลยี','วิทยาศาสตร์','การใช้เทคโนโลยีอย่างฉลาดรู้','เทคโนโลยี','วิทยาการคำนวณ'],
+  SOC:['สังคมและความเป็นพลเมือง','สังคมศึกษา ศาสนาและวัฒนธรรม','สังคมศึกษาศาสนาและวัฒนธรรม','สังคมศึกษา'],
+  ECO:['เศรษฐกิจและการเงิน'], HEALTH:['สุขภาพกายและจิต','สุขศึกษาและพลศึกษา','สุขศึกษา','พลศึกษา'], ART:['ศิลปะและวัฒนธรรม','ศิลปะ']
+};
 function abilityGroupsJS(key){
   const lower = key.charAt(0)==='ป' && Number(key.slice(1))<=3;
+  const C=CORE_JS;
   return lower ? [
-    {name:'ความสามารถด้านการอ่าน',kw:['ไทย','อังกฤษ']},{name:'ความสามารถด้านการเขียน',kw:['ไทย','อังกฤษ']},
-    {name:'ความสามารถด้านการคิดคำนวณ',kw:['คณิต']},{name:'ความรู้ด้านวิทยาศาสตร์ สิ่งแวดล้อม และเทคโนโลยี',kw:['วิทย','เทคโน']},
-    {name:'ความรู้ด้านสังคมและความเป็นพลเมือง',kw:['สังคม']},{name:'ความรู้ด้านเศรษฐกิจและการเงิน',kw:['เศรษฐ','การเงิน']},
-    {name:'ความรู้ด้านสุขภาพกายและจิต',kw:['สุข','พลศึกษา','พละ']},{name:'ความรู้ด้านศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ',kw:['ศิลป','ดนตรี','นาฏ']}
+    {name:'ความสามารถด้านการอ่าน',kw:['ไทย','อังกฤษ'],core:C.LANG},{name:'ความสามารถด้านการเขียน',kw:['ไทย','อังกฤษ'],core:C.LANG},
+    {name:'ความสามารถด้านการคิดคำนวณ',kw:['คณิต'],core:C.MATH},{name:'ความรู้ด้านวิทยาศาสตร์ สิ่งแวดล้อม และเทคโนโลยี',kw:['วิทย','เทคโน'],core:C.SCI},
+    {name:'ความรู้ด้านสังคมและความเป็นพลเมือง',kw:['สังคม'],core:C.SOC},{name:'ความรู้ด้านเศรษฐกิจและการเงิน',kw:['เศรษฐ','การเงิน'],core:C.ECO},
+    {name:'ความรู้ด้านสุขภาพกายและจิต',kw:['สุข','พลศึกษา','พละ'],core:C.HEALTH},{name:'ความรู้ด้านศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ',kw:['ศิลป','ดนตรี','นาฏ'],core:C.ART}
   ] : [
-    {name:'ความสามารถด้านภาษาและการสื่อสาร',kw:['ไทย','อังกฤษ']},{name:'ความสามารถด้านคณิตศาสตร์',kw:['คณิต']},
-    {name:'ความสามารถด้านวิทยาศาสตร์ สิ่งแวดล้อม และเทคโนโลยี',kw:['วิทย','เทคโน']},{name:'ความสามารถด้านสังคมและความเป็นพลเมือง',kw:['สังคม']},
-    {name:'ความสามารถด้านเศรษฐกิจและการเงิน',kw:['เศรษฐ','การเงิน']},{name:'ความสามารถด้านสุขภาพกายและสุขภาวะจิต',kw:['สุข','พลศึกษา','พละ']},
-    {name:'ความสามารถด้านศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ',kw:['ศิลป','ดนตรี','นาฏ']}
+    {name:'ความสามารถด้านภาษาและการสื่อสาร',kw:['ไทย','อังกฤษ'],core:C.LANG},{name:'ความสามารถด้านคณิตศาสตร์',kw:['คณิต'],core:C.MATH},
+    {name:'ความสามารถด้านวิทยาศาสตร์ สิ่งแวดล้อม และเทคโนโลยี',kw:['วิทย','เทคโน'],core:C.SCI},{name:'ความสามารถด้านสังคมและความเป็นพลเมือง',kw:['สังคม'],core:C.SOC},
+    {name:'ความสามารถด้านเศรษฐกิจและการเงิน',kw:['เศรษฐ','การเงิน'],core:C.ECO},{name:'ความสามารถด้านสุขภาพกายและสุขภาวะจิต',kw:['สุข','พลศึกษา','พละ'],core:C.HEALTH},
+    {name:'ความสามารถด้านศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ',kw:['ศิลป','ดนตรี','นาฏ'],core:C.ART}
   ];
+}
+// ค่าเริ่มต้นเดียวกับ Code.gs: มีวิชาหลักชื่อตรง → ใช้เฉพาะวิชาหลัก / ไม่มี → คีย์เวิร์ด (ไม่นับเพิ่มเติม/ส่งเสริม…)
+function defaultAbilitySetJS(g,cands){
+  const core=new Set((g.core||[]).map(normSubjJS)), out=new Set();
+  cands.forEach(s=>{ if(core.has(normSubjJS(s.name))) out.add(String(s.ID)); });
+  if(out.size) return out;
+  cands.forEach(s=>{ const nm=String(s.name||''); if(s.type==='เพิ่มเติม'||/^\s*ส่งเสริม/.test(nm)) return;
+    if(g.kw.some(k=>nm.includes(k))) out.add(String(s.ID)); });
+  return out;
 }
 function report51CfgAll(){ try{ const o=JSON.parse((state.settings&&state.settings.report51Config)||'{}'); return (o&&typeof o==='object')?o:{}; }catch(e){ return {}; } }
 function reportCandidates(key){
@@ -3020,11 +3038,11 @@ function reportCandidates(key){
 function reportCfgDefault(key){
   const cands=reportCandidates(key), groups=abilityGroupsJS(key), seen={}, subjects=[], ability={};
   cands.forEach(s=>{
-    const nm=String(s.name||'').trim();
+    const nm=normSubjJS(s.name);
     if(s.type!=='เพิ่มเติม' && !seen[nm]){ seen[nm]=1; subjects.push(String(s.ID)); }
-    const g=groups.find(g=>g.kw.some(k=>nm.indexOf(k)>=0));
-    ability[s.ID]=(g && s.type!=='เพิ่มเติม' && subjects.includes(String(s.ID))) ? g.name : '';
   });
+  const sets=groups.map(g=>defaultAbilitySetJS(g,cands));
+  cands.forEach(s=>{ const i=sets.findIndex(st=>st.has(String(s.ID))); ability[s.ID]=i>=0?groups[i].name:''; });
   return {subjects, ability};
 }
 function fillReportCfgLevels(){
@@ -3090,11 +3108,30 @@ async function saveReportCfg(){
     if(settings && typeof settings==='object') state.settings=settings;
     else state.settings.report51Config=JSON.stringify(all);
     patchBootSnap('settings', state.settings);
-    state._rcDraft=null; renderReportCfg();
+    state._rcDraft=null; renderReportCfg(); updateReportCfgWarn();
     toast('บันทึกการตั้งค่า '+gradeLabelJS(d.key)+' แล้ว ('+d.subjects.length+' วิชา) — กดสร้างรายงานใหม่เพื่อดูผล');
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
+// แอดมิน: เตือนเมื่อชั้นที่เลือกยังไม่ได้บันทึกการตั้งค่ารายวิชา
+function updateReportCfgWarn(){
+  const box=document.getElementById('rp_cfgWarn'); if(!box) return;
+  const cls=(document.getElementById('rp_class')||{}).value||'';
+  const admin=state.currentUser && state.currentUser.role==='admin';
+  const key=gradeKeyJS(cls);
+  if(!admin || !cls || report51CfgAll()[key]){ box.classList.add('hidden'); return; }
+  box.innerHTML=`<span>⚠️ ชั้น <b>${esc(gradeLabelJS(key))}</b> ยังไม่ได้ตั้งค่ารายวิชาในใบรายงาน — ระบบใช้ค่าเริ่มต้น (แสดงทุกวิชา, ความสามารถ 2568 นับเฉพาะวิชาหลัก)</span>
+    <button onclick="openReportCfgFor('${esc(key)}')" class="btn bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 text-xs">⚙️ ตั้งค่าตอนนี้</button>`;
+  box.classList.remove('hidden');
+}
+function openReportCfgFor(key){
+  const card=document.getElementById('rp_cfgCard'), sel=document.getElementById('rc_level');
+  if(!card||!sel) return;
+  if([...sel.options].some(o=>o.value===key)) sel.value=key;
+  state._rcDraft=null; renderReportCfg(); card.open=true;
+  card.scrollIntoView({behavior:'smooth',block:'start'});
+}
 function fillReportStudents(){
+  updateReportCfgWarn();
   const cls=document.getElementById('rp_class').value;
   const sel=document.getElementById('rp_student');
   const list=state.students
