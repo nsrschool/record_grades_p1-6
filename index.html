@@ -546,10 +546,17 @@
           <label class="text-xs text-slate-500">นักเรียน (ไม่เลือก = ทั้งห้อง)</label>
           <select id="rp_student" class="inp mt-1"><option value="">ทั้งชั้น</option></select>
         </div>
+        <div>
+          <label class="text-xs text-slate-500">ชนิดใบรายงาน</label>
+          <select id="rp_term" class="inp mt-1" onchange="resetReportView()">
+            <option value="year">ปลายปี (รายปี)</option>
+            <option value="mid">กลางปี (ภาคเรียนที่ 1)</option>
+          </select>
+        </div>
         <button onclick="buildReports()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 text-sm">👁️ สร้างรายงาน</button>
         <button onclick="printOnly('tab-report')" class="btn bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 text-sm">🖨️ พิมพ์</button>
       </div>
-      <p class="text-xs text-slate-400 mt-2">💡 พิมพ์ใบรายงานจบช่วงชั้นได้ที่ ป.3 และ ป.6 • แต่ละคน 1 หน้า A4 • แสดงทั้งหลักสูตร 2568 และ 2551</p>
+      <p class="text-xs text-slate-400 mt-2">💡 พิมพ์ได้ทุกชั้น ป.1–ป.6 • แต่ละคน 1 หน้า A4 • แสดงทั้งหลักสูตร 2568 และ 2551 • <b>กลางปี</b> = คะแนนเต็ม 50 ทุกวิชา คิดสัดส่วนจากหน่วยที่ครูกรอกแล้ว</p>
     </div>
     <div id="rp_cfgWarn" class="hidden card p-3 mb-4 bg-amber-50 border border-amber-200 text-amber-800 text-sm report-controls flex flex-wrap items-center gap-2"></div>
     <!-- ---------- ตั้งค่ารายวิชาในใบรายงาน (แอดมิน) ---------- -->
@@ -814,10 +821,17 @@
             <label class="text-xs text-slate-500">หมายเหตุ (แสดงในใบรายงาน)</label>
             <textarea id="set_remark" class="inp mt-1" rows="2"></textarea>
           </div>
+          <div>
+            <label class="text-xs text-slate-500">วันสิ้นสุดภาคเรียนที่ 1 (นับเวลาเรียนในใบกลางปี)</label>
+            <input type="date" id="set_term1End" class="inp mt-1">
+            <p class="text-[11px] text-slate-400 mt-0.5">ว่าง = 31 ตุลาคม ของปีการศึกษา</p>
+          </div>
           <div class="sm:col-span-2 border-t pt-3 mt-1">
             <div class="font-semibold text-sm text-teal-700 mb-1">🔎 ตรวจผลการเรียนออนไลน์ (นักเรียน/ผู้ปกครอง)</div>
             <label class="flex items-center gap-2 text-sm py-1"><input type="checkbox" id="set_lookupEnabled" class="w-5 h-5"> เปิดให้ตรวจผลด้วย เลขประจำตัว + วันเกิด</label>
             <label class="flex items-center gap-2 text-sm py-1"><input type="checkbox" id="set_lookupLockedOnly" class="w-5 h-5"> แสดงเฉพาะห้องที่ล็อก (อนุมัติผล) แล้ว</label>
+            <div class="flex items-center gap-2 py-1 text-sm"><span>ใบที่ผู้ปกครองเห็น</span>
+              <select id="set_lookupTerm" class="inp w-auto text-sm"><option value="year">ปลายปี (รายปี)</option><option value="mid">กลางปี (ภาคเรียนที่ 1)</option></select></div>
             <div class="flex gap-2 mt-2">
               <input id="set_lookupLink" readonly class="inp text-xs flex-1 bg-slate-50">
               <button onclick="copyLookupLink()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 text-xs">📋 คัดลอก</button>
@@ -2062,7 +2076,14 @@ function applySettingsToUI(){
   document.getElementById('set_remark').value=normalizeRemark(s.remark);
   const le=document.getElementById('set_lookupEnabled'); if(le) le.checked=String(s.lookupEnabled)==='1';
   const ll=document.getElementById('set_lookupLockedOnly'); if(ll) ll.checked=String(s.lookupLockedOnly)==='1';
+  const lt=document.getElementById('set_lookupTerm'); if(lt) lt.value=(s.lookupTerm==='mid')?'mid':'year';
+  const t1=document.getElementById('set_term1End'); if(t1) t1.value=termDateInput(s.term1End);
   const lk=document.getElementById('set_lookupLink'); if(lk) lk.value=lookupLink();
+}
+// ค่าวันที่จากชีต (yyyy-MM-dd หรือ yyyy-MM-dd HH:mm:ss หรือ yyyyMMdd) → ค่าสำหรับ <input type=date>
+function termDateInput(v){
+  const d=String(v==null?'':v).replace(/[^0-9]/g,'').slice(0,8);
+  return (d.length===8 && Number(d.slice(0,4))>=1900) ? d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8) : '';
 }
 function lookupLink(){ return location.origin+location.pathname+'?check'; }
 function copyLookupLink(){
@@ -2079,6 +2100,8 @@ async function saveSettings(){
   s.reportDate=val('set_reportDate'); s.address=val('set_address'); s.academicHead=val('set_academicHead');
   s.lookupEnabled=document.getElementById('set_lookupEnabled').checked?'1':'';
   s.lookupLockedOnly=document.getElementById('set_lookupLockedOnly').checked?'1':'';
+  s.lookupTerm=document.getElementById('set_lookupTerm').value==='mid'?'mid':'year';
+  s.term1End=val('set_term1End');
   try{ showLoading(true); await GAS.call('saveSettings', s); applySettingsToUI(); patchBootSnap('settings', state.settings); toast('บันทึกข้อมูลสถานศึกษาแล้ว'); }
   catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
@@ -2971,7 +2994,7 @@ async function doLookup(){
   if(!d||!m||!y){ toast('กรุณาเลือกวัน เดือน ปีเกิดให้ครบ','error'); return; }
   try{ showLoading(true);
     const r=await GAS.call('studentLookup',{studentCode:code, birthDate:d+'/'+m+'/'+y});
-    document.getElementById('lk_result').innerHTML=reportPageHTML(r.settings, r, {preview:true});
+    document.getElementById('lk_result').innerHTML=reportPageHTML(r.settings, r, {preview:true, term:r.term});
     document.getElementById('lk_formCard').classList.add('hidden');
     document.getElementById('lk_resultWrap').classList.remove('hidden');
     document.getElementById('lookupScreen').scrollTop=0;
@@ -3140,25 +3163,39 @@ function fillReportStudents(){
   sel.innerHTML='<option value="">ทั้งห้อง</option>'+list.map(s=>`<option value="${s.ID}">เลขที่ ${esc(s.number)} ${esc(s.fullName)}</option>`).join('');
 }
 
+function resetReportView(){
+  const a=document.getElementById('reportArea'); if(a) a.innerHTML='';
+  const e=document.getElementById('rp_empty'); if(e) e.classList.remove('hidden');
+}
 async function buildReports(){
   const cls=document.getElementById('rp_class').value;
   if(!cls){ toast('กรุณาเลือกห้อง','error'); return; }
   try{ showLoading(true);
-    const data=await GAS.call('getReportBatch',{classLevel:cls});
+    const term=document.getElementById('rp_term').value==='mid'?'mid':'year';
+    const data=await GAS.call('getReportBatch',{classLevel:cls, term});
     let students=data.students||[];
     if(data.settings){ data.settings.reportDate=formatReportDate(data.settings.reportDate); data.settings.remark=normalizeRemark(data.settings.remark); }
     const sid=document.getElementById('rp_student').value;
     if(sid) students=students.filter(x=>String(x.student.ID)===String(sid));
     if(!students.length){ document.getElementById('reportArea').innerHTML=''; document.getElementById('rp_empty').classList.remove('hidden'); toast('ไม่พบนักเรียนในห้องนี้','error'); return; }
-    document.getElementById('reportArea').innerHTML=students.map(rs=>reportPageHTML(data.settings,rs)).join('');
+    document.getElementById('reportArea').innerHTML=students.map(rs=>reportPageHTML(data.settings,rs,{term:data.term||term})).join('');
     document.getElementById('rp_empty').classList.add('hidden');
     toast('สร้างรายงาน '+students.length+' ฉบับ — กดปุ่ม 🖨️ พิมพ์');
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 
+// ---------- ใบรายงานผลการเรียนรู้: ปลายปี (รายปี) / กลางปี (ภาคเรียนที่ 1) ตามฟอร์ม ป.1-3 / ป.4-6 ----------
+function gradeDigitOf(room){ return Number(String(room||'').replace(/[^0-9]/g,'').charAt(0))||0; }
+function abilityLabel(n){ return String(n||'').replace(/^(ความสามารถด้าน|ความรู้ด้าน)/,''); }
+function fmtScore(v){ if(v==null||v==='') return '-'; const n=Number(v); if(isNaN(n)) return '-'; return Number.isInteger(n)?String(n):n.toFixed(1); }
+const REPORT_NOTE_SEMI='ผลตามหลักสูตร พ.ศ. 2568 เป็นการรายงานความก้าวหน้าระหว่างปี มิใช่ผลตัดสินเมื่อจบชั้นปี';
+const REPORT_NOTE_TWO='การจัดวางสองหลักสูตรในแนวเดียวกัน มิใช่การเทียบผลแบบหนึ่งต่อหนึ่ง';
 function reportPageHTML(s, rs, opt){
   opt=opt||{};
+  const mid=opt.term==='mid';
   const st=rs.student;
+  const digit=gradeDigitOf(st.classLevel), isPrimary=String(st.classLevel||'').charAt(0)==='ป', lower=isPrimary && digit>=1 && digit<=3;
+  const roomTxt=isPrimary?('ประถมศึกษาปีที่ '+String(st.classLevel).replace(/^[^0-9]*/,'')):String(st.classLevel||'');
   const ab={}; (rs.abilities||[]).forEach(a=>ab[a.itemKey]=a.result||'');
   const g=v=>(v==null||v==='')?'-':v;
   const basic=rs.subjects.filter(x=>x.type!=='เพิ่มเติม');
@@ -3167,46 +3204,65 @@ function reportPageHTML(s, rs, opt){
   const dirSign = s.directorSignURL?`<img src="${esc(s.directorSignURL)}" style="height:32px;object-fit:contain;display:block;margin:0 auto -2px">`:'<div style="height:30px"></div>';
   const depSign = s.deputySignURL?`<img src="${esc(s.deputySignURL)}" style="height:32px;object-fit:contain;display:block;margin:0 auto -2px">`:'<div style="height:30px"></div>';
 
-  const leftRows=(rs.abilityGroups||[]).map(x=>`<tr><td>${esc(x.name)}</td><td style="text-align:center">${g(x.level)}</td></tr>`).join('');
-  // ตาราง 2551: รายวิชา | เวลา | ระดับผลการเรียน (ไม่แสดงรหัสวิชา)
-  const subjRow=x=>`<tr><td>${esc(x.name)}</td><td style="text-align:center">${esc(x.hours)}</td><td class="rp-grade">${g(x.grade51)}</td></tr>`;
-  const basicRows=basic.map(subjRow).join('');
-  const extraRows=extra.length?(`<tr><td colspan="3" style="background:#e2e8f0;font-weight:600;text-align:center">รายวิชาเพิ่มเติม</td></tr>`+extra.map(subjRow).join('')):'';
+  // ซ้าย: ความสามารถ 2568 (ป.1-3 แบ่ง 2 กลุ่มตามฟอร์ม)
+  let lastSec=0;
+  const leftRows=(rs.abilityGroups||[]).map(x=>{
+    let head='';
+    if(lower && x.section && x.section!==lastSec){
+      lastSec=x.section;
+      head=`<tr><td colspan="2" style="font-weight:700">${x.section===1?'ความสามารถพื้นฐานด้านการเรียนรู้':'ความสามารถในการประยุกต์ใช้ในชีวิตประจำวัน'}</td></tr>`;
+    }
+    return head+`<tr><td style="padding-left:12px">${esc(abilityLabel(x.name))}</td><td style="text-align:center">${g(x.level)}</td></tr>`;
+  }).join('');
 
-  // ครูประจำชั้น: คนที่ 1 แสดงเสมอ, คนที่ 2-3 แสดงเฉพาะเมื่อกรอกชื่อ
+  // ขวา: 2551 — กลางปี: รายวิชา | คะแนนเต็ม | คะแนนภาคเรียนที่ 1 / ปลายปี: รายวิชา | ระดับผลการเรียน
+  const cols=mid?3:2;
+  const subjRow=x=>mid
+    ?`<tr><td style="padding-left:12px">${esc(x.name)}</td><td style="text-align:center">${esc(x.fullScore||50)}</td><td class="rp-grade">${fmtScore(x.score50)}</td></tr>`
+    :`<tr><td style="padding-left:12px">${esc(x.name)}</td><td class="rp-grade">${g(x.grade51)}</td></tr>`;
+  const secRow=t=>`<tr><td colspan="${cols}" style="font-weight:700">${t}</td></tr>`;
+  const basicRows=secRow('รายวิชาพื้นฐาน')+basic.map(subjRow).join('');
+  const extraRows=extra.length?(secRow('รายวิชาเพิ่มเติม')+extra.map(subjRow).join('')):'';
+  const subjHead=mid
+    ?'<tr><th>รายวิชา</th><th style="width:50px">คะแนนเต็ม</th><th style="width:66px">คะแนน<br>ภาคเรียนที่ 1</th></tr>'
+    :'<tr><th>รายวิชา</th><th style="width:70px">ระดับ<br>ผลการเรียน</th></tr>';
+
   // ครูประจำชั้น: ดึงจากหน้าจัดการครู (ครูที่มีห้องประจำชั้นตรงกับห้องนักเรียน)
   let hts=(rs.homeroomTeachers||[]).slice(0,3);
   if(!hts.length) hts=[''];
   const teacherBlocks=hts.map(nm=>`<div style="flex:0 1 32%;padding:0 4px"><div style="height:26px"></div>(ลงชื่อ) ...........................<br>( ${esc(nm||'.............................')} )<br>ครูประจำชั้น</div>`).join('');
+  const formNote=(mid&&lower)?REPORT_NOTE_SEMI:REPORT_NOTE_TWO;
+  const titleTxt=mid?'แบบรายงานความก้าวหน้าผลการเรียนรู้ ภาคเรียนที่ 1':'แบบรายงานผลการเรียนรู้รายปี';
 
   return `<div class="report-page">
     <div style="display:flex;align-items:center;justify-content:center;gap:10px;text-align:center">
       ${logo}
       <div>
-        <div style="font-weight:700;font-size:15px">แบบรายงานผลการเรียนรู้ระดับประถมศึกษา &nbsp;&nbsp; ปีการศึกษา ${esc(s.academicYear)}</div>
+        <div style="font-weight:700;font-size:15px">${titleTxt}</div>
+        <div style="font-weight:700;font-size:14px">${isPrimary&&digit?'ชั้นประถมศึกษาปีที่ '+digit+' &nbsp;&nbsp; ':''}ปีการศึกษา ${esc(s.academicYear)}</div>
         <div style="font-size:13px">${esc(s.schoolName)} ${esc(s.area||'')}</div>
       </div>
     </div>
     <div style="text-align:right;font-size:12px;margin-top:6px">เลขประจำตัว <b>${esc(st.studentCode)}</b></div>
     <div style="display:flex;justify-content:space-between;font-size:13px;border-bottom:1px solid #000;padding-bottom:3px;margin-bottom:6px">
       <span>ชื่อ-สกุล <b>${esc(st.fullName)}</b></span>
-      <span>ชั้น <b>${esc(st.classLevel)}</b> &nbsp; เลขที่ <b>${esc(st.number)}</b></span>
+      <span>ชั้น <b>${esc(roomTxt)}</b> &nbsp; เลขที่ <b>${esc(st.number)}</b></span>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1.18fr;gap:6px;align-items:start">
       <table class="rp-tbl">
         <thead>
-          <tr><th class="rp-head-68" colspan="2">หลักสูตรการศึกษาประถมศึกษา พุทธศักราช 2568</th></tr>
-          <tr><th>ความสามารถผู้เรียน</th><th style="width:80px">ระดับความสามารถ</th></tr>
+          <tr><th class="rp-head-68" colspan="2">หลักสูตรการศึกษาประถมศึกษา${lower?'ตอนต้น (ชั้น ป.1-3)':'ตอนปลาย (ชั้น ป.4-6)'}<br>พุทธศักราช 2568</th></tr>
+          <tr><th>ความสามารถผู้เรียน</th><th style="width:80px">${mid?'ระดับ<br>ความก้าวหน้า':'ระดับ<br>ความสามารถ'}</th></tr>
         </thead>
         <tbody>${leftRows||'<tr><td colspan="2" style="text-align:center;color:#888">ยังไม่มีข้อมูล</td></tr>'}</tbody>
       </table>
       <table class="rp-tbl">
         <thead>
-          <tr><th class="rp-head-51" colspan="3">หลักสูตรแกนกลางการศึกษาขั้นพื้นฐาน พุทธศักราช 2551</th></tr>
-          <tr><th>รายวิชาพื้นฐาน</th><th style="width:48px">เวลา (ชม.)</th><th style="width:56px">ระดับผลการเรียน</th></tr>
+          <tr><th class="rp-head-51" colspan="${cols}">หลักสูตรแกนกลางการศึกษาขั้นพื้นฐาน<br>พุทธศักราช 2551</th></tr>
+          ${subjHead}
         </thead>
-        <tbody>${basicRows||'<tr><td colspan="3" style="text-align:center;color:#888">ยังไม่มีข้อมูล</td></tr>'}${extraRows}</tbody>
+        <tbody>${(basic.length||extra.length)?basicRows+extraRows:`<tr><td colspan="${cols}" style="text-align:center;color:#888">ยังไม่มีข้อมูล</td></tr>`}</tbody>
       </table>
     </div>
 
@@ -3223,11 +3279,11 @@ function reportPageHTML(s, rs, opt){
       </div>
     </div>
 
-    <div style="font-size:11px;color:#444;margin-top:8px">หมายเหตุ : ${esc(s.remark||'')}</div>
+    <div style="font-size:11px;color:#444;margin-top:8px">หมายเหตุ : ${esc(formNote)}${s.remark?`<div style="margin-top:1px">${esc(s.remark)}</div>`:''}</div>
 
     ${(()=>{ const a=rs.attendance||{}; if(!a.schoolDays) return ''; return `
     <div style="margin-top:8px;font-size:12px">
-      <div style="font-weight:600;margin-bottom:3px">สรุปเวลาเรียน</div>
+      <div style="font-weight:600;margin-bottom:3px">สรุปเวลาเรียน${mid?' ภาคเรียนที่ 1':''}</div>
       <table style="border-collapse:collapse;font-size:12px;width:100%">
         <tr style="background:#f1f5f9">
           <th style="border:1px solid #000;padding:2px 6px">วันเปิดเรียน</th>
