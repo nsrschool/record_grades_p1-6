@@ -3058,6 +3058,10 @@ function reportCandidates(key){
     .sort((a,b)=>Number(a.sortOrder)-Number(b.sortOrder));
 }
 // ค่าแนะนำ: แสดงวิชาพื้นฐานทุกวิชา (ชื่อซ้ำแสดงครั้งเดียว) + ความสามารถเดาจากคีย์เวิร์ด ยกเว้นวิชาเพิ่มเติม
+// ค่าด้านความสามารถของวิชา: รายการ (ใหม่) หรือข้อความเดียว (ที่เคยบันทึกไว้) → รายการเสมอ
+function abListJS(v){ return Array.isArray(v)?v.map(String).filter(Boolean):((v===undefined||v===null||v==='')?[]:[String(v)]); }
+function abSummaryJS(list){ return list.length?list.map(abilityLabel).join(' + '):'— ไม่นับ —'; }
+const AB_READ='ความสามารถด้านการอ่าน', AB_WRITE='ความสามารถด้านการเขียน';
 function reportCfgDefault(key){
   const cands=reportCandidates(key), groups=abilityGroupsJS(key), seen={}, subjects=[], ability={};
   cands.forEach(s=>{
@@ -3065,7 +3069,7 @@ function reportCfgDefault(key){
     if(s.type!=='เพิ่มเติม' && !seen[nm]){ seen[nm]=1; subjects.push(String(s.ID)); }
   });
   const sets=groups.map(g=>defaultAbilitySetJS(g,cands));
-  cands.forEach(s=>{ const i=sets.findIndex(st=>st.has(String(s.ID))); ability[s.ID]=i>=0?groups[i].name:''; });
+  cands.forEach(s=>{ ability[s.ID]=groups.filter((g,i)=>sets[i].has(String(s.ID))).map(g=>g.name); });
   return {subjects, ability};
 }
 function fillReportCfgLevels(){
@@ -3084,18 +3088,29 @@ function renderReportCfg(){
   const saved=report51CfgAll()[key];
   if(!state._rcDraft || state._rcDraft.key!==key){
     const base=saved ? {subjects:(saved.subjects||[]).map(String), ability:Object.assign({},saved.ability||{})} : reportCfgDefault(key);
-    const def=reportCfgDefault(key);
-    reportCandidates(key).forEach(s=>{ if(!(s.ID in base.ability)) base.ability[s.ID]=def.ability[s.ID]||''; }); // วิชาที่เพิ่มใหม่ภายหลัง
-    state._rcDraft={key, subjects:base.subjects, ability:base.ability};
+    const def=reportCfgDefault(key), upgraded=[];
+    Object.keys(base.ability).forEach(k=>{ base.ability[k]=abListJS(base.ability[k]); });
+    reportCandidates(key).forEach(s=>{ if(!(s.ID in base.ability)) base.ability[s.ID]=(def.ability[s.ID]||[]).slice(); }); // วิชาที่เพิ่มใหม่ภายหลัง
+    // ป.1-3 ที่เคยบันทึกไว้ว่าภาษานับด้านเดียว (การอ่านหรือการเขียน) → ติ๊กอีกด้านให้ในฉบับร่าง (ใช้จริงเมื่อกดบันทึก)
+    if(saved && key.charAt(0)==='ป' && Number(key.slice(1))<=3){
+      const lang=new Set(CORE_JS.LANG.map(normSubjJS));
+      reportCandidates(key).forEach(s=>{
+        if(!lang.has(normSubjJS(s.name))) return;
+        const a=base.ability[s.ID]||[], r=a.includes(AB_READ), w=a.includes(AB_WRITE);
+        if(r!==w){ base.ability[s.ID]=a.concat(r?[AB_WRITE]:[AB_READ]); if(!upgraded.includes(s.name)) upgraded.push(s.name); }
+      });
+    }
+    state._rcDraft={key, subjects:base.subjects, ability:base.ability, upgraded};
   }
   const d=state._rcDraft, cands=reportCandidates(key), byId={}; cands.forEach(s=>byId[String(s.ID)]=s);
   d.subjects=d.subjects.filter(id=>byId[id]);
   const order=d.subjects.map(id=>byId[id]).concat(cands.filter(s=>!d.subjects.includes(String(s.ID))));
   const groups=abilityGroupsJS(key);
   const nmCount={}; order.forEach(s=>{ const n=String(s.name).trim(); nmCount[n]=(nmCount[n]||0)+1; });
-  document.getElementById('rc_status').innerHTML = saved
+  document.getElementById('rc_status').innerHTML = (saved
     ? '<span class="text-teal-700">✔ ชั้นนี้ตั้งค่าแล้ว — ใบรายงานใช้ตามนี้</span>'
-    : '<span class="text-amber-600">⚠ ชั้นนี้ยังไม่ได้บันทึก — ใบรายงานยังแสดงทุกวิชาแบบเดิม (ด้านล่างคือค่าแนะนำ ตรวจแล้วกดบันทึก)</span>';
+    : '<span class="text-amber-600">⚠ ชั้นนี้ยังไม่ได้บันทึก — ใบรายงานยังแสดงทุกวิชาแบบเดิม (ด้านล่างคือค่าแนะนำ ตรวจแล้วกดบันทึก)</span>')
+    + ((d.upgraded&&d.upgraded.length)?`<div class="text-amber-600 mt-1">⚠ ฉบับร่าง: ${d.upgraded.map(esc).join(', ')} ที่เคยบันทึกไว้นับด้านเดียว ถูกติ๊กให้นับทั้ง <b>การอ่านและการเขียน</b> แล้ว — กด 💾 บันทึกเพื่อใช้จริง</div>`:'');
   body.innerHTML=order.map(s=>{
     const id=String(s.ID), on=d.subjects.includes(id), pos=d.subjects.indexOf(id);
     const dup=nmCount[String(s.name).trim()]>1;
@@ -3105,10 +3120,18 @@ function renderReportCfg(){
       <td class="px-1">${esc(s.name)} ${dup?'<span class="badge bg-rose-100 text-rose-600">ชื่อซ้ำ</span>':''} ${s.classLevel?'':'<span class="text-[11px] text-slate-400">(ใช้ทุกชั้น)</span>'}</td>
       <td class="px-1">${esc(s.hours)}</td>
       <td class="px-1 text-xs">${esc(s.type)}</td>
-      <td class="px-1"><select class="inp text-xs" onchange="state._rcDraft.ability['${esc(id)}']=this.value">
-        <option value="">— ไม่นับ —</option>${groups.map(g=>`<option ${d.ability[id]===g.name?'selected':''}>${esc(g.name)}</option>`).join('')}
-      </select></td></tr>`;
+      <td class="px-1"><details>
+        <summary id="rc_sum_${esc(id)}" class="inp text-xs cursor-pointer">${esc(abSummaryJS(abListJS(d.ability[id])))}</summary>
+        <div class="mt-1 p-2 border rounded-lg bg-white shadow-sm">${groups.map(g=>`<label class="flex items-start gap-2 text-xs py-1"><input type="checkbox" class="w-4 h-4 mt-0.5" ${abListJS(d.ability[id]).includes(g.name)?'checked':''} onchange="toggleAbility('${esc(id)}','${esc(g.name)}',this.checked)"><span>${esc(abilityLabel(g.name))}</span></label>`).join('')}</div>
+      </details></td></tr>`;
   }).join('') || '<tr><td colspan="6" class="py-4 text-center text-slate-400">ไม่มีรายวิชาของชั้นนี้</td></tr>';
+}
+// ติ๊ก/ไม่ติ๊กด้านความสามารถของวิชา (1 วิชานับได้หลายด้าน) — ไม่วาดตารางใหม่ ช่องที่เปิดอยู่จะไม่ปิด
+function toggleAbility(id,name,on){
+  const d=state._rcDraft; let a=abListJS(d.ability[id]).filter(x=>x!==name); if(on) a.push(name);
+  const order=abilityGroupsJS(d.key).map(g=>g.name); a.sort((x,y)=>order.indexOf(x)-order.indexOf(y));
+  d.ability[id]=a;
+  const el=document.getElementById('rc_sum_'+id); if(el) el.textContent=abSummaryJS(a);
 }
 function toggleReportCfg(id,on){
   const d=state._rcDraft; d.subjects=d.subjects.filter(x=>x!==id); if(on) d.subjects.push(id); renderReportCfg();
@@ -3119,13 +3142,13 @@ function moveReportCfg(id,dir){
 }
 function resetReportCfg(){
   const key=document.getElementById('rc_level').value; if(!key) return;
-  const def=reportCfgDefault(key); state._rcDraft={key, subjects:def.subjects, ability:def.ability}; renderReportCfg();
+  const def=reportCfgDefault(key); state._rcDraft={key, subjects:def.subjects, ability:def.ability, upgraded:[]}; renderReportCfg();
   toast('คืนค่าแนะนำแล้ว — กดบันทึกเพื่อใช้งาน');
 }
 async function saveReportCfg(){
   const d=state._rcDraft; if(!d||!d.key) return;
   if(!d.subjects.length){ toast('กรุณาเลือกอย่างน้อย 1 วิชา','error'); return; }
-  const all=report51CfgAll(); all[d.key]={subjects:d.subjects.slice(), ability:Object.assign({},d.ability)};
+  const all=report51CfgAll(); all[d.key]={subjects:d.subjects.slice(), ability:JSON.parse(JSON.stringify(d.ability))};
   try{ showLoading(true);
     const settings=await GAS.call('saveReport51Config',{json:JSON.stringify(all)});
     if(settings && typeof settings==='object') state.settings=settings;
