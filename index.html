@@ -570,16 +570,21 @@
         <button onclick="resetReportCfg()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 text-xs">↺ คืนค่าแนะนำ</button>
         <button onclick="saveReportCfg()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 text-sm">💾 บันทึก</button>
       </div>
-      <p class="text-xs text-slate-400 mt-2">ติ๊ก ✔ = แสดงในตาราง 2551 • ▲▼ = เรียงลำดับ • ช่อง "นับเข้าความสามารถ 2568" = วิชานี้นำร้อยละไปเฉลี่ยในด้านใด (เลือก “ไม่นับ” ได้ เช่น คณิตคิดสร้างสรรค์)</p>
+      <p class="text-xs text-slate-400 mt-2">ติ๊ก ✔ = แสดงในตาราง 2551 • ▲▼ = เรียงลำดับ • ช่อง "นับเข้าความสามารถ 2568" = วิชานี้นำร้อยละไปเฉลี่ยในด้านใด (เลือก “ไม่นับ” ได้ เช่น คณิตคิดสร้างสรรค์) • <b>น้ำหนัก</b> = สัดส่วนของวิชานี้เมื่อเฉลี่ยในแต่ละด้าน (เว้นว่าง = 1 เท่ากันทุกวิชา, 0 = ไม่นำมาคิด, ตัวอย่าง 2 = มีน้ำหนักเป็น 2 เท่าของวิชาที่ตั้ง 1)</p>
       <div id="rc_status" class="text-xs mt-1"></div>
       <div class="overflow-x-auto mt-2">
         <table class="w-full text-sm">
           <thead><tr class="text-left text-slate-500 border-b">
             <th class="py-2 px-1 w-10">แสดง</th><th class="px-1 w-16">ลำดับ</th><th class="px-1">รายวิชา</th>
             <th class="px-1">ชม.</th><th class="px-1">ประเภท</th><th class="px-1 min-w-[200px]">นับเข้าความสามารถ 2568</th>
+            <th class="px-1 w-24" title="สัดส่วนน้ำหนักของวิชาในการเฉลี่ยความสามารถ 2568">น้ำหนัก</th>
           </tr></thead>
           <tbody id="rc_body"></tbody>
         </table>
+      </div>
+      <div class="mt-3 p-3 rounded-lg bg-slate-50 border text-xs text-slate-600">
+        <div class="font-semibold text-teal-700 mb-1">📐 สัดส่วนที่ใช้คิดความสามารถ 2568 ของแต่ละด้าน</div>
+        <div id="rc_summary"></div>
       </div>
     </details>
 
@@ -3084,7 +3089,7 @@ function fillReportCfgLevels(){
 }
 function renderReportCfg(){
   const key=document.getElementById('rc_level').value, body=document.getElementById('rc_body');
-  if(!key){ body.innerHTML='<tr><td colspan="6" class="py-4 text-center text-slate-400">ยังไม่มีรายวิชา</td></tr>'; return; }
+  if(!key){ body.innerHTML='<tr><td colspan="7" class="py-4 text-center text-slate-400">ยังไม่มีรายวิชา</td></tr>'; document.getElementById('rc_summary').innerHTML=''; return; }
   const saved=report51CfgAll()[key];
   if(!state._rcDraft || state._rcDraft.key!==key){
     const base=saved ? {subjects:(saved.subjects||[]).map(String), ability:Object.assign({},saved.ability||{})} : reportCfgDefault(key);
@@ -3100,7 +3105,8 @@ function renderReportCfg(){
         if(r!==w){ base.ability[s.ID]=a.concat(r?[AB_WRITE]:[AB_READ]); if(!upgraded.includes(s.name)) upgraded.push(s.name); }
       });
     }
-    state._rcDraft={key, subjects:base.subjects, ability:base.ability, upgraded};
+    const wt={}; Object.keys(saved&&saved.weight||{}).forEach(k=>{ wt[k]=saved.weight[k]; });   // ไม่มีค่า = 1
+    state._rcDraft={key, subjects:base.subjects, ability:base.ability, weight:wt, upgraded};
   }
   const d=state._rcDraft, cands=reportCandidates(key), byId={}; cands.forEach(s=>byId[String(s.ID)]=s);
   d.subjects=d.subjects.filter(id=>byId[id]);
@@ -3123,8 +3129,30 @@ function renderReportCfg(){
       <td class="px-1"><details>
         <summary id="rc_sum_${esc(id)}" class="inp text-xs cursor-pointer">${esc(abSummaryJS(abListJS(d.ability[id])))}</summary>
         <div class="mt-1 p-2 border rounded-lg bg-white shadow-sm">${groups.map(g=>`<label class="flex items-start gap-2 text-xs py-1"><input type="checkbox" class="w-4 h-4 mt-0.5" ${abListJS(d.ability[id]).includes(g.name)?'checked':''} onchange="toggleAbility('${esc(id)}','${esc(g.name)}',this.checked)"><span>${esc(abilityLabel(g.name))}</span></label>`).join('')}</div>
-      </details></td></tr>`;
-  }).join('') || '<tr><td colspan="6" class="py-4 text-center text-slate-400">ไม่มีรายวิชาของชั้นนี้</td></tr>';
+      </details></td>
+      <td class="px-1"><input type="number" min="0" step="0.5" inputmode="decimal" placeholder="1" class="inp text-xs w-20" value="${d.weight&&d.weight[id]!==undefined&&d.weight[id]!==''?esc(d.weight[id]):''}" oninput="setSubjWeight('${esc(id)}',this.value)"></td></tr>`;
+  }).join('') || '<tr><td colspan="7" class="py-4 text-center text-slate-400">ไม่มีรายวิชาของชั้นนี้</td></tr>';
+  renderAbilitySummary();
+}
+// น้ำหนักของวิชา (ว่าง/ไม่ถูกต้อง = 1) — ตรงกับ subjectWeight_ ใน Code.gs
+function weightOfJS(d,id){ const v=d.weight&&d.weight[id]; if(v===undefined||v===null||v==='') return 1; const n=Number(v); return (isFinite(n)&&n>=0)?n:1; }
+function setSubjWeight(id,v){
+  const d=state._rcDraft; if(!d) return;
+  if(v===''||v==null) delete d.weight[id]; else d.weight[id]=v;
+  renderAbilitySummary();
+}
+// สรุปสัดส่วนที่ใช้คิดจริงของแต่ละด้าน เช่น "การอ่าน: ภาษาไทย 70% • ภาษาอังกฤษ 30%"
+function renderAbilitySummary(){
+  const el=document.getElementById('rc_summary'), d=state._rcDraft; if(!el||!d) return;
+  const cands=reportCandidates(d.key), groups=abilityGroupsJS(d.key);
+  el.innerHTML=groups.map(g=>{
+    const subs=cands.filter(s=>abListJS(d.ability[s.ID]).includes(g.name)).map(s=>({name:String(s.name).trim(), w:weightOfJS(d,String(s.ID))}));
+    const used=subs.filter(x=>x.w>0), tot=used.reduce((a,x)=>a+x.w,0);
+    const txt=!subs.length?'<span class="text-slate-400">ไม่มีวิชา</span>'
+      :(!used.length?'<span class="text-amber-600">ทุกวิชามีน้ำหนัก 0 — ด้านนี้จะไม่มีระดับ</span>'
+      :used.map(x=>`${esc(x.name)} <b>${Math.round(x.w/tot*1000)/10}%</b>`).join(' • ')+(subs.length>used.length?` <span class="text-slate-400">(ไม่คิด: ${subs.filter(x=>!(x.w>0)).map(x=>esc(x.name)).join(', ')})</span>`:''));
+    return `<div class="py-0.5"><span class="font-medium">${esc(abilityLabel(g.name))}:</span> ${txt}</div>`;
+  }).join('');
 }
 // ติ๊ก/ไม่ติ๊กด้านความสามารถของวิชา (1 วิชานับได้หลายด้าน) — ไม่วาดตารางใหม่ ช่องที่เปิดอยู่จะไม่ปิด
 function toggleAbility(id,name,on){
@@ -3132,6 +3160,7 @@ function toggleAbility(id,name,on){
   const order=abilityGroupsJS(d.key).map(g=>g.name); a.sort((x,y)=>order.indexOf(x)-order.indexOf(y));
   d.ability[id]=a;
   const el=document.getElementById('rc_sum_'+id); if(el) el.textContent=abSummaryJS(a);
+  renderAbilitySummary();
 }
 function toggleReportCfg(id,on){
   const d=state._rcDraft; d.subjects=d.subjects.filter(x=>x!==id); if(on) d.subjects.push(id); renderReportCfg();
@@ -3142,13 +3171,21 @@ function moveReportCfg(id,dir){
 }
 function resetReportCfg(){
   const key=document.getElementById('rc_level').value; if(!key) return;
-  const def=reportCfgDefault(key); state._rcDraft={key, subjects:def.subjects, ability:def.ability, upgraded:[]}; renderReportCfg();
+  const def=reportCfgDefault(key); state._rcDraft={key, subjects:def.subjects, ability:def.ability, weight:{}, upgraded:[]}; renderReportCfg();
   toast('คืนค่าแนะนำแล้ว — กดบันทึกเพื่อใช้งาน');
 }
 async function saveReportCfg(){
   const d=state._rcDraft; if(!d||!d.key) return;
   if(!d.subjects.length){ toast('กรุณาเลือกอย่างน้อย 1 วิชา','error'); return; }
-  const all=report51CfgAll(); all[d.key]={subjects:d.subjects.slice(), ability:JSON.parse(JSON.stringify(d.ability))};
+  const weight={};
+  for(const s of reportCandidates(d.key)){
+    const id=String(s.ID), v=d.weight&&d.weight[id];
+    if(v===undefined||v===null||v==='') continue;
+    const n=Number(v);
+    if(!isFinite(n)||n<0){ toast('น้ำหนักของ “'+s.name+'” ต้องเป็นตัวเลข 0 ขึ้นไป','error'); return; }
+    weight[id]=n;
+  }
+  const all=report51CfgAll(); all[d.key]={subjects:d.subjects.slice(), ability:JSON.parse(JSON.stringify(d.ability)), weight};
   try{ showLoading(true);
     const settings=await GAS.call('saveReport51Config',{json:JSON.stringify(all)});
     if(settings && typeof settings==='object') state.settings=settings;
@@ -3210,6 +3247,7 @@ async function buildReports(){
 // ---------- ใบรายงานผลการเรียนรู้: ปลายปี (รายปี) / กลางปี (ภาคเรียนที่ 1) ตามฟอร์ม ป.1-3 / ป.4-6 ----------
 function gradeDigitOf(room){ return Number(String(room||'').replace(/[^0-9]/g,'').charAt(0))||0; }
 function abilityLabel(n){ return String(n||'').replace(/^(ความสามารถด้าน|ความรู้ด้าน)/,''); }
+function fmtPct(v){ if(v==null||v==='') return '-'; const n=Number(v); return isNaN(n)?'-':String(Math.round(n)); }
 function fmtScore(v){ if(v==null||v==='') return '-'; const n=Number(v); if(isNaN(n)) return '-'; return Number.isInteger(n)?String(n):n.toFixed(1); }
 const REPORT_NOTE_SEMI='ผลตามหลักสูตร พ.ศ. 2568 เป็นการรายงานความก้าวหน้าระหว่างปี มิใช่ผลตัดสินเมื่อจบชั้นปี';
 const REPORT_NOTE_TWO='การจัดวางสองหลักสูตรในแนวเดียวกัน มิใช่การเทียบผลแบบหนึ่งต่อหนึ่ง';
@@ -3239,15 +3277,15 @@ function reportPageHTML(s, rs, opt){
   }).join('');
 
   // ขวา: 2551 — กลางปี: รายวิชา | คะแนนเต็ม | คะแนนภาคเรียนที่ 1 / ปลายปี: รายวิชา | ระดับผลการเรียน
-  const cols=mid?3:2;
+  const cols=mid?4:2;
   const subjRow=x=>mid
-    ?`<tr><td style="padding-left:12px">${esc(x.name)}</td><td style="text-align:center">${esc(x.fullScore||50)}</td><td class="rp-grade">${fmtScore(x.score50)}</td></tr>`
+    ?`<tr><td style="padding-left:12px">${esc(x.name)}</td><td style="text-align:center">${esc(x.fullScore||50)}</td><td class="rp-grade">${fmtScore(x.score50)}</td><td class="rp-grade">${fmtPct(x.percent)}</td></tr>`
     :`<tr><td style="padding-left:12px">${esc(x.name)}</td><td class="rp-grade">${g(x.grade51)}</td></tr>`;
   const secRow=t=>`<tr><td colspan="${cols}" style="font-weight:700">${t}</td></tr>`;
   const basicRows=secRow('รายวิชาพื้นฐาน')+basic.map(subjRow).join('');
   const extraRows=extra.length?(secRow('รายวิชาเพิ่มเติม')+extra.map(subjRow).join('')):'';
   const subjHead=mid
-    ?'<tr><th>รายวิชา</th><th style="width:50px">คะแนนเต็ม</th><th style="width:66px">คะแนน<br>ภาคเรียนที่ 1</th></tr>'
+    ?'<tr><th>รายวิชา</th><th style="width:46px">คะแนนเต็ม</th><th style="width:62px">คะแนน<br>ภาคเรียนที่ 1</th><th style="width:44px">ร้อยละ</th></tr>'
     :'<tr><th>รายวิชา</th><th style="width:70px">ระดับ<br>ผลการเรียน</th></tr>';
 
   // ครูประจำชั้น: ดึงจากหน้าจัดการครู (ครูที่มีห้องประจำชั้นตรงกับห้องนักเรียน)
