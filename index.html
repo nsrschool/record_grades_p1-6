@@ -52,12 +52,10 @@
   .inp:focus{border-color:var(--kps-primary);box-shadow:0 0 0 3px rgba(13,148,136,.15)}
   .badge{font-size:.72rem;padding:.12rem .5rem;border-radius:99px;font-weight:600;}
   .nav-cat{font-size:11px;font-weight:700;color:#94a3b8;padding-left:.5rem;border-left:2px solid #e2e8f0;align-self:center;white-space:nowrap;}
-  .grpmenu{position:absolute;left:0;top:calc(100% + 6px);z-index:60;background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 12px 32px rgba(15,118,110,.14);padding:6px;min-width:248px;max-height:70vh;overflow:auto;}
-  .navgroup:last-of-type .grpmenu{left:auto;right:0;}
-  .grpmenu .navitem{background:#fff;border:0;border-radius:10px;}
-  .grpmenu .navitem:hover{background:#f0fdfa;}
-  .grpbtn.tab-active{background:#0d9488;color:#fff;border-color:#0d9488;}
-  .grpcur{font-size:10px;opacity:.85;font-weight:400;max-width:130px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle;white-space:nowrap;}
+  .nav-scroll::-webkit-scrollbar{height:6px}
+  .nav-scroll::-webkit-scrollbar-thumb{background:#99f6e4;border-radius:99px}
+  .subnav .navbtn{padding:.4rem .8rem}
+  .catbtn.tab-active{background:#0d9488;color:#fff;border-color:#0d9488;}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
   .cal-cell{min-height:84px;border:1px solid #e2e8f0;border-radius:10px;padding:5px 6px;background:#fff;display:flex;flex-direction:column;gap:3px;transition:.15s;}
   .cal-cell.dim{background:#f8fafc;color:#cbd5e1;}
@@ -189,47 +187,52 @@
   </div>
 </div>
 
-<!-- ====================== NAV TABS (จัดหมวด) ====================== -->
+<!-- ====================== NAV TABS (2 ชั้น: หมวด → เมนูย่อย) ====================== -->
 <nav class="max-w-6xl mx-auto px-3 mt-4">
-  <div class="flex flex-wrap items-center gap-2">
-    <button data-tab="home" data-role="all" class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">🏠 หน้าแรก</button>
-    <div class="navgroup relative" id="grp-acad">
-      <button type="button" onclick="toggleGrp('acad')" class="grpbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">🎓 งานวิชาการ <span id="cur-acad" class="grpcur"></span><span class="opacity-50 ml-0.5">▾</span></button>
-      <div id="menu-acad" class="grpmenu hidden">
-        <button data-tab="subjects" data-role="admin" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">🏫 จัดการรายวิชา</button>
-        <button data-tab="scores" data-role="staff" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">📝 บันทึกผลการเรียน</button>
-        <button data-tab="teachdoc" data-role="staff" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">📤 ส่งเอกสารการสอน</button>
-        <button data-tab="subdoc" data-role="staff" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">📚 คำอธิบาย/โครงสร้างวิชา</button>
-        <button data-tab="ability" data-role="staff" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">🎓 ความสามารถ/คุณลักษณะ</button>
-        <button data-tab="report" data-role="all" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">🖨️ พิมพ์ใบรายงาน</button>
-        <button data-tab="summary68" data-role="all" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">📋 สรุปผลการเรียน</button>
-        <button data-tab="schedule" data-role="all" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">🗓️ ตารางสอน</button>
-        <button data-tab="exam" data-role="all" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">🧪 ตารางสอบ</button>
-        <button data-tab="calendar" data-role="all" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">📅 ปฏิทินวิชาการ</button>
-        <button data-tab="scoretrack" data-role="director" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">📈 ติดตามการกรอกคะแนน</button>
-        <button data-tab="teachsum" data-role="director" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">📂 ติดตามเอกสารการสอน</button>
-        <button data-tab="supervise" data-role="director" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">🔍 นิเทศ/เยี่ยมชั้นเรียน</button>
-        <button data-tab="stats" data-role="director" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">📊 รายงานสรุป</button>
-        <button data-tab="sar" data-role="director" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">📑 รายงาน SAR</button>
-      </div>
+  <div id="catRow" class="flex flex-wrap items-center gap-2">
+    <button data-tab="home" data-role="all" class="navbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">🏠 หน้าแรก</button>
+    <button data-cat="record" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">📝 บันทึกผล</button>
+    <button data-cat="schedule" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">📅 ตาราง/ปฏิทิน</button>
+    <button data-cat="student" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">🧑‍🎓 นักเรียน</button>
+    <button data-cat="report" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">🖨️ รายงาน/เอกสาร</button>
+    <button data-cat="manage" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">📊 บริหารงาน</button>
+    <button data-cat="admin" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">⚙️ ผู้ดูแลระบบ</button>
+    <button data-tab="manual" data-role="all" class="navbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">📖 คู่มือ</button>
+  </div>
+  <div id="subRow" class="hidden mt-2 rounded-xl bg-white/80 border border-slate-200 px-2 py-2">
+    <div class="subnav hidden gap-2 overflow-x-auto nav-scroll pb-0.5" data-cat="record" data-label="📝 บันทึกผล">
+      <button data-tab="scores" data-role="staff" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">📝 บันทึกผลการเรียน</button>
+      <button data-tab="ability" data-role="staff" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">🎓 ความสามารถ/คุณลักษณะ</button>
+      <button data-tab="teachdoc" data-role="staff" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">📤 ส่งเอกสารการสอน</button>
+      <button data-tab="subdoc" data-role="staff" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">📚 คำอธิบาย/โครงสร้างวิชา</button>
     </div>
-    <div class="navgroup relative" id="grp-care">
-      <button type="button" onclick="toggleGrp('care')" class="grpbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">🛡️ งานปกครอง <span id="cur-care" class="grpcur"></span><span class="opacity-50 ml-0.5">▾</span></button>
-      <div id="menu-care" class="grpmenu hidden">
-        <button data-tab="attendance" data-role="staff" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">✅ เช็คชื่อ</button>
-        <button data-tab="profile" data-role="staff" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">🪪 ประวัตินักเรียน (SDQ/เยี่ยมบ้าน)</button>
-        <button data-tab="risk" data-role="all" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">⚠️ นักเรียนเสี่ยง</button>
-        <button data-tab="former" data-role="director" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">🗃️ นักเรียนจำหน่าย</button>
-      </div>
+    <div class="subnav hidden gap-2 overflow-x-auto nav-scroll pb-0.5" data-cat="schedule" data-label="📅 ตาราง/ปฏิทิน">
+      <button data-tab="schedule" data-role="all" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">🗓️ ตารางสอน</button>
+      <button data-tab="exam" data-role="all" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">🧪 ตารางสอบ</button>
+      <button data-tab="calendar" data-role="all" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">📅 ปฏิทินวิชาการ</button>
     </div>
-    <div class="navgroup relative" id="grp-adm">
-      <button type="button" onclick="toggleGrp('adm')" class="grpbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">🛠️ ผู้ดูแลระบบ <span id="cur-adm" class="grpcur"></span><span class="opacity-50 ml-0.5">▾</span></button>
-      <div id="menu-adm" class="grpmenu hidden">
-        <button data-tab="admin" data-role="admin" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">🛠️ แอดมิน</button>
-        <button data-tab="settings" data-role="admin" class="navbtn navitem btn w-full text-left whitespace-nowrap px-3 py-2 text-sm">⚙️ ตั้งค่าระบบ</button>
-      </div>
+    <div class="subnav hidden gap-2 overflow-x-auto nav-scroll pb-0.5" data-cat="student" data-label="🧑‍🎓 นักเรียน">
+      <button data-tab="attendance" data-role="staff" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">✅ เช็คชื่อ</button>
+      <button data-tab="profile" data-role="staff" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">🪪 ประวัตินักเรียน (SDQ/เยี่ยมบ้าน)</button>
+      <button data-tab="risk" data-role="all" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">⚠️ นักเรียนเสี่ยง</button>
+      <button data-tab="former" data-role="director" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">🗃️ นักเรียนจำหน่าย</button>
     </div>
-    <button data-tab="manual" data-role="all" class="navbtn btn whitespace-nowrap px-4 py-2 text-sm bg-white border border-slate-200">📖 คู่มือ</button>
+    <div class="subnav hidden gap-2 overflow-x-auto nav-scroll pb-0.5" data-cat="report" data-label="🖨️ รายงาน/เอกสาร">
+      <button data-tab="report" data-role="all" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">🖨️ พิมพ์ใบรายงาน</button>
+      <button data-tab="summary68" data-role="all" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">📋 สรุปผลการเรียน</button>
+      <button data-tab="stats" data-role="director" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">📊 รายงานสรุป</button>
+      <button data-tab="sar" data-role="director" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">📑 รายงาน SAR</button>
+    </div>
+    <div class="subnav hidden gap-2 overflow-x-auto nav-scroll pb-0.5" data-cat="manage" data-label="📊 บริหารงาน">
+      <button data-tab="scoretrack" data-role="director" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">📈 ติดตามการกรอกคะแนน</button>
+      <button data-tab="teachsum" data-role="director" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">📂 ติดตามเอกสารการสอน</button>
+      <button data-tab="supervise" data-role="director" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">🔍 นิเทศ/เยี่ยมชั้นเรียน</button>
+    </div>
+    <div class="subnav hidden gap-2 overflow-x-auto nav-scroll pb-0.5" data-cat="admin" data-label="⚙️ ผู้ดูแลระบบ">
+      <button data-tab="subjects" data-role="admin" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">🏫 จัดการรายวิชา</button>
+      <button data-tab="admin" data-role="admin" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">🛠️ แอดมิน</button>
+      <button data-tab="settings" data-role="admin" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">⚙️ ตั้งค่าระบบ</button>
+    </div>
   </div>
 </nav>
 
@@ -322,20 +325,14 @@
             <option value="">— เลือกรายวิชา —</option>
           </select>
         </div>
-        <div id="sc_modeWrap" class="hidden">
-          <label class="text-xs text-slate-500">โหมดการกรอก</label>
-          <div class="flex gap-1 mt-1 bg-slate-100 rounded-lg p-1">
-            <button id="modeA" class="btn px-3 py-1.5 text-xs" onclick="setScoreMode('A')">📊 คะแนนรายหน่วย</button>
-            <button id="modeB" class="btn px-3 py-1.5 text-xs" onclick="setScoreMode('B')">🎚️ ระดับ/ร้อยละ</button>
-          </div>
-        </div>
       </div>
       <div id="sc_docs" class="mt-3"></div>
       <div id="sc_lockBanner" class="hidden mt-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm px-3 py-2">🔒 ห้องนี้ถูกล็อก (อนุมัติผลแล้ว) — แก้ไขไม่ได้ จนกว่าแอดมินจะปลดล็อก</div>
+      <div id="sc_legacy" class="hidden mt-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-3 py-2"></div>
     </div>
 
-    <!-- Mode A -->
-    <div id="sc_modeA" class="hidden space-y-4">
+    <!-- หน่วย + กรอกคะแนน (เหลือหน้าเดียว) -->
+    <div id="sc_main" class="hidden space-y-4">
       <div class="card p-4">
         <div class="flex items-center justify-between mb-2">
           <h3 class="font-bold text-teal-700">หน่วย/ผลลัพธ์การเรียนรู้ <span class="text-xs font-normal text-slate-400">(ตั้งชื่ออิสระ)</span></h3>
@@ -357,26 +354,6 @@
         </div>
         <div class="text-right mt-3">
           <button onclick="saveScoresFn()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 text-sm">💾 บันทึกคะแนน + คำนวณเกรด</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Mode B -->
-    <div id="sc_modeB" class="hidden">
-      <div class="card p-4">
-        <h3 class="font-bold text-teal-700 mb-1">กรอกร้อยละ หรือเลือกระดับโดยตรง</h3>
-        <p class="text-xs text-slate-400 mb-3">กรอกร้อยละ → ระบบเทียบระดับ 68 และเกรด 51 ให้อัตโนมัติ • หรือเลือกระดับ 68 โดยไม่กรอกร้อยละก็ได้ (ระบบใช้เกรดตั้งต้นของระดับนั้น)</p>
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead><tr class="text-left text-slate-400 border-b">
-              <th class="py-2 px-2">เลขที่</th><th class="px-2">ชื่อ</th><th class="px-2">นามสกุล</th>
-              <th class="px-2">ร้อยละ</th><th class="px-2">ระดับ 68</th><th class="px-2 text-center">เกรด 51</th>
-            </tr></thead>
-            <tbody id="modeBBody"></tbody>
-          </table>
-        </div>
-        <div class="text-right mt-3">
-          <button onclick="saveModeB()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 text-sm">💾 บันทึกผลการเรียน</button>
         </div>
       </div>
     </div>
@@ -860,7 +837,7 @@
           <table class="w-full text-sm">
             <thead><tr class="text-left text-slate-400 border-b">
               <th class="py-2 px-2">ร้อยละต่ำสุด</th><th class="px-2">ร้อยละสูงสุด</th>
-              <th class="px-2">ระดับ 68</th><th class="px-2">เกรด 51</th><th class="px-2">ตัวอักษร</th><th class="px-2"></th>
+              <th class="px-2">ระดับ 68</th><th class="px-2">เกรด 51</th><th class="px-2"></th>
             </tr></thead>
             <tbody id="mappingBody"></tbody>
           </table>
@@ -1842,31 +1819,34 @@ function normalizeRemark(v){
    TABS
    ============================================================ */
 // ---- แถบเมนูแบบหมวด ----
-function toggleGrp(gid){
-  const menu=document.getElementById('menu-'+gid);
-  const open=menu && menu.classList.contains('hidden');
-  document.querySelectorAll('.grpmenu').forEach(m=>m.classList.add('hidden'));
-  if(open) menu.classList.remove('hidden');
-}
-document.addEventListener('click', e=>{
-  if(!e.target.closest('.navgroup')) document.querySelectorAll('.grpmenu').forEach(m=>m.classList.add('hidden'));
-});
-// ซ่อนปุ่มหมวดเมื่อไม่มีเมนูลูกที่มองเห็นได้ตามสิทธิ์ (เรียกหลัง applyRole)
-function updateNavGroups(){
-  document.querySelectorAll('.navgroup').forEach(g=>{
-    const any=[...g.querySelectorAll('.navitem')].some(b=>b.style.display!=='none');
-    g.style.display=any?'':'none';
+/* ---------- เมนู 2 ชั้น: หมวด → เมนูย่อย (แบบเดียวกับมัธยม) ---------- */
+const NAV_LAST={};   // จำเมนูย่อยล่าสุดที่เปิดในแต่ละหมวด
+function navRefresh(){   // ซ่อนทั้งหมวดถ้าผู้ใช้ไม่มีเมนูย่อยสักอัน (ตามสิทธิ์)
+  document.querySelectorAll('.subnav').forEach(g=>{
+    const vis=[...g.querySelectorAll('.navbtn')].some(b=>b.style.display!=='none');
+    const cb=document.querySelector('.catbtn[data-cat="'+g.dataset.cat+'"]');
+    if(cb) cb.style.display=vis?'':'none';
   });
 }
-// ปุ่มหมวดติดสี + โชว์ชื่อเมนูปัจจุบัน
-function navSyncGroups(name){
-  document.querySelectorAll('.grpmenu').forEach(m=>m.classList.add('hidden'));
-  document.querySelectorAll('.navgroup').forEach(g=>{
-    const act=[...g.querySelectorAll('.navitem')].find(b=>b.dataset.tab===name);
-    const btn=g.querySelector('.grpbtn'), cur=g.querySelector('.grpcur');
-    btn.classList.toggle('tab-active', !!act);
-    if(cur) cur.textContent=act?(' · '+act.textContent.trim()):'';
-  });
+function navSync(name){
+  navRefresh();
+  const btn=document.querySelector('.navbtn[data-tab="'+name+'"]');
+  const grp=btn?btn.closest('.subnav'):null;
+  const cat=grp?grp.dataset.cat:'';
+  if(cat) NAV_LAST[cat]=name;
+  document.querySelectorAll('.catbtn').forEach(c=>c.classList.toggle('tab-active', c.dataset.cat===cat));
+  document.querySelectorAll('.subnav').forEach(g=>{ const on=g.dataset.cat===cat; g.classList.toggle('hidden',!on); g.classList.toggle('flex',on); });
+  const sr=document.getElementById('subRow'); if(sr) sr.classList.toggle('hidden',!cat);
+  try{ if(btn&&btn.scrollIntoView) btn.scrollIntoView({block:'nearest',inline:'center'}); }catch(e){}
+}
+function openCat(cat){
+  const g=document.querySelector('.subnav[data-cat="'+cat+'"]'); if(!g) return;
+  const cur=document.querySelector('.navbtn.tab-active');
+  if(cur && g.contains(cur)) return;   // อยู่ในหมวดนี้อยู่แล้ว
+  const ok=b=>b&&b.style.display!=='none';
+  const last=NAV_LAST[cat] && g.querySelector('.navbtn[data-tab="'+NAV_LAST[cat]+'"]');
+  const first=ok(last)?last:[...g.querySelectorAll('.navbtn')].find(ok);
+  if(first) switchTab(first.dataset.tab);
 }
 function switchTab(name){
   document.querySelectorAll('.tabpane').forEach(p=>p.classList.add('hidden'));
@@ -1875,7 +1855,7 @@ function switchTab(name){
   document.querySelectorAll('.navbtn').forEach(b=>{
     b.classList.toggle('tab-active', b.dataset.tab===name);
   });
-  navSyncGroups(name);
+  navSync(name);
   if(name==='home') renderHome();
   if(name==='settings'){ switchSub('school'); fillExClass(); }
   if(name==='scores') fillScoreSubjects();
@@ -1929,6 +1909,7 @@ function switchAsub(name){
   if(name==='locks') renderLocksAdmin();
 }
 document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+document.querySelectorAll('.catbtn').forEach(b=>b.onclick=()=>openCat(b.dataset.cat));
 document.querySelectorAll('.subbtn').forEach(b=>b.onclick=()=>switchSub(b.dataset.sub));
 document.querySelectorAll('.asubbtn').forEach(b=>b.onclick=()=>switchAsub(b.dataset.asub));
 document.querySelectorAll('.ssubbtn').forEach(b=>b.onclick=()=>switchSsub(b.dataset.ssub));
@@ -2530,11 +2511,10 @@ function renderMapping(){
       <td class="px-1"><input class="inp text-sm" value="${m.maxPercent}" onchange="state.mapping[${i}].maxPercent=Number(this.value)"></td>
       <td class="px-1"><input class="inp text-sm" value="${esc(m.level68)}" onchange="state.mapping[${i}].level68=this.value"></td>
       <td class="px-1"><input class="inp text-sm w-16" value="${m.grade51}" onchange="state.mapping[${i}].grade51=this.value"></td>
-      <td class="px-1"><input class="inp text-sm w-16" value="${esc(m.letter51)}" onchange="state.mapping[${i}].letter51=this.value"></td>
       <td class="px-1 text-right"><button onclick="state.mapping.splice(${i},1);renderMapping()" class="text-rose-500 px-1">🗑️</button></td>
     </tr>`).join('');
 }
-function addMappingRow(){ state.mapping.push({minPercent:0,maxPercent:0,level68:'',grade51:'',letter51:''}); renderMapping(); }
+function addMappingRow(){ state.mapping.push({minPercent:0,maxPercent:0,level68:'',grade51:''}); renderMapping(); }
 async function saveMapping(){
   try{ showLoading(true); state.mapping=await GAS.call('saveGradeMapping',{mapping:state.mapping}); renderMapping(); toast('บันทึกตารางแปลงเกรดแล้ว'); }
   catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
@@ -2577,19 +2557,12 @@ async function doClear(){
    ============================================================ */
 Object.assign(state, { units:{}, scoreSubject:null, scoreMode:'A', scores:[], grades:[] });
 
-const LEVELS_68 = ['','เริ่มต้น','พัฒนา','ชำนาญ','เชี่ยวชาญ','ไม่ผ่าน'];
 
 /* ---- เครื่องมือแปลงเกรดฝั่ง client (ใช้ตารางเดียวกับ backend) ---- */
 function gradeFromPercent(p){
   p=Number(p);
-  for(const m of state.mapping){ if(p>=m.minPercent && p<=m.maxPercent) return {level68:m.level68,grade51:m.grade51,letter51:m.letter51}; }
-  return {level68:'',grade51:'',letter51:''};
-}
-function gradeFromLevel(level){
-  const rows=state.mapping.filter(m=>m.level68===level);
-  if(!rows.length) return {grade51:'',letter51:''};
-  rows.sort((a,b)=>Number(b.maxPercent)-Number(a.maxPercent));
-  return {grade51:rows[0].grade51, letter51:rows[0].letter51};
+  for(const m of state.mapping){ if(p>=m.minPercent && p<=m.maxPercent) return {level68:m.level68,grade51:m.grade51}; }
+  return {level68:'',grade51:''};
 }
 function classDigit(c){ c=String(c||''); const d=c.replace(/[^0-9]/g,'').charAt(0); const m=c.match(/[ก-ฮ]+/); return (m?m[0].charAt(0):'')+d; }
 function studentsOfClass(classLevel){
@@ -2674,9 +2647,8 @@ async function onSelectScoreSubject(){
   state.scoreSubject=state.subjects.find(s=>String(s.ID)===String(id));
   if(!id){
     document.getElementById('sc_empty').classList.remove('hidden');
-    document.getElementById('sc_modeWrap').classList.add('hidden');
-    document.getElementById('sc_modeA').classList.add('hidden');
-    document.getElementById('sc_modeB').classList.add('hidden');
+    document.getElementById('sc_main').classList.add('hidden');
+    document.getElementById('sc_legacy').classList.add('hidden');
     return;
   }
   try{
@@ -2689,24 +2661,13 @@ async function onSelectScoreSubject(){
     state.units[id]=units; state.scores=scores; state.grades=grades;
     GAS.call('getSubjectDocs',{subjectID:id}).then(docs=>renderDocList(docs,'sc_docs',false)).catch(()=>{});
     document.getElementById('sc_lockBanner').classList.toggle('hidden', !isRoomLocked(state.scoreRoom));
-    document.getElementById('sc_modeWrap').classList.remove('hidden');
     document.getElementById('sc_empty').classList.add('hidden');
-    const subGrades=grades.filter(g=>String(g.subjectID)===String(id));
-    const mode = units.length ? 'A' : (subGrades.some(g=>g.mode==='B')?'B':'A');
-    setScoreMode(mode);
+    document.getElementById('sc_main').classList.remove('hidden');
+    renderUnits(); renderScoreTable(); renderLegacyBanner();
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 
-function setScoreMode(mode){
-  state.scoreMode=mode;
-  document.getElementById('modeA').classList.toggle('tab-active',mode==='A');
-  document.getElementById('modeB').classList.toggle('tab-active',mode==='B');
-  document.getElementById('sc_modeA').classList.toggle('hidden',mode!=='A');
-  document.getElementById('sc_modeB').classList.toggle('hidden',mode!=='B');
-  if(mode==='A'){ renderUnits(); renderScoreTable(); } else { renderModeB(); }
-}
-
-/* ---- Mode A: units ---- */
+/* ---- หน่วยการเรียนรู้ ---- */
 function renderUnits(){
   const id=state.scoreSubject.ID;
   const units=state.units[id]||[];
@@ -2741,7 +2702,7 @@ async function saveUnitsFn(){
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 
-/* ---- Mode A: score table ---- */
+/* ---- ตารางกรอกคะแนน ---- */
 function renderScoreTable(){
   const sub=state.scoreSubject;
   const units=state.units[sub.ID]||[];
@@ -2777,7 +2738,7 @@ function calcRowTr(tr){
   tr.querySelector('.sumCell').textContent=sum;
   tr.querySelector('.pctCell').textContent=(totalMax>0&&hasInput)?pct+'%':'-';
   tr.querySelector('.lvlCell').textContent=(totalMax>0&&hasInput)?g.level68:'-';
-  tr.querySelector('.grdCell').textContent=(totalMax>0&&hasInput)?(g.grade51+' ('+g.letter51+')'):'-';
+  tr.querySelector('.grdCell').textContent=(totalMax>0&&hasInput)?g.grade51:'-';
 }
 async function saveScoresFn(){
   if(blockedByLock(state.scoreRoom)) return;
@@ -2794,58 +2755,41 @@ async function saveScoresFn(){
     await GAS.call('saveScores',{subjectID:sub.ID, scores:out, room:state.scoreRoom});
     state.scores=await GAS.call('getScores',{subjectID:sub.ID});
     state.grades=await GAS.call('getGrades');
+    renderLegacyBanner();
     toast('บันทึกคะแนนและคำนวณเกรดแล้ว');
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 
-/* ---- Mode B: direct ---- */
-function renderModeB(){
-  const sub=state.scoreSubject;
-  const students=scoreStudents();
-  const gmap={};
-  state.grades.filter(g=>String(g.subjectID)===String(sub.ID)).forEach(g=>gmap[g.studentID]=g);
-  document.getElementById('modeBBody').innerHTML = students.length ? students.map(st=>{
-    const g=gmap[st.ID]||{};
-    const grdTxt=(g.grade51!=null&&g.grade51!=='')?(g.grade51+(g.letter51?' ('+g.letter51+')':'')):'-';
-    return `<tr class="border-b" data-sid="${st.ID}">
-      <td class="px-2 py-1">${esc(st.number)}</td>
-      <td class="px-2 font-medium whitespace-nowrap">${esc(nmFirst(st))}</td>
-      <td class="px-2 whitespace-nowrap">${esc(nmLast(st))}</td>
-      <td class="px-2"><input type="number" class="inp w-20 text-sm bPct" value="${(g.percent!=null&&g.percent!=='')?g.percent:''}" oninput="calcModeBRow(this)" placeholder="%"></td>
-      <td class="px-2"><select class="inp text-sm bLvl" onchange="calcModeBRow(this)">
-        ${LEVELS_68.map(l=>`<option ${g.level68===l?'selected':''}>${l}</option>`).join('')}
-      </select></td>
-      <td class="px-2 text-center bGrd font-bold text-teal-700">${grdTxt}</td>
-    </tr>`;
-  }).join('') : `<tr><td colspan="5" class="text-center text-slate-400 py-6">ไม่มีนักเรียนในชั้นนี้</td></tr>`;
+/* ---- ผลเดิมจากโหมด "ระดับ/ร้อยละ" (ยกเลิกโหมดนี้แล้ว) ----
+   ผลเดิมไม่ถูกลบ ยังแสดงในรายงาน — แปลงเป็นหน่วย "คะแนนรวม" เต็ม 100 เพื่อแก้ไขต่อได้ */
+function legacyOfCurrent(){
+  const sub=state.scoreSubject; if(!sub) return {legacy:[],withPct:[],lvlOnly:[]};
+  const kids=new Set(scoreStudents().map(s=>String(s.ID)));
+  const scored=new Set((state.scores||[]).filter(r=>String(r.subjectID)===String(sub.ID)).map(r=>String(r.studentID)));
+  const legacy=(state.grades||[]).filter(g=>String(g.subjectID)===String(sub.ID) && g.mode==='B' && kids.has(String(g.studentID)) && !scored.has(String(g.studentID)));
+  const withPct=legacy.filter(g=>g.percent!=='' && g.percent!=null && !isNaN(Number(g.percent)));
+  return {legacy, withPct, lvlOnly:legacy.filter(g=>!withPct.includes(g))};
 }
-function calcModeBRow(el){
-  const tr=el.closest('tr');
-  const pct=tr.querySelector('.bPct').value;
-  const lvlSel=tr.querySelector('.bLvl');
-  if(pct!==''){ const g=gradeFromPercent(pct); lvlSel.value=g.level68||''; tr.querySelector('.bGrd').textContent=g.grade51+' ('+g.letter51+')'; }
-  else if(lvlSel.value){ const gg=gradeFromLevel(lvlSel.value); tr.querySelector('.bGrd').textContent=(gg.grade51!==''?gg.grade51:'-')+(gg.letter51?' ('+gg.letter51+')':''); }
-  else tr.querySelector('.bGrd').textContent='-';
+function renderLegacyBanner(){
+  const box=document.getElementById('sc_legacy'), sub=state.scoreSubject; if(!box||!sub) return;
+  const {legacy,withPct,lvlOnly}=legacyOfCurrent();
+  if(!legacy.length){ box.classList.add('hidden'); box.innerHTML=''; return; }
+  const unitsEmpty=!(state.units[sub.ID]||[]).length;
+  const nameOf=id=>{ const s=(state.students||[]).find(x=>String(x.ID)===String(id)); return s?s.fullName:id; };
+  let h=`<div>⚠️ มีผลเดิมที่กรอกด้วยโหมด “ระดับ/ร้อยละ” (ยกเลิกโหมดนี้แล้ว) <b>${legacy.length} คน</b> — ยังแสดงในรายงานตามเดิม แต่ไม่ปรากฏในตารางคะแนนรายหน่วย</div>`;
+  if(withPct.length && unitsEmpty) h+=`<button onclick="convertLegacy()" class="btn bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 text-xs mt-2">🔄 แปลงเป็นหน่วย “คะแนนรวม” เต็ม 100 (${withPct.length} คน)</button>`;
+  else if(withPct.length) h+=`<div class="text-xs mt-1">วิชานี้มีหน่วยแล้ว — กรอกคะแนนรายหน่วยของนักเรียนคนนั้นได้เลย ผลเดิมจะถูกแทนที่เมื่อบันทึก</div>`;
+  if(lvlOnly.length) h+=`<div class="text-xs mt-1">เลือกระดับอย่างเดียว (ไม่มีร้อยละ) แปลงไม่ได้ ผลเดิมคงไว้จนกว่าจะกรอกคะแนนรายหน่วย: ${lvlOnly.map(g=>esc(nameOf(g.studentID))).join(', ')}</div>`;
+  box.innerHTML=h; box.classList.remove('hidden');
 }
-async function saveModeB(){
+async function convertLegacy(){
   if(blockedByLock(state.scoreRoom)) return;
-  const sub=state.scoreSubject;
-  const tasks=[];
-  document.querySelectorAll('#modeBBody tr[data-sid]').forEach(tr=>{
-    const sid=tr.dataset.sid;
-    const pct=tr.querySelector('.bPct').value;
-    const lvl=tr.querySelector('.bLvl').value;
-    if(pct==='' && !lvl) return;
-    const payload={ studentID:sid, subjectID:sub.ID, mode:'B' };
-    if(pct!==''){ payload.percent=Number(pct); }
-    else { const gg=gradeFromLevel(lvl); payload.percent=''; payload.level68=lvl; payload.grade51=gg.grade51; payload.letter51=gg.letter51; }
-    tasks.push(payload);
-  });
-  if(!tasks.length){ toast('ยังไม่มีข้อมูลให้บันทึก','error'); return; }
+  const sub=state.scoreSubject; if(!sub) return;
+  if(!confirm('แปลงผลเดิม (ร้อยละ) เป็นหน่วย “คะแนนรวม” เต็ม 100 ?\nผลการเรียนเดิมของนักเรียนเหล่านี้ไม่เปลี่ยน แต่จะแก้ไขต่อได้ในตารางคะแนน')) return;
   try{ showLoading(true);
-    await GAS.call('saveGradesBatch',{grades:tasks});   // ต้องอัปเดต Code.gs (ดูแพตช์ Part 3)
-    state.grades=await GAS.call('getGrades');
-    toast('บันทึกผลการเรียนแล้ว ('+tasks.length+' คน)');
+    const r=await GAS.call('convertLegacyGrades',{subjectID:sub.ID, room:state.scoreRoom});
+    await onSelectScoreSubject();
+    toast('แปลงแล้ว '+r.converted+' คน'+(r.skipped?' • ข้าม '+r.skipped+' คน (ไม่มีร้อยละ)':''));
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 
@@ -4002,6 +3946,7 @@ const TAB_META=[
   ['schedule','🗓️ ตารางสอน','all'],
   ['ability','🎓 ความสามารถ/คุณลักษณะ','staff'],
   ['report','🖨️ พิมพ์ใบรายงาน','all'],
+  ['summary68','📋 สรุปผลการเรียน','all'],
   ['stats','📊 รายงานสรุป','director'],
   ['attendance','✅ เช็คชื่อ','staff'],
   ['calendar','🗓️ ปฏิทินวิชาการ','all'],
@@ -4019,9 +3964,20 @@ function defaultTabAccess(){
   });
   return {teacher, director};
 }
+// เมนูที่มีอยู่ก่อนเพิ่ม "สรุปผลการเรียน" เข้าตารางสิทธิ์ (ใช้กับสิทธิ์ที่เคยบันทึกไว้ซึ่งยังไม่มี known)
+const LEGACY_TABS=['home','subjects','scores','teachdoc','subdoc','profile','former','exam','sar','teachsum','scoretrack','supervise','schedule','ability','report','stats','attendance','calendar','risk','admin','settings'];
 function getTabAccess(){
-  if(state.tabAccess && state.tabAccess.teacher && state.tabAccess.director) return state.tabAccess;
-  return defaultTabAccess();
+  const def=defaultTabAccess(), s=state.tabAccess;
+  if(!(s && s.teacher && s.director)) return def;
+  // เมนูใหม่ที่เพิ่มหลังบันทึกสิทธิ์ → ใช้ค่าเริ่มต้นของเมนูนั้น (ไม่ซ่อนจากครู/ผู้บริหารโดยไม่ตั้งใจ)
+  const known=new Set(Array.isArray(s.known)?s.known:LEGACY_TABS);
+  const t=s.teacher.slice(), d=s.director.slice();
+  TAB_META.forEach(([tab])=>{
+    if(known.has(tab)) return;
+    if(def.teacher.includes(tab) && !t.includes(tab)) t.push(tab);
+    if(def.director.includes(tab) && !d.includes(tab)) d.push(tab);
+  });
+  return {teacher:t, director:d};
 }
 function applyRole(){
   const role = state.currentUser ? state.currentUser.role : 'teacher';
@@ -4038,9 +3994,10 @@ function applyRole(){
     else if(dr==='director') show=director;
     else if(dr==='staff') show=(role==='teacher');
     else show=false;
+    if(tab==='home'||tab==='manual') show=true;   // หน้าแรกและคู่มือ เห็นเสมอ (ไม่อยู่ในตารางสิทธิ์)
     el.style.display = show ? '' : 'none';
   });
-  updateNavGroups();
+  navRefresh();
   const label = admin?' • แอดมิน':(director?' • ผู้บริหาร':'');
   document.getElementById('userChip').textContent='👤 '+state.currentUser.name+label;
   document.getElementById('userBar').classList.remove('hidden');
@@ -8074,19 +8031,32 @@ async function saveAssign(){
    จัดการสิทธิ์การเข้าถึงเมนู (แอดมิน)
    ============================================================ */
 function initPerms(){ renderPerms(getTabAccess()); }
+// ลำดับและหมวดของเมนู ตามแถบเมนูจริง (หมวด → เมนูย่อย)
+function permRowsOrder(){
+  const order=[['home','']];
+  document.querySelectorAll('.subnav').forEach(g=>{
+    g.querySelectorAll('.navbtn').forEach(b=>order.push([b.dataset.tab,g.dataset.label||'']));
+  });
+  return order;
+}
 function renderPerms(acc){
   const body=document.getElementById('perms_body');
-  body.innerHTML=TAB_META.map(([tab,label,dr])=>{
+  let lastCat='';
+  body.innerHTML=permRowsOrder().map(([tab,cat])=>{
+    const meta=TAB_META.find(m=>m[0]===tab); if(!meta) return '';
+    const [,label,dr]=meta;
+    let head='';
+    if(cat && cat!==lastCat){ lastCat=cat; head=`<tr class="bg-slate-50"><td colspan="3" class="py-1 px-2 text-xs font-semibold text-slate-500">${esc(cat)}</td></tr>`; }
     if(dr==='admin'){
-      return `<tr class="border-b">
-        <td class="px-2 py-2">${esc(label)}</td>
+      return head+`<tr class="border-b">
+        <td class="px-2 py-2 pl-4">${esc(label)}</td>
         <td colspan="2" class="px-2 py-2 text-center text-xs text-slate-400">แอดมินเท่านั้น</td>
       </tr>`;
     }
     const tCk=acc.teacher.includes(tab)?'checked':'';
     const dCk=acc.director.includes(tab)?'checked':'';
-    return `<tr class="border-b">
-      <td class="px-2 py-2">${esc(label)}</td>
+    return head+`<tr class="border-b">
+      <td class="px-2 py-2 pl-4">${esc(label)}</td>
       <td class="px-2 py-2 text-center"><input type="checkbox" class="pm-t" data-tab="${tab}" ${tCk}></td>
       <td class="px-2 py-2 text-center"><input type="checkbox" class="pm-d" data-tab="${tab}" ${dCk}></td>
     </tr>`;
@@ -8099,7 +8069,7 @@ async function savePerms(){
   // home ให้เห็นเสมอ กันล็อกตัวเองออกจากระบบ
   if(!teacher.includes('home')) teacher.push('home');
   if(!director.includes('home')) director.push('home');
-  const obj={teacher, director};
+  const obj={teacher, director, known:TAB_META.map(m=>m[0])};
   try{ showLoading(true);
     await GAS.call('saveTabAccess',{json:JSON.stringify(obj)});
     state.tabAccess=obj;
