@@ -4302,7 +4302,7 @@ function renderHealth(r){
   badge.className='badge '+(r.red?'bg-rose-100 text-rose-600':(r.yellow?'bg-amber-100 text-amber-700':'bg-emerald-100 text-emerald-700'));
   badge.textContent=(r.red||r.yellow)?('พบ '+(r.red+r.yellow)+' ประเด็น'):'สุขภาพดี ✅';
   const fixes=new Set();
-  area.innerHTML=`<div class="text-xs text-slate-400 mb-1.5">ตรวจล่าสุด: ${esc(r.at||'')}</div>`+
+  area.innerHTML=`<div class="text-xs text-slate-400 mb-1.5">ตรวจล่าสุด: ${esc(r.at||'')} • โค้ดเซิร์ฟเวอร์: ${esc(r.build||'เก่า (ยังไม่ได้ Deploy ใหม่)')}</div>`+
     ((r.issues&&r.issues.length)?r.issues.map(i=>{
       if(i.fix) fixes.add(i.fix);
       return `<div class="border-b last:border-0 border-slate-100 py-1.5">
@@ -4325,7 +4325,8 @@ async function runHealthFix(type){
   const label=HC_FIX_LABEL[type]||type;
   if(type==='dup_student_ids'||type==='orphan_units'){
     try{ showLoading(true);
-      const d=await GAS.call('runHealthFix',{type,dry:1});
+      const act=(type==='dup_student_ids')?'fixDupStudentIds':'recoverOrphanUnits';
+      const d=await GAS.call(act,{dry:1});
       showLoading(false);
       let msg;
       if(type==='dup_student_ids'){
@@ -4338,7 +4339,7 @@ async function runHealthFix(type){
       if(!d.groups&&!d.units&&!d.subjects){ toast('ไม่พบสิ่งที่ต้องซ่อม'); return; }
       if(!confirm(msg)) return;
       showLoading(true);
-      const r=await GAS.call('runHealthFix',{type});
+      const r=await GAS.call(act,{});
       toast(type==='dup_student_ids'?('แยกรหัสแล้ว: ย้าย '+r.repointed+' แถว, พัก '+r.parked+' แถว'):('กู้ '+r.units+' หน่วย ใน '+r.subjects+' วิชา'));
       runHealth();
     }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
