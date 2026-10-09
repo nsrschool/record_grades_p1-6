@@ -122,7 +122,7 @@
       </div>
       <div>
         <label class="text-xs text-slate-500">รหัส PIN</label>
-        <input id="loginPin" type="password" inputmode="numeric" class="inp mt-1" placeholder="กรอก PIN" onkeydown="if(event.key==='Enter')doLogin()">
+        <input id="loginPin" type="password" inputmode="text" autocapitalize="off" autocomplete="current-password" class="inp mt-1" placeholder="กรอก PIN" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
     </div>
     <button onclick="doLogin()" class="btn bg-teal-600 hover:bg-teal-700 text-white w-full py-2.5 mt-4 text-sm">เข้าสู่ระบบ</button>
@@ -4375,7 +4375,7 @@ function renderTeachers(){
     <tr class="border-b" data-id="${t.ID}">
       <td class="px-1 py-1"><input class="inp text-sm tc-name" value="${esc(t.name)}"></td>
       <td class="px-1"><select class="inp text-sm tc-role"><option value="teacher" ${(!t.role||t.role==='teacher')?'selected':''}>ครู</option><option value="director" ${t.role==='director'?'selected':''}>ผู้บริหาร</option><option value="admin" ${t.role==='admin'?'selected':''}>แอดมิน</option></select></td>
-      <td class="px-1"><input class="inp text-sm w-24 tc-pin" value="" inputmode="numeric" autocomplete="new-password" placeholder="${t.hasPin?'•••• คงเดิม':'ยังไม่ตั้ง'}"></td>
+      <td class="px-1"><input class="inp text-sm w-24 tc-pin" value="" inputmode="text" autocapitalize="off" autocomplete="new-password" placeholder="${t.hasPin?'•••• คงเดิม':'ยังไม่ตั้ง'}"></td>
       <td class="px-1"><select class="inp text-sm w-28 tc-home">${homeroomOptions(t.homeroomClass)}</select></td>
       <td class="px-1 text-right whitespace-nowrap">
         <button onclick="delTeacher('${t.ID}')" class="text-rose-500 px-1">🗑️</button>
