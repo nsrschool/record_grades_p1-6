@@ -14,7 +14,7 @@
      ตัวอย่าง: 'https://script.google.com/macros/s/AKfycb..../exec'
      ============================================================ -->
 <script>
-  window.WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwjo4Vyq0OWbIYiUD7BoBdrTnbCrEp42jlAyIJvw4I9y_-_HQFvzI329yQK4w1VZQ-L/exec';
+  window.WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwAih8yJtqPp5j0kIv5oF6VU8jrqqFqJJq4iGdl5pMMaHYaLG37Ut3_y5OwDKB_OrexEg/exec';
 </script>
 
 <!-- Tailwind CSS -->
@@ -388,13 +388,29 @@
 
       <div id="absub-char" class="absubpane hidden card p-4">
         <p class="text-xs text-slate-400 mb-2">1.รักชาติ ศาสน์ กษัตริย์ • 2.ซื่อสัตย์สุจริต • 3.มีวินัย • 4.อยู่อย่างพอเพียง • 5.มีจิตสาธารณะ</p>
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+          <button onclick="abFillPass('char')" class="btn bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs">✅ ผ่านทั้งหมด</button>
+          <span class="text-[11px] text-slate-400">เติม “ผ่าน” เฉพาะช่องที่ยังว่าง — ครูแก้เป็นรายช่องได้ แล้วกด 💾 บันทึก</span>
+        </div>
         <div class="overflow-x-auto"><table class="w-full text-sm" id="charTable"></table></div>
       </div>
       <div id="absub-readthink" class="absubpane hidden card p-4">
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+          <button onclick="abFillPass('readthink')" class="btn bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs">✅ ผ่านทั้งหมด</button>
+          <span class="text-[11px] text-slate-400">เติม “ผ่าน” เฉพาะช่องที่ยังว่าง — ครูแก้เป็นรายช่องได้ แล้วกด 💾 บันทึก</span>
+        </div>
         <div class="overflow-x-auto"><table class="w-full text-sm" id="rtTable"></table></div>
       </div>
       <div id="absub-activity" class="absubpane hidden card p-4">
         <p class="text-xs text-slate-400 mb-2">กิจกรรมพัฒนาผู้เรียน (ผ่าน/ไม่ผ่าน) + ชื่อชุมนุม + สมรรถนะสำคัญ</p>
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+          <button onclick="abFillPass('activity')" class="btn bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs">✅ ผ่านทั้งหมด</button>
+          <span class="text-[11px] text-slate-400">เติม “ผ่าน” เฉพาะช่องที่ยังว่าง — ครูแก้เป็นรายช่องได้ แล้วกด 💾 บันทึก</span>
+          <div class="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
+            <input id="ab_clubAll" class="inp text-xs" style="max-width:190px" placeholder="ชื่อชุมนุมทั้งห้อง">
+            <button onclick="abFillClub()" class="btn bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 text-xs whitespace-nowrap">ใส่ให้ทุกคน</button>
+          </div>
+        </div>
         <div class="overflow-x-auto"><table class="w-full text-sm" id="actTable"></table></div>
       </div>
 
@@ -3102,6 +3118,35 @@ function updateAbSummary(sid){
     if(span) span.textContent = vals.length ? (vals.some(v=>v==='ไม่ผ่าน')?'ไม่ผ่าน':'ผ่าน') : '-';
   });
 }
+
+// ผ่านทั้งหมด: เติม "ผ่าน" เฉพาะช่องที่ยังว่างในแท็บนั้น (ไม่ทับค่าเดิม) — ยังไม่บันทึกจนกว่าจะกด 💾
+function abFillPass(name){
+  const cls=(document.getElementById('ab_class')||{}).value;
+  if(!state.abStudents||!state.abStudents.length){ toast('โหลดรายชื่อก่อน','error'); return; }
+  if(blockedByLock(cls)) return;
+  const cells=[...document.querySelectorAll('#absub-'+name+' select.ab-cell')].filter(c=>c.value==='');
+  if(!cells.length){ toast('ไม่มีช่องว่างให้เติม','error'); return; }
+  if(!confirm('เติม “ผ่าน” ให้ '+cells.length+' ช่องที่ยังว่าง?\n(ช่องที่มีค่าอยู่แล้วไม่ถูกเปลี่ยน — ตรวจ/แก้รายช่องได้ แล้วกดบันทึก)')) return;
+  const sids=new Set();
+  cells.forEach(c=>{ c.value='ผ่าน'; sids.add(c.dataset.sid); });
+  sids.forEach(updateAbSummary);
+  toast('เติม “ผ่าน” '+cells.length+' ช่องแล้ว — กด 💾 บันทึกเพื่อยืนยัน');
+}
+// ชื่อชุมนุมทั้งห้อง: ใส่ครั้งเดียวให้ทุกคน (ถ้ามีบางคนมีชื่ออยู่แล้ว ถามว่าทับหรือเติมเฉพาะช่องว่าง)
+function abFillClub(){
+  const cls=(document.getElementById('ab_class')||{}).value;
+  if(!state.abStudents||!state.abStudents.length){ toast('โหลดรายชื่อก่อน','error'); return; }
+  if(blockedByLock(cls)) return;
+  const name=(document.getElementById('ab_clubAll').value||'').trim();
+  if(!name){ toast('พิมพ์ชื่อชุมนุมก่อน','error'); return; }
+  const inputs=[...document.querySelectorAll('#absub-activity input.ab-cell[data-item="ชื่อชุมนุม"]')];
+  const filled=inputs.filter(i=>i.value.trim()!=='' && i.value.trim()!==name);
+  let overwrite=false;
+  if(filled.length) overwrite=confirm('มี '+filled.length+' คนมีชื่อชุมนุมอยู่แล้ว\nตกลง = ทับทุกคนด้วย “'+name+'”\nยกเลิก = เติมเฉพาะคนที่ยังว่าง');
+  let n=0;
+  inputs.forEach(i=>{ if(overwrite||i.value.trim()===''){ if(i.value!==name){ i.value=name; n++; } } });
+  toast('ใส่ชื่อชุมนุม “'+name+'” '+n+' คนแล้ว — กด 💾 บันทึกเพื่อยืนยัน');
+}
 async function saveAbilityAll(){
   if(!state.abStudents || !state.abStudents.length){ toast('ยังไม่มีรายชื่อ','error'); return; }
   if(blockedByLock(document.getElementById('ab_class').value)) return;
@@ -3478,7 +3523,7 @@ function reportPageHTML(s, rs, opt){
       <table class="rp-tbl">
         <thead>
           <tr><th class="rp-head-68" colspan="2">หลักสูตรการศึกษาประถมศึกษา${lower?'ตอนต้น (ชั้น ป.1-3)':'ตอนปลาย (ชั้น ป.4-6)'}<br>พุทธศักราช 2568</th></tr>
-          <tr><th>ความสามารถผู้เรียน</th><th style="width:80px">${'ระดับ<br>ความสามารถ'}</th></tr>
+          <tr><th>ความสามารถผู้เรียน</th><th style="width:80px">ระดับ<br>ความสามารถ</th></tr>
         </thead>
         <tbody>${leftRows||'<tr><td colspan="2" style="text-align:center;color:#888">ยังไม่มีข้อมูล</td></tr>'}</tbody>
       </table>
