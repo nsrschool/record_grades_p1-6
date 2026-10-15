@@ -15,6 +15,14 @@
      ============================================================ -->
 <script>
   window.WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwjo4Vyq0OWbIYiUD7BoBdrTnbCrEp42jlAyIJvw4I9y_-_HQFvzI329yQK4w1VZQ-L/exec';
+  // ข้อมูลผู้พัฒนา (เมนู 👨‍💻 ผู้พัฒนา) — ช่องที่เว้นว่างจะไม่แสดง
+  window.DEV_INFO = {
+    brand: 'ครูพร้อมสอน™', owner: 'ครูรุ่งนิรันดร์',
+    facebook: 'https://www.facebook.com/krupromsorn',
+    line: '@984livpo',
+    website: 'https://kps-shop.pages.dev/',
+    phone: '', email: ''
+  };
 </script>
 
 <!-- Tailwind CSS -->
@@ -223,9 +231,8 @@
     <button data-cat="student" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">🧑‍🎓 นักเรียน</button>
     <button data-cat="report" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">🖨️ รายงาน/เอกสาร</button>
     <button data-cat="manage" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">📊 ติดตาม & อนุมัติผล</button>
-    <button data-cat="admin" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">⚙️ ผู้ดูแลระบบ</button>
+    <button data-cat="admin" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">🛠️ แอดมิน</button>
     <button data-cat="settings" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">⚙️ ตั้งค่าระบบ</button>
-    <button data-tab="manual" data-role="all" class="navbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">📖 คู่มือ</button>
   </div>
   <div id="subRow" class="hidden mt-2 rounded-xl bg-white/80 border border-slate-200 px-2 py-2">
     <div class="subnav hidden gap-2 overflow-x-auto nav-scroll pb-0.5" data-cat="record" data-label="📝 บันทึกผล">
@@ -255,7 +262,7 @@
       <button data-tab="adm_locks" data-role="admin" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">🔒 ล็อกบังคับ/ปลดล็อก</button>
       <button data-tab="set_lookup" data-role="admin" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">👪 ตรวจผลออนไลน์</button>
     </div>
-    <div class="subnav hidden gap-2 overflow-x-auto nav-scroll pb-0.5" data-cat="admin" data-label="⚙️ ผู้ดูแลระบบ">
+    <div class="subnav hidden gap-2 overflow-x-auto nav-scroll pb-0.5" data-cat="admin" data-label="🛠️ แอดมิน">
       <button data-tab="adm_start" data-role="admin" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">🚀 เริ่มปีการศึกษาใหม่</button>
       <button data-tab="adm_backup" data-role="admin" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">① 💾 สำรองข้อมูล</button>
       <button data-tab="adm_roster" data-role="admin" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">② 🧑‍🎓 จัดการนักเรียน</button>
@@ -268,6 +275,8 @@
       <button data-tab="set_school" data-role="admin" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">🏫 ข้อมูลสถานศึกษา</button>
       <button data-tab="set_mapping" data-role="admin" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">🎚️ ตารางแปลงเกรด</button>
       <button data-tab="adm_perms" data-role="admin" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">🧭 สิทธิ์เมนูรายบทบาท</button>
+      <button data-tab="manual" data-role="all" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">📖 คู่มือ</button>
+      <button data-tab="developer" data-role="all" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">👨‍💻 ผู้พัฒนา</button>
     </div>
   </div>
 </nav>
@@ -1581,6 +1590,37 @@
   </section>
 
   <!-- ---------- TAB: MANUAL ---------- -->
+  <!-- ---------- TAB: DEVELOPER ---------- -->
+  <section id="tab-developer" class="tabpane hidden">
+    <div class="card p-5 text-center mb-4 bg-gradient-to-br from-teal-50 via-white to-amber-50">
+      <img id="dv_logo" class="w-20 h-20 object-contain mx-auto mb-2 rounded-2xl" alt="">
+      <h2 id="dv_brand" class="text-xl font-bold text-teal-700"></h2>
+      <p class="text-xs text-slate-500 mt-0.5">ผู้พัฒนาระบบ NSR SMART ประถมศึกษา</p>
+    </div>
+    <div class="card p-4 mb-4">
+      <h3 class="font-semibold text-teal-700 mb-2">📞 ช่องทางติดต่อ</h3>
+      <div id="dv_contacts" class="grid gap-2 sm:grid-cols-2"></div>
+    </div>
+    <div class="card p-4 mb-4">
+      <h3 class="font-semibold text-teal-700 mb-2">🧩 ข้อมูลระบบ</h3>
+      <div id="dv_sys" class="text-sm text-slate-600 space-y-1"></div>
+      <div class="flex flex-wrap gap-2 mt-3">
+        <button onclick="devCopyReport()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 text-sm">📋 คัดลอกข้อมูลแจ้งปัญหา</button>
+        <button onclick="devRenew()" class="btn bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 text-sm">🔄 ต่ออายุใบอนุญาต</button>
+      </div>
+      <p class="text-[11px] text-slate-400 mt-1">กด “คัดลอกข้อมูลแจ้งปัญหา” แล้วนำไปวางใน LINE ถึงผู้พัฒนา พร้อมอธิบายอาการที่พบ</p>
+    </div>
+    <div class="card p-4 mb-4">
+      <h3 class="font-semibold text-teal-700 mb-2">🆕 ประวัติการอัปเดต</h3>
+      <div id="dv_log" class="text-sm text-slate-600 space-y-2"></div>
+    </div>
+    <div class="card p-4 text-xs text-slate-500 leading-relaxed">
+      <h3 class="font-semibold text-teal-700 mb-1 text-sm">©️ ลิขสิทธิ์และเงื่อนไขการใช้งาน</h3>
+      สิทธิ์ใช้งานรายปี 1 หน่วยงาน / 1 ระบบ ห้ามคัดลอก ดัดแปลง หรือนำไปเผยแพร่/จำหน่ายต่อโดยไม่ได้รับอนุญาต • ข้อมูลทั้งหมดเก็บบน Google Sheets/Drive ของหน่วยงานเอง<br>
+      Copyright © ครูรุ่งนิรันดร์ • All Rights Reserved.
+    </div>
+  </section>
+
   <section id="tab-manual" class="tabpane hidden">
     <div class="card p-5 space-y-4 text-sm leading-relaxed">
       <h2 class="font-bold text-teal-700 text-lg">📖 คู่มือการใช้งาน</h2>
@@ -1920,7 +1960,7 @@ const VTAB={
   adm_roster:{tab:'admin',asub:'roster'}, adm_teachers:{tab:'admin',asub:'teachers'},
   adm_backup:{tab:'admin',asub:'backup'}, adm_health:{tab:'admin',asub:'health'}, adm_audit:{tab:'admin',asub:'audit'},
   adm_locks:{tab:'admin',asub:'locks'},   adm_perms:{tab:'admin',asub:'perms'},
-  adm_start:{tab:'startyear'},
+  adm_start:{tab:'startyear'}, developer:{tab:'developer'},
   set_school:{tab:'settings',sub:'school'}, set_mapping:{tab:'settings',sub:'mapping'}, set_lookup:{tab:'settings',sub:'lookup'}
 };
 function switchTab(name){
@@ -1934,6 +1974,7 @@ function switchTab(name){
   navSync(name);
   if(real==='schedule'){ const m=document.getElementById('sch_mode'); if(m) m.value=(name==='roomtt'?'class':'teacher'); }
   if(real==='startyear') initStartYear();
+  if(real==='developer') renderDeveloper();
   name=real;
   if(name==='home'){ renderHome(); refreshIssueBadge(); refreshApprovalBadge(); }
   if(name==='settings'){ switchSub(v&&v.sub?v.sub:'school'); fillExClass(); if(v&&v.sub==='lookup') loadIssues(); }
@@ -4627,9 +4668,12 @@ function applyRole(){
     else if(dr==='director') show=director;
     else if(dr==='staff') show=(role==='teacher');
     else show=false;
-    if(tab==='home'||tab==='manual') show=true;   // หน้าแรกและคู่มือ เห็นเสมอ (ไม่อยู่ในตารางสิทธิ์)
+    if(tab==='home'||tab==='manual'||tab==='developer') show=true;   // หน้าแรก/คู่มือ/ผู้พัฒนา เห็นเสมอ (ไม่อยู่ในตารางสิทธิ์)
     el.style.display = show ? '' : 'none';
   });
+  // หมวดสุดท้าย: แอดมินเห็น "⚙️ ตั้งค่าระบบ" / ครู-ผอ. เห็น "ℹ️ ช่วยเหลือ" (มีแค่คู่มือ + ผู้พัฒนา)
+  const sc=document.querySelector('.catbtn[data-cat="settings"]'); if(sc) sc.textContent=admin?'⚙️ ตั้งค่าระบบ':'ℹ️ ช่วยเหลือ';
+  const sg=document.querySelector('.subnav[data-cat="settings"]'); if(sg) sg.dataset.label=admin?'⚙️ ตั้งค่าระบบ':'ℹ️ ช่วยเหลือ';
   navRefresh();
   const label = admin?' • แอดมิน':(director?' • ผู้บริหาร':'');
   document.getElementById('userChip').textContent='👤 '+state.currentUser.name+label;
@@ -4818,6 +4862,58 @@ function renderHealth(r){
       `<button onclick="runHealthFix('${f}')" class="btn bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 text-xs">${HC_FIX_LABEL[f]||f}</button>`).join('')}</div>`:'');
 }
 
+
+// ---------- 👨‍💻 ผู้พัฒนา ----------
+const DEV_CHANGELOG=[
+  ['2026-10-15','อนุมัติ/ล็อกผลรายวิชา × ห้อง • ติดตามแบบวิชา×ห้อง×ครู • ป้ายแดงงานรออนุมัติ • ประวัติการแก้ไข • ตรวจสุขภาพเพิ่มเติม • ส่งออกข้อมูลทั้งหมด'],
+  ['2026-10-15','ช่องทางแจ้งปัญหาข้อมูลนักเรียนในหน้าตรวจผลออนไลน์ + แจ้งเตือนทางอีเมล'],
+  ['2026-10-15','จัดเมนูใหม่ให้เหมือนระบบมัธยม • ส่งออก SchoolMIS • เมนูผู้พัฒนา'],
+  ['2026-10-14','ตัวกรองหน้าติดตามคะแนน (ชั้น/ห้อง/ครู/ความคืบหน้า) + สรุปรายครู + แจ้งเตือนครูที่ค้าง'],
+];
+let DEV_SYS={be:'…',license:null};
+function devInfo(){ return window.DEV_INFO||{}; }
+function devLineUrl(){ const l=String(devInfo().line||'').trim(); return l?'https://line.me/R/ti/p/'+encodeURIComponent(l.startsWith('@')?l:'@'+l).replace('%40','@'):''; }
+async function renderDeveloper(){
+  const D=devInfo();
+  const lg=document.getElementById('dv_logo'), ic=document.querySelector('link[rel="apple-touch-icon"]')||document.querySelector('link[rel="icon"]');
+  if(lg&&ic) lg.src=ic.href;
+  document.getElementById('dv_brand').textContent=D.brand||'';
+  const items=[
+    D.line&&['💬','LINE',D.line,devLineUrl(),D.line],
+    D.facebook&&['📘','Facebook',String(D.facebook).replace(/^https?:\/\/(www\.)?/,''),D.facebook,D.facebook],
+    D.website&&['🌐','เว็บไซต์',String(D.website).replace(/^https?:\/\//,'').replace(/\/$/,''),D.website,D.website],
+    D.phone&&['📞','โทร',D.phone,'tel:'+String(D.phone).replace(/[^0-9+]/g,''),D.phone],
+    D.email&&['✉️','อีเมล',D.email,'mailto:'+D.email,D.email],
+  ].filter(Boolean);
+  document.getElementById('dv_contacts').innerHTML=items.map(([ic2,lb,tx,href,cp])=>`<div class="flex items-center gap-2 border border-slate-200 rounded-xl p-2.5">
+      <span class="text-xl">${ic2}</span><div class="flex-1 min-w-0"><div class="text-[11px] text-slate-400">${esc(lb)}</div><div class="text-sm text-slate-700 truncate">${esc(tx)}</div></div>
+      <a href="${esc(href)}" target="_blank" rel="noopener" class="btn bg-teal-600 text-white px-3 py-1.5 text-xs">เปิด</a>
+      <button onclick="spClip(decodeURIComponent('${encodeURIComponent(cp)}'),'คัดลอก${esc(lb)}แล้ว')" class="btn bg-white border border-slate-200 px-2 py-1.5 text-xs">📋</button></div>`).join('')
+    ||'<div class="text-slate-400 text-sm">ยังไม่ได้ตั้งช่องทางติดต่อ</div>';
+  document.getElementById('dv_log').innerHTML=DEV_CHANGELOG.map(([d,t])=>`<div><span class="text-[11px] text-slate-400">${esc(d)}</span><div>${esc(t)}</div></div>`).join('');
+  devRenderSys();
+  try{ const r=await GAS.call('getAppBuild'); DEV_SYS.be=r.build||'เก่า (ยังไม่ได้ Deploy)'; DEV_SYS.license=r.licenseExpires?{expires:r.licenseExpires,daysLeft:r.daysLeft}:null; }
+  catch(e){ DEV_SYS.be='ตรวจไม่ได้'; }
+  devRenderSys();
+}
+function devRenderSys(){
+  const L=DEV_SYS.license, dl=L&&L.daysLeft;
+  const lic=L?`${esc(L.expires)} ${dl<0?'<span class="text-rose-600 font-semibold">(หมดอายุแล้ว)</span>':'<span class="'+(dl<=60?'text-amber-600 font-semibold':'text-emerald-600')+'">(เหลือ '+dl+' วัน)</span>'}`:'—';
+  document.getElementById('dv_sys').innerHTML=`<div>📄 เวอร์ชันหน้าเว็บ: <b>${esc(APP_BUILD)}</b></div><div>🧱 เวอร์ชัน Code.gs: <b>${esc(DEV_SYS.be)}</b>${DEV_SYS.be&&DEV_SYS.be!=='…'&&DEV_SYS.be!==APP_BUILD&&DEV_SYS.be.indexOf(APP_BUILD)<0?' <span class="text-amber-600 text-xs">(ไม่ตรงกับหน้าเว็บ — ตรวจว่า Deploy/อัปไฟล์ครบหรือยัง)</span>':''}</div><div>🪪 ใบอนุญาตหมดอายุ: <b>${lic}</b></div>`
+    +(L&&dl<=60?`<div class="rounded-lg bg-amber-50 border border-amber-300 text-amber-800 px-3 py-2 text-xs mt-1">${dl<0?'ใบอนุญาตหมดอายุแล้ว':'ใบอนุญาตใกล้หมดอายุ'} — กด “ต่ออายุใบอนุญาต” เพื่อติดต่อผู้พัฒนา</div>`:'');
+}
+function devReportText(){
+  const u=state.currentUser||{}, s=state.settings||{}, L=DEV_SYS.license;
+  return ['📋 ข้อมูลระบบ NSR SMART ประถมศึกษา','โรงเรียน: '+(s.schoolName||'-'),'ผู้ใช้: '+(u.name||'-')+' ('+(u.role||'-')+')','เวอร์ชันหน้าเว็บ: '+APP_BUILD,'เวอร์ชัน Code.gs: '+DEV_SYS.be,
+    'ใบอนุญาตหมดอายุ: '+(L?L.expires+' (เหลือ '+L.daysLeft+' วัน)':'-'),'เบราว์เซอร์: '+navigator.userAgent,'เวลา: '+new Date().toLocaleString('th-TH'),'','อาการที่พบ: '].join('\n');
+}
+function devCopyReport(){ spClip(devReportText(),'คัดลอกข้อมูลแล้ว — วางใน LINE ถึงผู้พัฒนาได้'); }
+function devRenew(){
+  const s=state.settings||{}, L=DEV_SYS.license;
+  const msg='สวัสดีครับ/ค่ะ ขอต่ออายุใบอนุญาตระบบ NSR SMART ประถมศึกษา\nโรงเรียน: '+(s.schoolName||'-')+'\nใบอนุญาตหมดอายุ: '+(L?L.expires:'-');
+  spClip(msg,'คัดลอกข้อความต่ออายุแล้ว — วางในแชต LINE ได้เลย');
+  const u=devLineUrl(); if(u) window.open(u,'_blank','noopener');
+}
 // ---------- 📜 ประวัติการแก้ไข ----------
 const AUDIT_LABEL={approveSubjects:'อนุมัติ/ล็อกวิชา',unlockSubject:'ปลดล็อกวิชา',setLock:'ล็อก/ปลดล็อกทั้งห้อง',saveSettings:'แก้ตั้งค่า',saveTabAccess:'แก้สิทธิ์เมนู',
   saveGradeMapping:'แก้ตารางแปลงเกรด',saveReport51Config:'แก้ตั้งค่าใบรายงาน',saveTeacher:'บันทึกครู',saveTeachersBatch:'บันทึกครูหลายคน',deleteTeacher:'ลบครู',importDMC:'นำเข้า DMC',
@@ -4904,7 +5000,7 @@ const LOGIN_LOGO_BASE64='';
 const APP_NAME='NSR SMART ประถมศึกษา';
 const APP_NAME_HTML='NSR <span class="text-emerald-500">SMART</span> <span class="text-slate-600">ประถมศึกษา</span>';
 const APP_TAGLINE='ระบบสารสนเทศงานวิชาการและดูแลช่วยเหลือนักเรียน';
-const APP_BUILD='2026-10-15a'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
+const APP_BUILD='2026-10-15b'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
 const TH_M_ABBR=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 // โหลดรายการ (วัน|ห้อง|คาบ) ที่เช็คแล้วของเดือนนั้น (cache ต่อเดือน)
 async function attMonthKeys(month){
