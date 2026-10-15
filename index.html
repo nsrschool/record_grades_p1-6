@@ -17,10 +17,10 @@
   window.WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwjo4Vyq0OWbIYiUD7BoBdrTnbCrEp42jlAyIJvw4I9y_-_HQFvzI329yQK4w1VZQ-L/exec';
   // ข้อมูลผู้พัฒนา (เมนู 👨‍💻 ผู้พัฒนา) — ช่องที่เว้นว่างจะไม่แสดง
   window.DEV_INFO = {
-    brand: '™', owner: 'ครูรุ่งนิรันดร์',
+    brand: 'ครูรุ่งนิรันดร์™', owner: 'ครูรุ่งนิรันดร์',
     facebook: '',
     line: '',
-    website: '/',
+    website: '',
     phone: '', email: ''
   };
 </script>
@@ -1645,7 +1645,7 @@
         <h3 class="font-semibold text-teal-600">เอกสารประกอบรายวิชา & นักเรียนเสี่ยง (ใหม่)</h3>
         <ol class="list-decimal ml-5 mt-1 space-y-1 text-slate-600">
           <li>เมนู <b>📚 คำอธิบาย/โครงสร้างวิชา</b>: ครูอัปโหลด คำอธิบายรายวิชา, โครงสร้างรายวิชา, แบบวิเคราะห์ผู้เรียนรายบุคคล ของวิชาที่รับผิดชอบ — ฝังในเล่ม ปพ.5 หน้า "เอกสารประกอบรายวิชา" อัตโนมัติ ส่วนกำหนดการสอนรายภาคดึงจากเมนูส่งเอกสารการสอนมาแสดงรวมให้ ไม่ต้องอัปซ้ำ</li>
-          <li>เมนู <b>📈 ติดตาม &amp; อนุมัติ</b> (แอดมิน): 1 แถว = วิชา×ห้อง×ครู • แถวที่คะแนนทุกหน่วยครบทุกคนและตัดเกรดครบจะขึ้น <b>✅ พร้อมอนุมัติ</b> → ติ๊กเลือกแล้วกด <b>🔒 อนุมัติ/ล็อกที่เลือก</b> (แถวที่ยังไม่ครบระบบไม่อนุมัติให้ และบอกว่าขาดอะไร) • ล็อกแล้วครูแก้ไม่ได้ ผู้ปกครองเห็นเฉพาะวิชาที่อนุมัติ (วิชาอื่นขึ้น “รอการอนุมัติ”) • ปลดล็อก/ล็อกบังคับต้องระบุเหตุผล ที่เมนู <b>🔒 ล็อกบังคับ/ปลดล็อก</b> • ปุ่ม <b>📣 แจ้งครูที่ค้าง</b> คัดลอกข้อความไปวางใน LINE</li>
+          <li>เมนู <b>📈 ติดตาม &amp; อนุมัติ</b> (แอดมิน): 1 แถว = วิชา×ห้อง×ครู • แถวที่คะแนนทุกหน่วยครบทุกคนและตัดเกรดครบจะขึ้น <b>✅ พร้อมอนุมัติ</b> → ติ๊กเลือกแล้วกด <b>🔒 อนุมัติ/ล็อกที่เลือก</b> (แถวที่ยังไม่ครบระบบไม่อนุมัติให้ และบอกว่าขาดอะไร) • ล็อกแล้วครูแก้ไม่ได้ ผู้ปกครองเห็นเฉพาะวิชาที่อนุมัติ (วิชาอื่นขึ้น “รอการอนุมัติ”) • แอดมินและผู้บริหารอนุมัติได้ • ปลดล็อก/ล็อกบังคับ (เฉพาะแอดมิน) ต้องระบุเหตุผล ที่เมนู <b>🔒 ล็อกบังคับ/ปลดล็อก</b> • ปุ่ม <b>📣 แจ้งครูที่ค้าง</b> คัดลอกข้อความไปวางใน LINE</li>
           <li>เมนู <b>⚠️ นักเรียนเสี่ยง</b>: เลือกห้องและเกณฑ์ (เวลาเรียน/เกรดเฉลี่ย/ขาดเรียน) แล้วกด 🔍 ตรวจสอบ ดูรายชื่อพร้อมสัญญาณเสี่ยง และส่งออก Excel ได้</li>
         </ol>
       </div>
@@ -4088,7 +4088,7 @@ function spSelReady(){
 }
 function spSelClear(){ state._spSel={}; renderScoreProgress(); }
 async function refreshApprovalBadge(){
-  if(!isAdminUser()) return;
+  if(!canApproveUser()) return;
   try{ const d=await GAS.call('getApprovalBadge'); setApprovalBadge(d.ready||0); }catch(e){}
 }
 function setApprovalBadge(n){
@@ -4106,7 +4106,7 @@ async function spApproveSelected(){
   const ok=chosen.filter(r=>r.ready), bad=chosen.filter(r=>!r.ready);
   if(!ok.length){
     alert('ไม่มีรายการที่เรียบร้อยพอจะอนุมัติ\n\n'+bad.slice(0,8).map(r=>'• '+(r.room||'')+' '+r.name+' — '+spReason(r)).join('\n')+
-      '\n\nแก้ให้ครบก่อน หรือถ้าจำเป็นจริงๆ ให้ล็อกบังคับที่เมนู 🔒 ล็อกบังคับ/ปลดล็อก');
+      '\n\nแก้ให้ครบก่อน หรือถ้าจำเป็นจริงๆ ให้แอดมินล็อกบังคับที่เมนู 🔒 ล็อกบังคับ/ปลดล็อก');
     return;
   }
   let msg='อนุมัติ/ล็อก '+ok.length+' รายการ?\n• ครูจะแก้ไขคะแนน/เกรดของวิชา×ห้องเหล่านี้ไม่ได้\n• ผู้ปกครองจะเห็นผลของวิชาเหล่านี้';
@@ -4177,9 +4177,9 @@ function renderScoreProgress(){
   const body=rows.map((r,i)=>{
     const barC=r.percent>=100?'bg-emerald-500':(r.percent>0?'bg-amber-400':'bg-rose-300');
     const tch=String(r.teacher||'').trim();
-    const idx=d.rows.indexOf(r), lk=spLocked(r), canSel=isAdminUser()&&!lk&&!!r.room;
+    const idx=d.rows.indexOf(r), lk=spLocked(r), canSel=canApproveUser()&&!lk&&!!r.room;
     return `<tr class="border-b last:border-0 ${lk?'bg-slate-50':''}">
-      ${isAdminUser()?`<td class="px-2 py-1.5 text-center">${canSel?`<input type="checkbox" class="w-4 h-4" ${state._spSel[spKey(r)]?'checked':''} onchange="spToggleSel(${idx})">`:''}</td>`:''}
+      ${canApproveUser()?`<td class="px-2 py-1.5 text-center">${canSel?`<input type="checkbox" class="w-4 h-4" ${state._spSel[spKey(r)]?'checked':''} onchange="spToggleSel(${idx})">`:''}</td>`:''}
       <td class="px-2 py-1.5 text-center text-slate-400">${i+1}</td>
       <td class="px-2 py-1.5 whitespace-nowrap font-medium text-slate-700">${esc(r.name)}</td>
       <td class="px-2 py-1.5 text-center">${esc((r.rooms&&r.rooms.length)?r.rooms.join(', '):r.classLevel)}</td>
@@ -4200,15 +4200,15 @@ function renderScoreProgress(){
   const s=state._spSort;
   const th=(k,label,cls)=>`<th class="px-2 ${cls||''} cursor-pointer select-none" onclick="spSort('${k}')">${label}${s&&s.k===k?(s.dir===1?' ▲':' ▼'):''}</th>`;
   const nSel=Object.keys(state._spSel).length;
-  const bar=isAdminUser()?`<div class="flex flex-wrap items-center gap-2 mb-2 p-2 rounded-lg bg-slate-50 border border-slate-200">
+  const bar=canApproveUser()?`<div class="flex flex-wrap items-center gap-2 mb-2 p-2 rounded-lg bg-slate-50 border border-slate-200">
       <button onclick="spApproveSelected()" class="btn bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 text-sm">🔒 อนุมัติ/ล็อกที่เลือก${nSel?' ('+nSel+')':''}</button>
       <button onclick="spSelReady()" class="btn bg-white border border-slate-200 px-3 py-1.5 text-xs">☑ เลือกที่พร้อมอนุมัติทั้งหมด (ตามตัวกรอง)</button>
       ${nSel?'<button onclick="spSelClear()" class="btn bg-white border border-slate-200 px-3 py-1.5 text-xs">✖ ล้างที่เลือก</button>':''}
-      <span class="text-[11px] text-slate-400">อนุมัติได้เฉพาะแถว "พร้อมอนุมัติ" • ล็อกบังคับ/ปลดล็อกที่เมนู 🔒</span></div>`:'';
+      <span class="text-[11px] text-slate-400">อนุมัติได้เฉพาะแถว "พร้อมอนุมัติ" • ${isAdminUser()?'ล็อกบังคับ/ปลดล็อกที่เมนู 🔒':'ปลดล็อก/ล็อกบังคับ ติดต่อแอดมิน'}</span></div>`:'';
   el.innerHTML=bar+`<div class="text-xs text-slate-400 mb-2">แสดง ${rows.length} จาก ${d.rows.length} รายการ (วิชา×ห้อง) • แตะหัวตารางเพื่อเรียง</div>
     <table class="w-full text-sm" style="min-width:1200px">
     <thead><tr class="text-left text-slate-400 border-b">
-      ${isAdminUser()?'<th class="px-2 py-2 text-center" title="เลือก">☑</th>':''}<th class="px-2 py-2">#</th>${th('name','รายวิชา')}${th('room','ห้อง','text-center')}${th('teacher','ครูผู้สอน')}
+      ${canApproveUser()?'<th class="px-2 py-2 text-center" title="เลือก">☑</th>':''}<th class="px-2 py-2">#</th>${th('name','รายวิชา')}${th('room','ห้อง','text-center')}${th('teacher','ครูผู้สอน')}
       <th class="px-2 text-center">หน่วย</th><th class="px-2 text-center">นร.มีคะแนน</th><th class="px-2 text-center">ช่องคะแนน</th>
       ${th('percent','ความคืบหน้า')}${th('status','สถานะ','text-center')}${th('graded','ตัดเกรดแล้ว','text-center')}<th class="px-2">สถานะอนุมัติ / ขาดอะไร</th><th class="px-2 text-center">รายละเอียด</th>
     </tr></thead><tbody>${body}</tbody></table>`+procLine;
@@ -4596,6 +4596,7 @@ function logout(){
 }
 
 function isTeacherScope(u){ return u && u.role==='teacher'; }
+function canApproveUser(){ const r=state.currentUser&&state.currentUser.role; return r==='admin'||r==='director'; }   // อนุมัติผล: แอดมิน + ผู้บริหาร (ปลดล็อก/ล็อกบังคับ: แอดมินเท่านั้น)
 function isAdminUser(){ return !!(state.currentUser && state.currentUser.role==='admin'); }
 // รายการแท็บ + ป้าย + สิทธิ์เริ่มต้น (all=ทุกคน, staff=ครู, director=ผู้บริหาร, admin=แอดมินเท่านั้น)
 const TAB_META=[
@@ -4865,7 +4866,7 @@ function renderHealth(r){
 
 // ---------- 👨‍💻 ผู้พัฒนา ----------
 const DEV_CHANGELOG=[
-  ['2026-10-15','อนุมัติ/ล็อกผลรายวิชา × ห้อง • ติดตามแบบวิชา×ห้อง×ครู • ป้ายแดงงานรออนุมัติ • ประวัติการแก้ไข • ตรวจสุขภาพเพิ่มเติม • ส่งออกข้อมูลทั้งหมด'],
+  ['2026-10-15','อนุมัติ/ล็อกผลรายวิชา × ห้อง (แอดมิน+ผู้บริหารอนุมัติได้ ปลดล็อกเฉพาะแอดมิน) • ติดตามแบบวิชา×ห้อง×ครู • ป้ายแดงงานรออนุมัติ • ประวัติการแก้ไข • ตรวจสุขภาพเพิ่มเติม • ส่งออกข้อมูลทั้งหมด'],
   ['2026-10-15','ช่องทางแจ้งปัญหาข้อมูลนักเรียนในหน้าตรวจผลออนไลน์ + แจ้งเตือนทางอีเมล'],
   ['2026-10-15','จัดเมนูใหม่ให้เหมือนระบบมัธยม • ส่งออก SchoolMIS • เมนูผู้พัฒนา'],
   ['2026-10-14','ตัวกรองหน้าติดตามคะแนน (ชั้น/ห้อง/ครู/ความคืบหน้า) + สรุปรายครู + แจ้งเตือนครูที่ค้าง'],
@@ -5000,7 +5001,7 @@ const LOGIN_LOGO_BASE64='';
 const APP_NAME='NSR SMART ประถมศึกษา';
 const APP_NAME_HTML='NSR <span class="text-emerald-500">SMART</span> <span class="text-slate-600">ประถมศึกษา</span>';
 const APP_TAGLINE='ระบบสารสนเทศงานวิชาการและดูแลช่วยเหลือนักเรียน';
-const APP_BUILD='2026-10-15b'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
+const APP_BUILD='2026-10-15c'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
 const TH_M_ABBR=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 // โหลดรายการ (วัน|ห้อง|คาบ) ที่เช็คแล้วของเดือนนั้น (cache ต่อเดือน)
 async function attMonthKeys(month){
