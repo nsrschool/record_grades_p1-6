@@ -1346,6 +1346,9 @@
         </div>
         <div class="flex flex-wrap gap-2 ml-auto">
           <input id="sp_search" oninput="renderScoreProgress()" placeholder="🔍 ค้นหาวิชา/ครู" class="inp text-sm" style="max-width:170px">
+          <select id="sp_level" onchange="spLevelChanged()" class="inp text-sm" style="max-width:130px"><option value="">ทุกชั้น</option></select>
+          <select id="sp_room" onchange="renderScoreProgress()" class="inp text-sm" style="max-width:130px"><option value="">ทุกห้อง</option></select>
+          <select id="sp_teacher" onchange="renderScoreProgress()" class="inp text-sm" style="max-width:190px"><option value="">👤 ครูทุกคน</option></select>
           <select id="sp_filter" onchange="renderScoreProgress()" class="inp text-sm" style="max-width:170px">
             <option value="all">ทั้งหมด</option>
             <option value="none">ยังไม่บันทึกเลย</option>
@@ -1353,12 +1356,26 @@
             <option value="done">บันทึกครบ</option>
             <option value="no_units">ยังไม่กำหนดหน่วย</option>
           </select>
+          <select id="sp_pct" onchange="renderScoreProgress()" class="inp text-sm" style="max-width:150px">
+            <option value="">ความคืบหน้าทุกช่วง</option>
+            <option value="lt50">ต่ำกว่า 50%</option>
+            <option value="50to99">50–99%</option>
+            <option value="100">100%</option>
+          </select>
+          <select id="sp_grade" onchange="renderScoreProgress()" class="inp text-sm" style="max-width:150px">
+            <option value="">ตัดเกรด: ทั้งหมด</option>
+            <option value="done">ตัดเกรดครบทุกคน</option>
+            <option value="notyet">ยังตัดเกรดไม่ครบ</option>
+          </select>
+          <label class="flex items-center gap-1 text-xs text-slate-600 px-1"><input type="checkbox" id="sp_noteacher" onchange="renderScoreProgress()"> ไม่พบครู</label>
+          <button onclick="spReset()" class="btn bg-white border border-slate-200 px-3 py-1.5 text-sm">✖ ล้างตัวกรอง</button>
           <button onclick="loadScoreProgress(true)" class="btn bg-white border border-slate-200 px-3 py-1.5 text-sm">🔄 รีเฟรช</button>
           <button onclick="exportScoreProgress()" class="btn bg-emerald-600 text-white px-3 py-1.5 text-sm">📥 Excel</button>
         </div>
       </div>
       <div id="sp_cards" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3"></div>
     </div>
+    <div id="sp_teachers" class="card p-4 mb-4 overflow-x-auto text-sm hidden"></div>
     <div id="sp_area" class="card p-4 overflow-x-auto text-sm text-slate-400">กำลังโหลด…</div>
   </section>
 
@@ -3761,28 +3778,145 @@ async function loadScoreProgress(force){
   const el=document.getElementById('sp_area');
   try{ showLoading(true);
     if(force || !state._spData) state._spData=await GAS.call('getScoreProgress');
-    const s=state._spData.summary;
-    document.getElementById('sp_cards').innerHTML=[
-      ['ทั้งหมด (วิชา)', s.total, 'bg-slate-50 text-slate-700'],
-      ['บันทึกครบ', s.done, 'bg-emerald-50 text-emerald-700'],
-      ['บันทึกบางส่วน', s.partial, 'bg-amber-50 text-amber-700'],
-      ['ยังไม่บันทึก/ไม่มีหน่วย', s.none+s.noUnits, 'bg-rose-50 text-rose-600'],
-    ].map(([l,v,c])=>`<div class="rounded-xl p-3 ${c}"><div class="text-2xl font-bold">${v}</div><div class="text-xs">${l}</div></div>`).join('');
+    spFillOptions();
     renderScoreProgress();
   }catch(e){ el.innerHTML='<div class="text-rose-500">'+esc(e.message)+'</div>'; }
   finally{ showLoading(false); }
 }
-function renderScoreProgress(){
-  const el=document.getElementById('sp_area');
+// ชั้นของแถว (ป.1–ป.6) จากชั้นของวิชา หรือห้องแรก
+function spLevelOf(r){
+  const s=String((r.classLevel)||((r.rooms&&r.rooms[0])||'')).trim();
+  const m=s.match(/^(ป\.?\s*\d+)/);
+  if(m) return m[1].replace(/\s+/g,'').replace(/^ป(\d)/,'ป.$1');
+  return s.split('/')[0];
+}
+function spRoomsOf(r){
+  const a=(r.rooms&&r.rooms.length)?r.rooms:(String(r.classLevel||'').includes('/')?[r.classLevel]:[]);
+  return a;
+}
+function spFillOptions(){
   const d=state._spData; if(!d) return;
-  const procLine=d._processedAt?`<div class="text-[10px] text-slate-400 mt-2">ประมวลผลเมื่อ ${esc(d._processedAt)} น. (สดสุดทุก 5 นาที)</div>`:'';
+  const keep=id=>document.getElementById(id).value;
+  const lv=keep('sp_level'), rm=keep('sp_room'), tc=keep('sp_teacher');
+  const levels=[...new Set(d.rows.map(spLevelOf).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th',{numeric:true}));
+  const teachers=[...new Set(d.rows.map(r=>String(r.teacher||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th'));
+  document.getElementById('sp_level').innerHTML='<option value="">ทุกชั้น</option>'+levels.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+  document.getElementById('sp_teacher').innerHTML='<option value="">👤 ครูทุกคน</option>'+teachers.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+  if(levels.includes(lv)) document.getElementById('sp_level').value=lv;
+  if(teachers.includes(tc)) document.getElementById('sp_teacher').value=tc;
+  spFillRooms();
+  const rooms=[...document.getElementById('sp_room').options].map(o=>o.value);
+  if(rooms.includes(rm)) document.getElementById('sp_room').value=rm;
+}
+function spFillRooms(){
+  const d=state._spData; if(!d) return;
+  const lv=document.getElementById('sp_level').value;
+  const rooms=[...new Set(d.rows.filter(r=>!lv||spLevelOf(r)===lv).flatMap(spRoomsOf))].sort((a,b)=>a.localeCompare(b,'th',{numeric:true}));
+  document.getElementById('sp_room').innerHTML='<option value="">ทุกห้อง</option>'+rooms.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+}
+function spLevelChanged(){ spFillRooms(); renderScoreProgress(); }
+function spReset(){
+  ['sp_search'].forEach(id=>document.getElementById(id).value='');
+  ['sp_level','sp_room','sp_teacher','sp_pct','sp_grade'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('sp_filter').value='all';
+  document.getElementById('sp_noteacher').checked=false;
+  spFillRooms(); state._spSort=null; renderScoreProgress();
+}
+function spSetTeacher(name){
+  const sel=document.getElementById('sp_teacher');
+  if(name===''){ document.getElementById('sp_noteacher').checked=true; sel.value=''; }
+  else { document.getElementById('sp_noteacher').checked=false; sel.value=name; }
+  renderScoreProgress(); document.getElementById('sp_area').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function spSort(k){
+  const s=state._spSort;
+  state._spSort=(s&&s.k===k)?(s.dir===1?{k,dir:-1}:null):{k,dir:1};
+  renderScoreProgress();
+}
+function spFiltered(){
+  const d=state._spData; if(!d) return [];
   const q=(document.getElementById('sp_search').value||'').trim().toLowerCase();
   const f=document.getElementById('sp_filter').value;
-  const rows=d.rows.filter(r=>{
+  const lv=document.getElementById('sp_level').value;
+  const rm=document.getElementById('sp_room').value;
+  const tc=document.getElementById('sp_teacher').value;
+  const pc=document.getElementById('sp_pct').value;
+  const gr=document.getElementById('sp_grade').value;
+  const nt=document.getElementById('sp_noteacher').checked;
+  let rows=d.rows.filter(r=>{
     if(f!=='all' && r.status!==f) return false;
+    if(lv && spLevelOf(r)!==lv) return false;
+    if(rm && !spRoomsOf(r).includes(rm)) return false;
+    if(tc && String(r.teacher||'').trim()!==tc) return false;
+    if(nt && String(r.teacher||'').trim()) return false;
+    if(pc==='lt50' && !(r.percent<50)) return false;
+    if(pc==='50to99' && !(r.percent>=50&&r.percent<100)) return false;
+    if(pc==='100' && !(r.percent>=100)) return false;
+    if(gr==='done' && !(r.studentCount>0 && r.gradedCount>=r.studentCount)) return false;
+    if(gr==='notyet' && !(r.gradedCount<r.studentCount)) return false;
     if(q && !(String(r.name).toLowerCase().includes(q)||String(r.teacher).toLowerCase().includes(q)||String(r.classLevel).toLowerCase().includes(q))) return false;
     return true;
   });
+  const s=state._spSort;
+  if(s){
+    const ord={none:0,partial:1,done:2,no_units:3};
+    const key={
+      name:r=>String(r.name), room:r=>spRoomsOf(r).join(',')||String(r.classLevel),
+      teacher:r=>String(r.teacher||''), percent:r=>r.percent, status:r=>ord[r.status],
+      graded:r=>r.studentCount?r.gradedCount/r.studentCount:0
+    }[s.k];
+    rows=rows.slice().sort((a,b)=>{
+      const x=key(a), y=key(b);
+      return (typeof x==='number'?x-y:String(x).localeCompare(String(y),'th',{numeric:true}))*s.dir;
+    });
+  }
+  return rows;
+}
+// สรุปรายครู จากแถวที่กรองแล้ว
+function spTeacherSummary(rows){
+  const m={};
+  rows.forEach(r=>{
+    const t=String(r.teacher||'').trim();
+    const o=m[t]=m[t]||{teacher:t,subjects:0,done:0,partial:0,none:0,noUnits:0,filled:0,total:0};
+    o.subjects++;
+    if(r.status==='done') o.done++; else if(r.status==='partial') o.partial++; else if(r.status==='no_units') o.noUnits++; else o.none++;
+    o.filled+=Math.min(r.filledCells,r.totalCells); o.total+=r.totalCells;
+  });
+  return Object.values(m).map(o=>Object.assign(o,{pct:o.total?Math.round(o.filled/o.total*100):0}))
+    .sort((a,b)=>a.pct-b.pct||a.teacher.localeCompare(b.teacher,'th'));
+}
+function renderScoreProgress(){
+  const el=document.getElementById('sp_area');
+  const d=state._spData; if(!d) return;
+  const rows=spFiltered();
+  // การ์ดสรุป (ตามตัวกรอง)
+  const c={done:0,partial:0,none:0,no_units:0}; rows.forEach(r=>c[r.status]++);
+  document.getElementById('sp_cards').innerHTML=[
+    ['ทั้งหมด (วิชา)', rows.length, 'bg-slate-50 text-slate-700'],
+    ['บันทึกครบ', c.done, 'bg-emerald-50 text-emerald-700'],
+    ['บันทึกบางส่วน', c.partial, 'bg-amber-50 text-amber-700'],
+    ['ยังไม่บันทึก/ไม่มีหน่วย', c.none+c.no_units, 'bg-rose-50 text-rose-600'],
+  ].map(([l,v,cl])=>`<div class="rounded-xl p-3 ${cl}"><div class="text-2xl font-bold">${v}</div><div class="text-xs">${l}</div></div>`).join('');
+  // สรุปรายครู (แสดงเมื่อยังไม่เลือกครูคนใดคนหนึ่ง)
+  const tbox=document.getElementById('sp_teachers');
+  const tcSel=document.getElementById('sp_teacher').value;
+  if(rows.length && !tcSel){
+    const ts=spTeacherSummary(rows);
+    tbox.classList.remove('hidden');
+    tbox.innerHTML=`<div class="font-semibold text-teal-700 mb-1">👤 สรุปรายครู <span class="text-xs font-normal text-slate-400">(เรียงจากค้างมากไปน้อย • แตะชื่อครูเพื่อกรอง)</span></div>
+      <table class="w-full text-sm" style="min-width:560px"><thead><tr class="text-left text-slate-400 border-b">
+        <th class="px-2 py-1">ครู</th><th class="px-2 text-center">วิชา</th><th class="px-2 text-center">ครบ</th><th class="px-2 text-center">บางส่วน</th><th class="px-2 text-center">ยังไม่บันทึก</th><th class="px-2">ความคืบหน้า</th>
+      </tr></thead><tbody>${ts.map(o=>{
+        const barC=o.pct>=100?'bg-emerald-500':(o.pct>0?'bg-amber-400':'bg-rose-300');
+        const nm=o.teacher?`<button class="text-teal-700 underline text-left" onclick="spSetTeacher(decodeURIComponent('${encodeURIComponent(o.teacher)}'))">${esc(o.teacher)}</button>`
+          :`<button class="text-slate-400 underline text-left" onclick="spSetTeacher('')">— ไม่พบครู —</button>`;
+        return `<tr class="border-b last:border-0"><td class="px-2 py-1 whitespace-nowrap">${nm}</td>
+          <td class="px-2 text-center">${o.subjects}</td><td class="px-2 text-center text-emerald-600">${o.done}</td>
+          <td class="px-2 text-center text-amber-600">${o.partial}</td><td class="px-2 text-center text-rose-500">${o.none+o.noUnits}</td>
+          <td class="px-2" style="min-width:110px"><div class="flex items-center gap-1.5"><div class="bg-slate-100 rounded-full h-2 flex-1"><div class="h-2 rounded-full ${barC}" style="width:${Math.min(o.pct,100)}%"></div></div><span class="text-[10px] text-slate-500 w-8 text-right">${o.pct}%</span></div></td></tr>`;
+      }).join('')}</tbody></table>`;
+  } else { tbox.classList.add('hidden'); tbox.innerHTML=''; }
+  const procLine=d._processedAt?`<div class="text-[10px] text-slate-400 mt-2">ประมวลผลเมื่อ ${esc(d._processedAt)} น. (สดสุดทุก 5 นาที)</div>`:'';
   if(!rows.length){ el.innerHTML='<div class="text-center text-slate-400 py-6">ไม่พบรายการตามเงื่อนไข</div>'; return; }
   const stChip=r=>({
     done:'<span class="badge bg-emerald-100 text-emerald-700">✅ ครบ</span>',
@@ -3792,11 +3926,12 @@ function renderScoreProgress(){
   }[r.status]);
   const body=rows.map((r,i)=>{
     const barC=r.percent>=100?'bg-emerald-500':(r.percent>0?'bg-amber-400':'bg-rose-300');
+    const tch=String(r.teacher||'').trim();
     return `<tr class="border-b last:border-0">
       <td class="px-2 py-1.5 text-center text-slate-400">${i+1}</td>
       <td class="px-2 py-1.5 whitespace-nowrap font-medium text-slate-700">${esc(r.name)}</td>
       <td class="px-2 py-1.5 text-center">${esc((r.rooms&&r.rooms.length)?r.rooms.join(', '):r.classLevel)}</td>
-      <td class="px-2 py-1.5 whitespace-nowrap">${esc(r.teacher)||'<span class="text-slate-300">— ไม่พบครู —</span>'}</td>
+      <td class="px-2 py-1.5 whitespace-nowrap">${tch?`<button class="text-left hover:underline" onclick="spSetTeacher(decodeURIComponent('${encodeURIComponent(tch)}'))">${esc(tch)}</button>`:'<span class="text-slate-300">— ไม่พบครู —</span>'}</td>
       <td class="px-2 py-1.5 text-center">${r.unitCount}</td>
       <td class="px-2 py-1.5 text-center">${r.studentsWithScore}/${r.studentCount}</td>
       <td class="px-2 py-1.5 text-center">${r.filledCells}/${r.totalCells}</td>
@@ -3808,12 +3943,14 @@ function renderScoreProgress(){
       <td class="px-2 py-1.5 text-center"><button onclick="spDetail(${d.rows.indexOf(r)})" class="text-teal-600 text-xs whitespace-nowrap">🔍 เจาะลึก</button></td>
     </tr>`;
   }).join('');
-  el.innerHTML=`<div class="text-xs text-slate-400 mb-2">แสดง ${rows.length} จาก ${d.rows.length} วิชา</div>
+  const s=state._spSort;
+  const th=(k,label,cls)=>`<th class="px-2 ${cls||''} cursor-pointer select-none" onclick="spSort('${k}')">${label}${s&&s.k===k?(s.dir===1?' ▲':' ▼'):''}</th>`;
+  el.innerHTML=`<div class="text-xs text-slate-400 mb-2">แสดง ${rows.length} จาก ${d.rows.length} วิชา • แตะหัวตารางเพื่อเรียง</div>
     <table class="w-full text-sm" style="min-width:980px">
     <thead><tr class="text-left text-slate-400 border-b">
-      <th class="px-2 py-2">#</th><th class="px-2">รายวิชา</th><th class="px-2 text-center">ห้อง</th><th class="px-2">ครูผู้สอน</th>
+      <th class="px-2 py-2">#</th>${th('name','รายวิชา')}${th('room','ห้อง','text-center')}${th('teacher','ครูผู้สอน')}
       <th class="px-2 text-center">หน่วย</th><th class="px-2 text-center">นร.มีคะแนน</th><th class="px-2 text-center">ช่องคะแนน</th>
-      <th class="px-2">ความคืบหน้า</th><th class="px-2 text-center">สถานะ</th><th class="px-2 text-center">ตัดเกรดแล้ว</th><th class="px-2 text-center">รายละเอียด</th>
+      ${th('percent','ความคืบหน้า')}${th('status','สถานะ','text-center')}${th('graded','ตัดเกรดแล้ว','text-center')}<th class="px-2 text-center">รายละเอียด</th>
     </tr></thead><tbody>${body}</tbody></table>`+procLine;
 }
 // Modal เจาะลึกรายวิชา: ความคืบหน้ารายหน่วย + นร.ที่คะแนนยังไม่ครบ
@@ -3864,13 +4001,17 @@ async function spDetail(idx){
 }
 function exportScoreProgress(){
   const d=state._spData; if(!d||!d.rows.length){ toast('ยังไม่มีข้อมูล','error'); return; }
+  const rows=spFiltered(); if(!rows.length){ toast('ไม่มีรายการตามตัวกรอง','error'); return; }
   const stTh={done:'ครบ',partial:'บางส่วน',none:'ยังไม่บันทึก',no_units:'ยังไม่กำหนดหน่วย'};
-  const aoa=[['รายวิชา','ชั้น','ครูผู้สอน','จำนวนหน่วย','นร.มีคะแนน','นร.ทั้งหมด','ช่องที่บันทึก','ช่องทั้งหมด','%','สถานะ','ตัดเกรดแล้ว']];
-  d.rows.forEach(r=>aoa.push([r.name,r.classLevel,r.teacher,r.unitCount,r.studentsWithScore,r.studentCount,r.filledCells,r.totalCells,r.percent,stTh[r.status],r.gradedCount]));
-  const ws=XLSX.utils.aoa_to_sheet(aoa); const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'บันทึกคะแนน');
+  const aoa=[['รายวิชา','ชั้น','ห้อง','ครูผู้สอน','จำนวนหน่วย','นร.มีคะแนน','นร.ทั้งหมด','ช่องที่บันทึก','ช่องทั้งหมด','%','สถานะ','ตัดเกรดแล้ว']];
+  rows.forEach(r=>aoa.push([r.name,r.classLevel,spRoomsOf(r).join(', '),r.teacher,r.unitCount,r.studentsWithScore,r.studentCount,r.filledCells,r.totalCells,r.percent,stTh[r.status],r.gradedCount]));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),'บันทึกคะแนน');
+  const t=[['ครู','จำนวนวิชา','ครบ','บางส่วน','ยังไม่บันทึก','ช่องที่บันทึก','ช่องทั้งหมด','% ความคืบหน้า']];
+  spTeacherSummary(rows).forEach(o=>t.push([o.teacher||'— ไม่พบครู —',o.subjects,o.done,o.partial,o.none+o.noUnits,o.filled,o.total,o.pct]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(t),'สรุปรายครู');
   XLSX.writeFile(wb,'สรุปการบันทึกคะแนน_'+todayISO()+'.xlsx');
-  toast('ส่งออกแล้ว');
+  toast('ส่งออกแล้ว ('+rows.length+' วิชา)');
 }
 // ---------- การส่งงาน (มุมมองผู้บริหาร) ----------
 async function loadExecDocs(force){
