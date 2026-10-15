@@ -18,9 +18,9 @@
   // ข้อมูลผู้พัฒนา (เมนู 👨‍💻 ผู้พัฒนา) — ช่องที่เว้นว่างจะไม่แสดง
   window.DEV_INFO = {
     brand: 'ครูรุ่งนิรันดร์™', owner: 'ครูรุ่งนิรันดร์',
-    facebook: '',
-    line: '',
-    website: '',
+    facebook: 'https://www.facebook.com/krupromsorn',
+    line: '@984livpo',
+    website: 'https://kps-shop.pages.dev/',
     phone: '', email: ''
   };
 </script>
@@ -162,7 +162,7 @@
     <button onclick="doLookup()" class="btn bg-teal-600 hover:bg-teal-700 text-white w-full py-2.5 mt-4 text-sm">ดูผลการเรียน</button>
     <div id="lk_wait" class="hidden mt-3 rounded-lg bg-amber-50 border border-amber-300 text-amber-800 text-xs px-3 py-2"></div>
     <div class="text-center mt-3"><a id="lk_issueLink" href="javascript:void(0)" onclick="openIssueForm()" class="hidden text-xs text-teal-700 underline">เข้าไม่ได้? แจ้งปัญหาข้อมูลนักเรียน</a></div>
-    <button onclick="closeLookup()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-600 w-full py-2 mt-2 text-xs">← กลับหน้าเข้าสู่ระบบ (ครู)</button>
+    <button id="lk_backBtn" onclick="closeLookup()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-600 w-full py-2 mt-2 text-xs">← กลับหน้าเข้าสู่ระบบ (ครู)</button>
     <p class="text-[11px] text-slate-400 mt-3">ข้อมูลใช้เพื่อยืนยันตัวตนเท่านั้น • หากกรอกถูกแต่เข้าไม่ได้ กรุณาติดต่อครูประจำชั้น</p>
   </div>
   <div id="lk_issueCard" class="card p-5 w-full max-w-sm mx-auto mt-6 noprint hidden">
@@ -1072,13 +1072,14 @@
           <button onclick="resetPerms()" class="btn bg-white border border-slate-200 px-3 py-1.5 text-sm">↩️ ค่าเริ่มต้น</button>
           <button onclick="savePerms()" class="btn bg-teal-600 text-white px-4 py-2 text-sm ml-auto">💾 บันทึกสิทธิ์</button>
         </div>
-        <p class="text-xs text-slate-400 mb-3">ติ๊กเมนูที่แต่ละบทบาทมองเห็นได้ • แอดมินเห็นทุกเมนูเสมอ • เมนูที่ล็อกไว้สำหรับแอดมินเท่านั้นจะแก้ไม่ได้</p>
+        <p class="text-xs text-slate-400 mb-3">ติ๊กเมนูที่ ครู / รองผอ.-หัวหน้าวิชาการ / ผู้อำนวยการ มองเห็น (แอดมินเห็นทุกเมนูเสมอ • หน้าแรกและคู่มือเปิดให้ทุกคน) • มีผลเมื่อผู้ใช้เข้าระบบใหม่</p>
         <div class="overflow-x-auto">
           <table class="w-full text-sm" style="min-width:480px">
             <thead><tr class="text-slate-400 border-b">
               <th class="text-left px-2 py-2">เมนู</th>
               <th class="px-2 py-2">ครู</th>
-              <th class="px-2 py-2">รองผอ./ผอ.</th>
+              <th class="px-2 py-2">รองผอ./<br>วิชาการ</th>
+              <th class="px-2 py-2">ผอ.</th>
             </tr></thead>
             <tbody id="perms_body"></tbody>
           </table>
@@ -3501,8 +3502,11 @@ function fillLookupDateSelects(){
   const be=new Date().getFullYear()+543;
   document.getElementById('lk_y').innerHTML='<option value="">ปี พ.ศ.</option>'+Array.from({length:22},(_,i)=>`<option>${be-3-i}</option>`).join('');
 }
+// เข้าผ่านลิงก์ ?check (นักเรียน/ผู้ปกครอง) = โหมดตรวจผลอย่างเดียว: ไม่มีปุ่มกลับหน้าครู ไม่โหลดหน้าล็อกอิน ไม่อ่าน session
+function isCheckOnly(){ return /[?&]check\b/.test(location.search); }
 async function openLookup(){
   fillLookupDateSelects();
+  const bb=document.getElementById('lk_backBtn'); if(bb) bb.classList.toggle('hidden',isCheckOnly());
   const ls=document.getElementById('loginScreen'); ls.classList.add('hidden'); ls.classList.remove('flex');
   document.getElementById('lookupScreen').classList.remove('hidden');
   resetLookup();
@@ -3515,6 +3519,7 @@ async function openLookup(){
   }catch(e){ if(e.code!=='EXPIRED') toast(e.message,'error'); }
 }
 function closeLookup(){
+  if(isCheckOnly()) return;   // โหมดนักเรียน: ห้ามกลับไปหน้าล็อกอินครู
   document.getElementById('lookupScreen').classList.add('hidden');
   if(history.replaceState && /[?&]check\b/.test(location.search)) history.replaceState(null,'',location.pathname);
   if(state.currentUser){ return; }
@@ -4892,6 +4897,7 @@ async function seedDemoIfEmpty(){
 Object.assign(state, { currentUser:null, teachers:[], mySchedule:[], schedule:[] });
 
 async function showLoginScreen(){
+  if(isCheckOnly()) return;   // ลิงก์ตรวจผลของนักเรียนไม่แสดง/ไม่โหลดหน้าล็อกอินครู
   const ls=document.getElementById('loginScreen');
   ls.classList.remove('hidden'); ls.classList.add('flex');
   document.getElementById('userBar').classList.add('hidden');
@@ -4996,13 +5002,13 @@ const TAB_META=[
 ];
 // สิทธิ์เริ่มต้นตาม data-role
 function defaultTabAccess(){
-  const teacher=[], director=[];
+  const teacher=[], director=[], principal=[];
   TAB_META.forEach(([t,,dr])=>{
-    if(dr==='all'){ teacher.push(t); director.push(t); }
+    if(dr==='all'){ teacher.push(t); director.push(t); principal.push(t); }
     else if(dr==='staff'){ teacher.push(t); }
-    else if(dr==='director'){ director.push(t); }
+    else if(dr==='director'){ director.push(t); principal.push(t); }
   });
-  return {teacher, director};
+  return {teacher, director, principal};
 }
 // เมนูที่มีอยู่ก่อนเพิ่ม "สรุปผลการเรียน" เข้าตารางสิทธิ์ (ใช้กับสิทธิ์ที่เคยบันทึกไว้ซึ่งยังไม่มี known)
 const LEGACY_TABS=['home','subjects','scores','teachdoc','subdoc','profile','former','exam','sar','teachsum','scoretrack','supervise','schedule','ability','report','stats','attendance','calendar','risk','admin','settings'];
@@ -5012,16 +5018,18 @@ function getTabAccess(){
   // เมนูใหม่ที่เพิ่มหลังบันทึกสิทธิ์ → ใช้ค่าเริ่มต้นของเมนูนั้น (ไม่ซ่อนจากครู/ผู้บริหารโดยไม่ตั้งใจ)
   const known=new Set(Array.isArray(s.known)?s.known:LEGACY_TABS);
   const t=s.teacher.slice(), d=s.director.slice();
+  const p=Array.isArray(s.principal)?s.principal.slice():null;   // สิทธิ์เก่าที่ยังไม่มีคอลัมน์ ผอ. → ใช้ชุดเดียวกับรองผอ.
   TAB_META.forEach(([tab])=>{
     if(known.has(tab)) return;
     if(def.teacher.includes(tab) && !t.includes(tab)) t.push(tab);
     if(def.director.includes(tab) && !d.includes(tab)) d.push(tab);
+    if(p && def.principal.includes(tab) && !p.includes(tab)) p.push(tab);
   });
-  return {teacher:t, director:d};
+  return {teacher:t, director:d, principal:p||d.slice()};
 }
 function applyRole(){
   const role = state.currentUser ? state.currentUser.role : 'teacher';
-  const admin = role==='admin', principal = role==='principal', director = role==='director'||principal;   // ผอ. ใช้ชุดเมนูเดียวกับรองผอ. + เมนูอนุมัติรายห้อง
+  const admin = role==='admin', principal = role==='principal', director = role==='director'||principal;   // ผอ. มีชุดสิทธิ์เมนูของตัวเอง (acc.principal) + เมนูอนุมัติรายห้อง
   const acc = getTabAccess();
   document.querySelectorAll('[data-role]').forEach(el=>{
     const dr=el.dataset.role, tab=el.dataset.tab; let show;
@@ -5029,7 +5037,7 @@ function applyRole(){
     else if(tab && (director||role==='teacher')){
       if(dr==='admin') show=false;  // แท็บแอดมินล็อกไว้เสมอ
       else if(dr==='principal') show=principal;
-      else show=(director?acc.director:acc.teacher).indexOf(tab)>=0;
+      else show=(principal?acc.principal:director?acc.director:acc.teacher).indexOf(tab)>=0;
     }
     else if(dr==='all') show=true;
     else if(dr==='director') show=director;
@@ -5234,6 +5242,7 @@ function renderHealth(r){
 
 // ---------- 👨‍💻 ผู้พัฒนา ----------
 const DEV_CHANGELOG=[
+  ['2026-10-15','สิทธิ์เมนูรายบทบาทแยก 3 คอลัมน์ (ครู / รองผอ.-วิชาการ / ผอ.) + ลิงก์ตรวจผลของนักเรียน (?check) ไม่มีปุ่มกลับหน้าครู ไม่โหลดหน้าล็อกอิน'],
   ['2026-10-15','หน้า "แก้ผล ร/มส/มผ & เลื่อนชั้น": ครูตั้งสถานะ ร/มส/มผ และบันทึกผลแก้ไขของวิชาที่สอน (ผ่านแล้วบันทึกเป็นผลสูงสุดตามเกณฑ์ + เก็บประวัติ) • ผู้บริหารดูเงื่อนไขเลื่อนชั้น (เวลาเรียน/วิชาค้าง/กิจกรรม) และกดเลื่อนชั้น/ซ้ำชั้นพร้อมเหตุผล • ตั้งเกณฑ์ได้ที่ ⚙️ ตั้งค่า • หน้าขึ้นปีใช้ผลการตัดสินนี้'],
   ['2026-10-15','ขึ้นปีการศึกษาใหม่ (แอดมิน): ตรวจตัวอย่างก่อน → สำรอง + เก็บ Archive ลง Drive → เลื่อนชั้น ป.1→ป.2 … ป.5→ป.6 ย้าย ป.6 ไปนักเรียนจำหน่าย → ล้างคะแนน/เกรด/การอนุมัติ → ปี +1 • มีคลัง Archive และเช็คลิสต์เริ่มปีเพิ่ม 2 ข้อ'],
   ['2026-10-15','ตรวจความสมบูรณ์ข้อมูลหลังอัปเดต: เทียบจำนวนแถวชีตหลักก่อน-หลัง Deploy แล้วขึ้นแถบเตือนแอดมิน + หน้าตรวจสุขภาพข้อมูล (กด "รับทราบ" เมื่อตรวจแล้ว)'],
@@ -5376,7 +5385,7 @@ const LOGIN_LOGO_BASE64='';
 const APP_NAME='NSR SMART ประถมศึกษา';
 const APP_NAME_HTML='NSR <span class="text-emerald-500">SMART</span> <span class="text-slate-600">ประถมศึกษา</span>';
 const APP_TAGLINE='ระบบสารสนเทศงานวิชาการและดูแลช่วยเหลือนักเรียน';
-const APP_BUILD='2026-10-15i'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
+const APP_BUILD='2026-10-15j'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
 const TH_M_ABBR=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 // โหลดรายการ (วัน|ห้อง|คาบ) ที่เช็คแล้วของเดือนนั้น (cache ต่อเดือน)
 async function attMonthKeys(month){
@@ -8992,19 +9001,21 @@ function renderPerms(acc){
     const meta=TAB_META.find(m=>m[0]===tab); if(!meta) return '';
     const [,label,dr]=meta;
     let head='';
-    if(cat && cat!==lastCat){ lastCat=cat; head=`<tr class="bg-slate-50"><td colspan="3" class="py-1 px-2 text-xs font-semibold text-slate-500">${esc(cat)}</td></tr>`; }
+    if(cat && cat!==lastCat){ lastCat=cat; head=`<tr class="bg-slate-50"><td colspan="4" class="py-1 px-2 text-xs font-semibold text-slate-500">${esc(cat)}</td></tr>`; }
     if(dr==='admin'||dr==='principal'){
       return head+`<tr class="border-b">
         <td class="px-2 py-2 pl-4">${esc(label)}</td>
-        <td colspan="2" class="px-2 py-2 text-center text-xs text-slate-400">${dr==='principal'?'ผอ. (และแอดมิน) เท่านั้น':'แอดมินเท่านั้น'}</td>
+        <td colspan="3" class="px-2 py-2 text-center text-xs text-slate-400">${dr==='principal'?'ผอ. (และแอดมิน) เท่านั้น':'แอดมินเท่านั้น'}</td>
       </tr>`;
     }
     const tCk=acc.teacher.includes(tab)?'checked':'';
     const dCk=acc.director.includes(tab)?'checked':'';
+    const pCk=(acc.principal||acc.director).includes(tab)?'checked':'';
     return head+`<tr class="border-b">
       <td class="px-2 py-2 pl-4">${esc(label)}</td>
       <td class="px-2 py-2 text-center"><input type="checkbox" class="pm-t" data-tab="${tab}" ${tCk}></td>
       <td class="px-2 py-2 text-center"><input type="checkbox" class="pm-d" data-tab="${tab}" ${dCk}></td>
+      <td class="px-2 py-2 text-center"><input type="checkbox" class="pm-p" data-tab="${tab}" ${pCk}></td>
     </tr>`;
   }).join('');
 }
@@ -9012,10 +9023,12 @@ function resetPerms(){ renderPerms(defaultTabAccess()); toast('ตั้งก�
 async function savePerms(){
   const teacher=[...document.querySelectorAll('#perms_body .pm-t:checked')].map(c=>c.dataset.tab);
   const director=[...document.querySelectorAll('#perms_body .pm-d:checked')].map(c=>c.dataset.tab);
+  const principal=[...document.querySelectorAll('#perms_body .pm-p:checked')].map(c=>c.dataset.tab);
   // home ให้เห็นเสมอ กันล็อกตัวเองออกจากระบบ
   if(!teacher.includes('home')) teacher.push('home');
   if(!director.includes('home')) director.push('home');
-  const obj={teacher, director, known:TAB_META.map(m=>m[0])};
+  if(!principal.includes('home')) principal.push('home');
+  const obj={teacher, director, principal, known:TAB_META.map(m=>m[0])};
   try{ showLoading(true);
     await GAS.call('saveTabAccess',{json:JSON.stringify(obj)});
     state.tabAccess=obj;
@@ -9029,7 +9042,7 @@ async function savePerms(){
    ============================================================ */
 async function startApp(){
   try{
-    if(/[?&]check\b/.test(location.search)){ openLookup(); }
+    if(isCheckOnly()){ openLookup(); return; }   // โหมดนักเรียน: ไม่อ่าน session ครู ไม่โหลดรายชื่อครู
     const saved=localStorage.getItem('kps_session');
     const su=saved?JSON.parse(saved):null;
     if(su && !su.token){ localStorage.removeItem('kps_session'); }   // session รุ่นเก่า (ไม่มี token) → ล็อกอินใหม่ 1 ครั้ง
