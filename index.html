@@ -96,7 +96,8 @@
   .rp-head-51{background:#dbeafe;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .rp-grade{background:#fef9c3;font-weight:700;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
 
-  @media print{
+  .lk-printonly{display:none}
+    @media print{
     @page{size:A4;margin:0;}
     @page land{size:A4 landscape;margin:0;}
     *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
@@ -111,6 +112,7 @@
     body.printing-lookup #lookupScreen{position:static !important;display:block !important;background:#fff !important;padding:0 !important;overflow:visible !important;}
     body.printing-lookup #lookupScreen .noprint{display:none !important;}
     body.printing-lookup #lk_result{overflow:visible !important;}
+    body.printing-lookup .lk-printonly{display:block !important;}
   }
 </style>
 </head>
@@ -135,10 +137,6 @@
     </div>
     <button onclick="doLogin()" class="btn bg-teal-600 hover:bg-teal-700 text-white w-full py-2.5 mt-4 text-sm">เข้าสู่ระบบ</button>
     <div id="licenseNotice" class="hidden mt-3 text-xs text-left bg-rose-50 border border-rose-200 text-rose-600 rounded-lg p-2"></div>
-    <div id="demoEntry" class="hidden border-t mt-4 pt-3">
-      <button onclick="demoOpenChooser()" class="btn bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 w-full py-2.5 text-sm">👀 ทดลองใช้ระบบ (ไม่ต้องล็อกอิน)</button>
-      <p class="text-[11px] text-slate-400 mt-1">ดูหน้าระบบและแดชบอร์ดด้วยข้อมูลสมมติ — ไม่เห็นข้อมูลของโรงเรียน</p>
-    </div>
     <div id="lookupEntry" class="hidden border-t mt-4 pt-3">
       <button onclick="openLookup()" class="btn bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 w-full py-2.5 text-sm">🔎 ตรวจผลการเรียน (นักเรียน/ผู้ปกครอง)</button>
     </div>
@@ -152,18 +150,22 @@
     <h2 class="text-lg font-bold text-teal-700 text-center">ตรวจผลการเรียน</h2>
     <p id="lk_school" class="text-xs text-slate-400 text-center mb-4"></p>
     <label class="text-xs text-slate-500">เลขประจำตัวนักเรียน</label>
-    <input id="lk_code" inputmode="numeric" autocomplete="off" class="inp mt-1 mb-3" placeholder="เช่น 8048">
+    <input id="lk_code" inputmode="numeric" pattern="[0-9]*" autocomplete="off" oninput="lkCodeInput(this)" class="inp mt-1" placeholder="เช่น 8048">
+    <p id="lk_codeHint" class="text-[11px] text-slate-400 mb-3 mt-0.5">ใช้เลขประจำตัวนักเรียน (ตัวเลขเท่านั้น) — ไม่ใช่เลขบัตรประชาชน</p>
     <label class="text-xs text-slate-500">วันเกิด</label>
     <div class="grid grid-cols-3 gap-2 mt-1">
       <select id="lk_d" class="inp"></select>
       <select id="lk_m" class="inp"></select>
       <select id="lk_y" class="inp"></select>
     </div>
+    <label class="text-xs text-slate-500 mt-3 block">ภาคเรียนที่ต้องการดู</label>
+    <select id="lk_term" class="inp mt-1"><option value="year">ปลายปี (รายปี)</option><option value="mid">กลางปี (ภาคเรียนที่ 1)</option></select>
     <button onclick="doLookup()" class="btn bg-teal-600 hover:bg-teal-700 text-white w-full py-2.5 mt-4 text-sm">ดูผลการเรียน</button>
     <div id="lk_wait" class="hidden mt-3 rounded-lg bg-amber-50 border border-amber-300 text-amber-800 text-xs px-3 py-2"></div>
     <div class="text-center mt-3"><a id="lk_issueLink" href="javascript:void(0)" onclick="openIssueForm()" class="hidden text-xs text-teal-700 underline">เข้าไม่ได้? แจ้งปัญหาข้อมูลนักเรียน</a></div>
+    <div class="text-center mt-2"><a href="javascript:void(0)" onclick="openIssueTrack()" class="text-xs text-slate-500 underline">ติดตามเรื่องที่แจ้งไว้</a></div>
     <button id="lk_backBtn" onclick="closeLookup()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-600 w-full py-2 mt-2 text-xs">← กลับหน้าเข้าสู่ระบบ (ครู)</button>
-    <p class="text-[11px] text-slate-400 mt-3">ข้อมูลใช้เพื่อยืนยันตัวตนเท่านั้น • หากกรอกถูกแต่เข้าไม่ได้ กรุณาติดต่อครูประจำชั้น</p>
+    <p class="text-[11px] text-slate-400 mt-3">แสดงเฉพาะผลที่โรงเรียนอนุมัติแล้ว • ข้อมูลใช้เพื่อยืนยันตัวตนเท่านั้น • หากกรอกถูกแต่เข้าไม่ได้ กรุณาติดต่อครูประจำชั้น</p>
   </div>
   <div id="lk_issueCard" class="card p-5 w-full max-w-sm mx-auto mt-6 noprint hidden">
     <h2 class="text-base font-bold text-teal-700 text-center">แจ้งปัญหาข้อมูลนักเรียน</h2>
@@ -180,12 +182,25 @@
       </div>
       <label class="text-xs text-slate-500">ประเภทปัญหา</label>
       <select id="is_type" class="inp mt-1 mb-2"><option>ไม่พบเลขประจำตัว</option><option>วันเกิดไม่ตรง</option><option>อื่นๆ</option></select>
+      <label class="text-xs text-slate-500">อีเมลสำหรับรับผลการแก้ไข (ไม่บังคับ)</label>
+      <input id="is_email" type="email" maxlength="80" autocomplete="off" class="inp mt-1 mb-2" placeholder="name@example.com">
       <label class="text-xs text-slate-500">รายละเอียด</label>
       <textarea id="is_detail" maxlength="600" rows="4" class="inp mt-1" placeholder="ถ้าต้องการให้โรงเรียนติดต่อกลับ โปรดระบุเบอร์โทรหรือ LINE"></textarea>
       <button onclick="submitIssue()" class="btn bg-teal-600 hover:bg-teal-700 text-white w-full py-2.5 mt-3 text-sm">ส่งเรื่องแจ้ง</button>
     </div>
-    <div id="is_done" class="hidden text-center py-6"><div class="text-4xl mb-2">✅</div><div class="font-semibold text-slate-700">โรงเรียนได้รับแจ้งแล้ว</div></div>
+    <div id="is_done" class="hidden text-center py-6"><div class="text-4xl mb-2">✅</div><div class="font-semibold text-slate-700">โรงเรียนได้รับแจ้งแล้ว</div>
+      <div class="text-xs text-slate-500 mt-3">เลขติดตามเรื่อง (กรุณาจดไว้)</div>
+      <div id="is_ticket" class="text-3xl font-bold tracking-widest text-teal-700 mt-1 select-all"></div>
+      <div class="text-[11px] text-slate-400 mt-2">ใช้เลขนี้ที่ “ติดตามเรื่องที่แจ้งไว้” หน้าตรวจผล เพื่อดูว่าโรงเรียนแก้ไขแล้วหรือยัง</div></div>
     <button onclick="closeIssueForm()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-600 w-full py-2 mt-2 text-xs">← กลับ</button>
+  </div>
+  <div id="lk_trackCard" class="card p-5 w-full max-w-sm mx-auto mt-6 noprint hidden">
+    <h2 class="text-base font-bold text-teal-700 text-center">ติดตามเรื่องที่แจ้งไว้</h2>
+    <label class="text-xs text-slate-500 mt-3 block">เลขติดตามเรื่อง</label>
+    <input id="tk_code" maxlength="10" autocomplete="off" class="inp mt-1 uppercase tracking-widest" placeholder="เช่น K7M4Q2">
+    <button onclick="checkIssueTrack()" class="btn bg-teal-600 hover:bg-teal-700 text-white w-full py-2.5 mt-3 text-sm">ตรวจสถานะ</button>
+    <div id="tk_result" class="mt-3 text-sm"></div>
+    <button onclick="closeIssueTrack()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-600 w-full py-2 mt-2 text-xs">← กลับ</button>
   </div>
   <div id="lk_resultWrap" class="hidden">
     <div class="noprint max-w-3xl mx-auto flex flex-wrap gap-2 justify-center my-3">
@@ -197,17 +212,6 @@
 </div>
 
 <!-- ====================== USER BAR ====================== -->
-<div id="demoBar" class="hidden noprint sticky top-0 z-[70] bg-amber-500 text-white text-xs px-3 py-1.5 shadow">
-  <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-    <span class="font-semibold">👀 โหมดทดลองใช้ — ข้อมูลสมมติ ไม่เขียนลงข้อมูลจริง</span>
-    <label class="flex items-center gap-1">มุมมอง
-      <select id="demoRole" onchange="DEMO.setRole(this.value)" class="rounded px-1 py-0.5 text-slate-700 text-xs">
-        <option value="teacher">👩‍🏫 ครู</option><option value="director">📋 รองผอ./หัวหน้าวิชาการ</option><option value="principal">🏛️ ผู้อำนวยการ</option>
-      </select></label>
-    <button onclick="DEMO.openParent()" class="btn bg-white/25 hover:bg-white/40 px-2 py-0.5 text-xs">👪 ดูหน้าผู้ปกครอง</button>
-    <button onclick="DEMO.exit()" class="btn bg-white/25 hover:bg-white/40 px-2 py-0.5 text-xs">✖ ออกจากโหมดทดลอง</button>
-  </div>
-</div>
 <div id="userBar" class="hidden actionbar max-w-6xl mx-auto px-3 pt-3">
   <div class="flex items-center justify-between bg-teal-600 text-white rounded-xl px-4 py-2 text-sm">
     <span id="userChip" class="font-medium"></span>
@@ -245,7 +249,7 @@
   <div id="catRow" class="flex flex-wrap items-center gap-2">
     <button data-tab="home" data-role="all" class="navbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">🏠 หน้าแรก</button>
     <button data-cat="record" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">📝 บันทึกผล</button>
-    <button data-cat="schedule" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">📅 ตาราง/ปฏิทิน</button>
+    <button data-cat="schedule" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">📅 ปฏิทิน</button>
     <button data-cat="student" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">🧑‍🎓 นักเรียน</button>
     <button data-cat="report" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">🖨️ รายงาน/เอกสาร</button>
     <button data-cat="manage" class="catbtn btn whitespace-nowrap px-3 sm:px-4 py-2 text-sm bg-white border border-slate-200">📊 ติดตาม & อนุมัติผล</button>
@@ -259,9 +263,7 @@
       <button data-tab="ability" data-role="staff" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">🎯 กิจกรรม/คุณลักษณะ</button>
       <button data-tab="subdoc" data-role="staff" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">📚 คำอธิบาย/โครงสร้างวิชา</button>
     </div>
-    <div class="subnav hidden gap-2 overflow-x-auto nav-scroll pb-0.5" data-cat="schedule" data-label="📅 ตาราง/ปฏิทิน">
-      <button data-tab="schedule" data-role="all" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">🗓️ ตารางสอน</button>
-      <button data-tab="roomtt" data-role="all" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">🏫 ตารางเรียนรายห้อง</button>
+    <div class="subnav hidden gap-2 overflow-x-auto nav-scroll pb-0.5" data-cat="schedule" data-label="📅 ปฏิทิน">
       <button data-tab="calendar" data-role="all" class="navbtn btn whitespace-nowrap px-3 py-1.5 text-sm bg-white border border-slate-200">📅 ปฏิทินวิชาการ</button>
     </div>
     <div class="subnav hidden gap-2 overflow-x-auto nav-scroll pb-0.5" data-cat="student" data-label="🧑‍🎓 นักเรียน">
@@ -879,6 +881,7 @@
               <div><label class="text-xs text-slate-500">ภาค 2 ปิด</label><input type="date" id="set_term2End" class="inp mt-1"></div>
             </div>
             <p class="text-[11px] text-slate-400 mt-1">ว่าง = ใช้ค่ามาตรฐาน (ภาค 1: 16 พ.ค.–10 ต.ค. / ภาค 2: 3 พ.ย.–31 มี.ค.) • วันสิ้นสุดภาค 1 ใช้นับเวลาเรียนในใบกลางปีด้วย</p>
+            <label class="flex items-start gap-2 text-sm mt-2"><input type="checkbox" id="set_attAssumePresent" class="w-5 h-5 mt-0.5"> <span>นับวันที่ห้องไม่ได้เช็กชื่อว่า “มาเรียน” (วันเปิดเรียนเท่ากันทุกห้อง = วันที่มีบันทึกอย่างน้อย 1 ห้อง + วันเรียนตามปฏิทินวิชาการ)<br><span class="text-[11px] text-slate-400">เทอมหน้าเมื่อครูเช็กครบแล้ว ให้ปิดช่องนี้ก่อนพิมพ์รายงาน • ปิด = นับเฉพาะวันที่มีบันทึก ห้องที่ไม่เช็กจะนับว่าไม่ได้มา</span></span></label>
           </div>
           <div class="sm:col-span-2 rounded-xl border border-violet-200 bg-violet-50 p-3">
             <div class="text-xs font-semibold text-violet-800 mb-2">🎓 เกณฑ์แก้ไขผลการเรียน/เลื่อนชั้น (ตั้งตามระเบียบวัดผลของโรงเรียน)</div>
@@ -927,14 +930,15 @@
             <label class="flex items-center gap-2 text-sm py-1"><input type="checkbox" id="set_lookupEnabled" class="w-5 h-5"> เปิดให้ตรวจผลด้วย เลขประจำตัว + วันเกิด</label>
             <label class="flex items-center gap-2 text-sm py-1"><input type="checkbox" id="set_lookupLockedOnly" class="w-5 h-5"> แสดงเฉพาะห้องที่ล็อก (อนุมัติผล) แล้ว</label>
             <label class="flex items-center gap-2 text-sm py-1"><input type="checkbox" id="set_requirePrincipal" class="w-5 h-5"> ต้องให้ ผอ. อนุมัติรายห้องก่อน ผู้ปกครองจึงจะเห็นผลการเรียน</label>
-            <label class="flex items-center gap-2 text-sm py-1"><input type="checkbox" id="set_demoEnabled" class="w-5 h-5"> แสดงปุ่ม "👀 ทดลองใช้ระบบ" ที่หน้าเข้าสู่ระบบ (ข้อมูลสมมติ ไม่แตะข้อมูลจริง)</label>
-            <div class="flex items-center gap-2 py-1 text-sm"><span>ใบที่ผู้ปกครองเห็น</span>
+            <div class="flex items-center gap-2 py-1 text-sm"><span>จำนวนหลักเลขประจำตัวนักเรียน</span>
+              <input type="number" id="set_lookupCodeLen" class="inp w-24 text-sm" min="2" max="20" placeholder="ไม่จำกัด"><span class="text-[11px] text-slate-400">ช่วยกันผู้ปกครองกรอกเลขบัตรประชาชนผิดช่อง (เว้นว่าง = ไม่จำกัด)</span></div>
+            <div class="flex items-center gap-2 py-1 text-sm"><span>ใบที่ผู้ปกครองเห็นตั้งต้น</span>
               <select id="set_lookupTerm" class="inp w-auto text-sm"><option value="year">ปลายปี (รายปี)</option><option value="mid">กลางปี (ภาคเรียนที่ 1)</option></select></div>
             <div class="flex gap-2 mt-2">
               <input id="set_lookupLink" readonly class="inp text-xs flex-1 bg-slate-50">
               <button onclick="copyLookupLink()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 text-xs">📋 คัดลอก</button>
             </div>
-            <p class="text-[11px] text-slate-400 mt-1">ลิงก์นี้แชร์ในกลุ่มผู้ปกครองได้ • นักเรียนต้องมี "วันเกิด" ในประวัตินักเรียน • ผิด 5 ครั้งระบบพัก 15 นาที • กดบันทึกด้านล่างเพื่อให้มีผล</p>
+            <p class="text-[11px] text-slate-400 mt-1">ลิงก์นี้แชร์ในกลุ่มผู้ปกครองได้ • นักเรียนต้องมี "วันเกิด" ในประวัตินักเรียน • กดบันทึกด้านล่างเพื่อให้มีผล</p>
           </div>
         </div>
         <div class="border-t mt-3 pt-3">
@@ -943,7 +947,7 @@
             <input id="set_issueEmail" class="inp text-sm flex-1" placeholder="อีเมลรับแจ้งปัญหา (หลายอีเมลคั่นด้วยจุลภาค) — ว่าง = อีเมลเจ้าของระบบ">
             <button onclick="testIssueEmail()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 text-xs whitespace-nowrap">✉️ ส่งอีเมลทดสอบ</button>
           </div>
-          <p class="text-[11px] text-slate-400 mt-1">กด "บันทึกการตั้งค่า" ก่อนส่งอีเมลทดสอบ • ครั้งแรกต้องรันฟังก์ชัน authorizeMail_ ใน Apps Script เพื่ออนุญาตส่งอีเมล</p>
+          <p class="text-[11px] text-slate-400 mt-1">กด "บันทึกการตั้งค่า" ก่อนส่งอีเมลทดสอบ • ครั้งแรกต้องรันฟังก์ชัน authorizeMail ใน Apps Script (หรือเมนู NSR → 📧 อนุญาตสิทธิ์ส่งอีเมล) เพื่ออนุญาตส่งอีเมล</p>
         </div>
         <div class="text-right mt-4">
           <button onclick="saveSettings()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 text-sm">💾 บันทึกการตั้งค่า</button>
@@ -1587,46 +1591,6 @@
     <div id="ts_area" class="card p-2 sm:p-4 text-sm text-slate-400">กำลังโหลด…</div>
   </section>
 
-  <!-- ---------- TAB: SCHEDULE (ตารางสอน) ---------- -->
-  <section id="tab-schedule" class="tabpane hidden">
-    <div class="card p-4 mb-4">
-      <div class="flex flex-wrap gap-3 items-end">
-        <h3 id="sch_title" class="font-bold text-teal-700">🗓️ ตารางสอน</h3>
-        <div class="flex flex-wrap items-end gap-2 ml-auto">
-          <div id="sch_modeWrap" class="hidden"><label class="text-xs text-slate-500">มุมมอง</label>
-            <select id="sch_mode" class="inp mt-1" onchange="onSchMode()">
-              <option value="teacher">รายครู</option>
-              <option value="class">รายห้อง</option>
-            </select></div>
-          <div id="sch_pickWrap" class="hidden">
-            <label class="text-xs text-slate-500">เลือกครู</label>
-            <select id="sch_teacher" class="inp mt-1" onchange="loadScheduleView()"></select>
-          </div>
-          <div id="sch_classWrap" class="hidden">
-            <label class="text-xs text-slate-500">เลือกห้อง</label>
-            <select id="sch_class" class="inp mt-1" onchange="loadScheduleByClass()"></select>
-          </div>
-          <button onclick="printScheduleView()" class="btn bg-sky-500 hover:bg-sky-600 text-white px-3 py-2 text-sm">🖨️ พิมพ์ตาราง</button>
-        </div>
-      </div>
-      <p id="sch_hint" class="text-xs text-slate-400 mt-1"></p>
-    </div>
-    <div id="sch_area" class="card p-4 overflow-x-auto text-sm text-slate-400">กำลังโหลด…</div>
-    <div id="schEditWrap" data-role="admin" class="mt-4">
-      <div class="card p-4">
-        <div class="flex flex-wrap items-end gap-3">
-          <div>
-            <h3 class="font-bold text-teal-700">✏️ แก้ไขตารางสอน (แอดมิน)</h3>
-            <p class="text-xs text-slate-400 mt-0.5">คลิกคาบที่มีเพื่อ แก้ไข/ย้าย/ลบ • คลิก ➕ ในช่องว่างเพื่อเพิ่มคาบ • ระบบตรวจการชน (ครูซ้ำคาบ/ห้องซ้ำคาบ) ให้อัตโนมัติ</p>
-          </div>
-          <div class="ml-auto"><label class="text-xs text-slate-500">เลือกครู</label>
-            <select id="se_teacher" class="inp mt-1" onchange="loadSchEdit()"><option value="">— เลือกครู —</option></select></div>
-        </div>
-        <div id="se_area" class="overflow-x-auto mt-3 text-sm text-slate-400">เลือกครูเพื่อแสดงตาราง</div>
-      </div>
-    </div>
-  </section>
-
   <!-- ---------- TAB: EXAM (ตารางสอบ + กรรมการคุมสอบ) ---------- -->
   <section id="tab-exam" class="tabpane hidden">
     <div class="card p-4 mb-4">
@@ -1757,7 +1721,7 @@
         <ol class="list-decimal ml-5 mt-1 space-y-1 text-slate-600">
           <li><b>🪪 ประวัตินักเรียน</b>: แอดมินนำเข้าไฟล์ DMC (.xlsx) เติมข้อมูลหลักอัตโนมัติ • ครูประจำชั้นกรอกรูปถ่าย (≤5MB ระบบย่อเหลือ 600px) ชื่อเล่น เบอร์ผู้ปกครอง ฯลฯ • พิมพ์ระเบียนประวัติและ 🪪 บัตรนักเรียนทั้งห้องได้ (8 ใบ/A4)</li>
           <li><b>ลบนักเรียน (แอดมิน)</b> = จำหน่ายไปเก็บที่เมนู 🗃️ นักเรียนจำหน่าย — คะแนน/เช็คชื่อ/เกรดไม่หาย ดูย้อนหลัง พิมพ์รายงาน และกู้คืนได้ • เลขที่ในห้องขยับให้อัตโนมัติพร้อมพรีวิวก่อนยืนยัน</li>
-          <li><b>✏️ แก้ไขตารางสอน (แอดมิน)</b>: 📅 ตาราง/ปฏิทิน → 🗓️ ตารางสอน → เลือกครู → คลิกคาบในส่วน “แก้ไขตารางสอน” ด้านล่างเพื่อแก้/ย้าย/ลบ หรือ ➕ เพิ่มคาบ ระบบเตือนการชนอัตโนมัติ • 🏫 ตารางเรียนรายห้อง ดูและพิมพ์ A4 แนวนอนได้</li>
+          <li><b>✏️ แก้ไขตารางสอน (แอดมิน)</b>: 📅 ปฏิทิน → 🗓️ ตารางสอน → เลือกครู → คลิกคาบในส่วน “แก้ไขตารางสอน” ด้านล่างเพื่อแก้/ย้าย/ลบ หรือ ➕ เพิ่มคาบ ระบบเตือนการชนอัตโนมัติ • 🏫 ตารางเรียนรายห้อง ดูและพิมพ์ A4 แนวนอนได้</li>
           <li><b>🧑‍🎓 สถิตินักเรียน</b>: 📊 รายงานสรุป → แท็บสถิตินักเรียน (ชาย/หญิงรายห้อง ศาสนา กรุ๊ปเลือด ความด้อยโอกาส + Excel)</li>
         </ol>
       </div>
@@ -1800,19 +1764,6 @@
 
 <!-- ====================== MODALS ====================== -->
 <!-- change PIN -->
-<div id="demoModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4 z-[90]">
-  <div class="card p-5 w-full max-w-sm fade-in">
-    <h3 class="font-bold text-indigo-700 mb-1">👀 ทดลองใช้ระบบ</h3>
-    <p class="text-xs text-slate-400 mb-3">เลือกมุมมองที่อยากลอง — ใช้ข้อมูลสมมติ ไม่เห็นข้อมูลของโรงเรียน และสลับมุมมองได้ภายหลัง</p>
-    <div class="space-y-2">
-      <button onclick="DEMO.enter('principal')" class="btn w-full text-left bg-white border border-slate-200 hover:bg-indigo-50 px-3 py-2.5 text-sm">🏛️ <b>ผู้อำนวยการ</b><div class="text-[11px] text-slate-400">ภาพรวมทั้งโรงเรียน • อนุมัติผลการเรียนรายห้อง</div></button>
-      <button onclick="DEMO.enter('director')" class="btn w-full text-left bg-white border border-slate-200 hover:bg-indigo-50 px-3 py-2.5 text-sm">📋 <b>รองผอ./หัวหน้าวิชาการ</b><div class="text-[11px] text-slate-400">ติดตามครูที่ยังกรอกไม่เรียบร้อย • อนุมัติรายวิชา</div></button>
-      <button onclick="DEMO.enter('teacher')" class="btn w-full text-left bg-white border border-slate-200 hover:bg-indigo-50 px-3 py-2.5 text-sm">👩‍🏫 <b>ครู</b><div class="text-[11px] text-slate-400">บันทึกผลการเรียน • ตารางสอน • ปฏิทิน</div></button>
-    </div>
-    <div class="flex justify-end mt-3"><button onclick="closeModal('demoModal')" class="btn bg-slate-100 px-4 py-2 text-sm">ปิด</button></div>
-  </div>
-</div>
-
 <div id="changePinModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4 z-50">
   <div class="card p-5 w-full max-w-sm fade-in">
     <h3 class="font-bold text-teal-700 mb-3">🔑 เปลี่ยนรหัสผ่าน (PIN)</h3>
@@ -1911,7 +1862,6 @@
 const GAS = {
   URL: (window.WEB_APP_URL || '').trim(),  // ตั้งค่าได้ที่ส่วนบนสุดของไฟล์ (window.WEB_APP_URL)
   async call(action, payload = {}) {
-    if (state.demo) return DEMO.call(action, payload);   // โหมดทดลองใช้: ข้อมูลสมมติในหน้าเว็บ ไม่เรียกเซิร์ฟเวอร์
     if (GAS.URL.indexOf('http') !== 0) {
       throw new Error('ยังไม่ได้ตั้งค่า Web App URL ในไฟล์ index.html (ตัวแปร GAS.URL)');
     }
@@ -1972,6 +1922,13 @@ function toast(msg, type='success'){
 function showLoading(b){ const l=document.getElementById('loading'); l.classList.toggle('hidden',!b); l.classList.toggle('flex',b); }
 function closeModal(id){ const m=document.getElementById(id); m.classList.add('hidden'); m.classList.remove('flex'); }
 function openModal(id){ const m=document.getElementById(id); m.classList.remove('hidden'); m.classList.add('flex'); }
+// วันที่/เวลาที่แสดงบนหน้าจอเป็น พ.ศ. เสมอ: 'YYYY-MM-DD[ HH:mm[:ss]]' (หรือ ISO) → 'D/M/BBBB HH:mm' (ปีเป็น ค.ศ. >2400 คงเดิม)
+function beTs(v){
+  const t=String(v==null?'':v).trim(); if(!t) return '';
+  const m=t.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/); if(!m) return t;
+  const y=Number(m[1]), by=y>2400?y:y+543;
+  return Number(m[3])+'/'+Number(m[2])+'/'+by+(m[4]?' '+m[4]+':'+m[5]:'');
+}
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 // แยกคำนำหน้า/ชื่อ/นามสกุล (ใช้ฟิลด์ใหม่ก่อน ถ้าไม่มีค่อย parse จาก fullName)
@@ -2074,7 +2031,6 @@ function openCat(cat){
 }
 // เมนูเสมือน: ปุ่มบนแถบเมนูที่ชี้ไปยังหน้า/แท็บย่อยเดิม
 const VTAB={
-  roomtt:{tab:'schedule'},
   adm_roster:{tab:'admin',asub:'roster'}, adm_teachers:{tab:'admin',asub:'teachers'},
   adm_backup:{tab:'admin',asub:'backup'}, adm_health:{tab:'admin',asub:'health'}, adm_audit:{tab:'admin',asub:'audit'},
   adm_locks:{tab:'admin',asub:'locks'},   adm_perms:{tab:'admin',asub:'perms'},
@@ -2090,7 +2046,6 @@ function switchTab(name){
     b.classList.toggle('tab-active', b.dataset.tab===name);
   });
   navSync(name);
-  if(real==='schedule'){ const m=document.getElementById('sch_mode'); if(m) m.value=(name==='roomtt'?'class':'teacher'); }
   if(real==='startyear') initStartYear();
   if(real==='developer') renderDeveloper();
   name=real;
@@ -2104,7 +2059,6 @@ function switchTab(name){
   if(name==='attendance') initAttendance();
   if(name==='calendar') initCalendar();
   if(name==='risk') initRisk();
-  if(name==='schedule') initSchedule();
   if(name==='teachdoc') initTeachDoc();
   if(name==='subdoc') initSubDoc();
   if(name==='profile') initProfiles();
@@ -2302,10 +2256,11 @@ function applySettingsToUI(){
   const le=document.getElementById('set_lookupEnabled'); if(le) le.checked=String(s.lookupEnabled)==='1';
   const ll=document.getElementById('set_lookupLockedOnly'); if(ll) ll.checked=String(s.lookupLockedOnly)==='1';
   const rp=document.getElementById('set_requirePrincipal'); if(rp) rp.checked=String(s.requirePrincipal)!=='0';
-  const dm=document.getElementById('set_demoEnabled'); if(dm) dm.checked=String(s.demoEnabled)!=='0';
   const ie=document.getElementById('set_issueEnabled'); if(ie) ie.checked=String(s.issueEnabled)==='1';
   const im=document.getElementById('set_issueEmail'); if(im) im.value=s.issueEmail||'';
   const lt=document.getElementById('set_lookupTerm'); if(lt) lt.value=(s.lookupTerm==='mid')?'mid':'year';
+  const aap=document.getElementById('set_attAssumePresent'); if(aap) aap.checked=String(s.attAssumePresent)!=='0';
+  const lcl=document.getElementById('set_lookupCodeLen'); if(lcl) lcl.value=s.lookupCodeLen||'';
   ['term1Start','term1End','term2Start','term2End'].forEach(k=>{ const e=document.getElementById('set_'+k); if(e) e.value=termDateInput(s[k]); });
   [['passPercent','50'],['minAttendPercent','80'],['remedyCapPercent','50'],['promoteMaxFail','0']].forEach(([k,def])=>{ const e=document.getElementById('set_'+k); if(e) e.value=(s[k]!==undefined&&s[k]!=='')?s[k]:def; });
   const lk=document.getElementById('set_lookupLink'); if(lk) lk.value=lookupLink();
@@ -2324,7 +2279,6 @@ function termRanges(){
 }
 // วันนี้เป็นวันหยุดหรือปิดภาคเรียนไหม ('' = เปิดเรียนปกติ)
 function breakReason(iso){
-  if(state.demo) return '';
   const d=new Date(iso+'T00:00:00'), wd=d.getDay();
   if(wd===0||wd===6) return 'วันหยุดสุดสัปดาห์';
   const r=termRanges();
@@ -2347,10 +2301,11 @@ async function saveSettings(){
   s.lookupEnabled=document.getElementById('set_lookupEnabled').checked?'1':'';
   s.lookupLockedOnly=document.getElementById('set_lookupLockedOnly').checked?'1':'';
   s.requirePrincipal=document.getElementById('set_requirePrincipal').checked?'1':'0';
-  s.demoEnabled=document.getElementById('set_demoEnabled').checked?'1':'0';
   s.issueEnabled=document.getElementById('set_issueEnabled').checked?'1':'';
   s.issueEmail=val('set_issueEmail');
   s.lookupTerm=document.getElementById('set_lookupTerm').value==='mid'?'mid':'year';
+  s.attAssumePresent=document.getElementById('set_attAssumePresent').checked?'1':'0';
+  s.lookupCodeLen=String(Math.max(0,parseInt(document.getElementById('set_lookupCodeLen').value,10)||0)||'');
   ['term1Start','term1End','term2Start','term2End'].forEach(k=>{ s[k]=val('set_'+k); });
   for(const [k,mx] of [['passPercent',100],['minAttendPercent',100],['remedyCapPercent',100],['promoteMaxFail',20]]){
     const v=val('set_'+k); if(v===''){ s[k]=''; continue; }
@@ -2370,12 +2325,12 @@ function setIssueBadge(n){
 }
 async function refreshIntegrity(){
   const el=document.getElementById('integBanner'); if(!el) return;
-  if(state.demo||!isAdminUser()){ el.classList.add('hidden'); return; }
+  if(!isAdminUser()){ el.classList.add('hidden'); return; }
   try{
     const d=await GAS.call('getIntegrityAlert');
     const a=d&&d.alert;
     if(!a||!(a.drops||[]).length){ el.classList.add('hidden'); return; }
-    el.innerHTML=`<b>⚠️ หลังอัปเดตเวอร์ชัน (${esc(a.build)}) จำนวนแถวข้อมูลลดลง</b> <span class="text-rose-600">เทียบกับ ${esc(a.baseAt||'-')}</span><br>`+
+    el.innerHTML=`<b>⚠️ หลังอัปเดตเวอร์ชัน (${esc(a.build)}) จำนวนแถวข้อมูลลดลง</b> <span class="text-rose-600">เทียบกับ ${esc(beTs(a.baseAt)||'-')}</span><br>`+
       (a.drops.map(x=>esc(x.sheet)+' '+x.before+' → '+x.after).join(' • '))+
       `<div class="mt-1.5 flex gap-2"><button onclick="switchTab('adm_health')" class="btn bg-white border border-rose-300 px-2 py-1">🩺 ดูหน้าตรวจสุขภาพข้อมูล</button><button onclick="ackIntegrity()" class="btn bg-rose-600 text-white px-2 py-1">✔ รับทราบ (ข้อมูลถูกต้อง)</button></div>`;
     el.classList.remove('hidden');
@@ -2398,8 +2353,8 @@ async function loadIssues(){
     el.innerHTML=`<table class="w-full text-sm" style="min-width:760px"><thead><tr class="text-left text-slate-400 border-b">
       <th class="px-2 py-1">เวลา</th><th class="px-2">ผู้แจ้ง / นักเรียน</th><th class="px-2">ประเภท</th><th class="px-2">รายละเอียด</th><th class="px-2">อีเมล</th><th class="px-2 text-center">สถานะ</th></tr></thead><tbody>`+
       d.rows.map(r=>`<tr class="border-b last:border-0 align-top">
-        <td class="px-2 py-1 whitespace-nowrap text-xs">${esc(r.createdAt)}</td>
-        <td class="px-2 py-1 text-xs"><b>${esc(r.studentName)}</b> ${esc(r.room)}${r.studentCode?' • '+esc(r.studentCode):''}<br><span class="text-slate-400">แจ้งโดย ${esc(r.reporter)}</span></td>
+        <td class="px-2 py-1 whitespace-nowrap text-xs">${esc(beTs(r.createdAt))}</td>
+        <td class="px-2 py-1 text-xs"><b>${esc(r.studentName)}</b> ${esc(r.room)}${r.studentCode?' • '+esc(r.studentCode):''}<br><span class="text-slate-400">แจ้งโดย ${esc(r.reporter)}</span>${r.ticket?`<br><span class="text-slate-400">เลขติดตาม ${esc(r.ticket)}</span>`:''}${r.replyEmail?`<br><span class="text-slate-400">${esc(r.replyEmail)}</span>`:''}${r.reply?`<br><span class="text-emerald-700">ตอบ: ${esc(r.reply)}</span>`:''}</td>
         <td class="px-2 py-1 text-xs whitespace-nowrap">${esc(r.type)}</td>
         <td class="px-2 py-1 text-xs" style="max-width:260px;white-space:pre-wrap">${esc(r.detail)}</td>
         <td class="px-2 py-1 text-xs ${String(r.emailStatus).indexOf('ไม่สำเร็จ')>=0?'text-rose-500':'text-slate-500'}">${esc(r.emailStatus)}</td>
@@ -2407,7 +2362,9 @@ async function loadIssues(){
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 async function markIssue(id){
-  try{ showLoading(true); await GAS.call('markLookupIssue',{id}); }catch(e){ toast(e.message,'error'); showLoading(false); return; }
+  const reply=prompt('ข้อความตอบกลับถึงผู้แจ้ง (เว้นว่างได้) — ผู้แจ้งดูได้จากเลขติดตามเรื่อง และได้รับอีเมลถ้าระบุไว้','');
+  if(reply===null) return;
+  try{ showLoading(true); const r=await GAS.call('markLookupIssue',{id,reply}); if(r&&r.mailed) toast(r.mailed); }catch(e){ toast(e.message,'error'); showLoading(false); return; }
   showLoading(false); loadIssues();
 }
 async function testIssueEmail(){
@@ -3516,6 +3473,11 @@ async function openLookup(){
     if(info.logoURL) document.getElementById('lk_logo').innerHTML=`<img src="${esc(info.logoURL)}" alt="" class="w-16 h-16 object-contain">`;
     if(!info.lookupEnabled) toast('ระบบตรวจผลการเรียนยังไม่เปิดให้บริการ','error');
     document.getElementById('lk_issueLink').classList.toggle('hidden',!info.issueEnabled);
+    const ci=document.getElementById('lk_code'), n=Number(info.lookupCodeLen)||0;
+    if(n>0){ ci.maxLength=n; ci.placeholder='ตัวเลข '+n+' หลัก'; document.getElementById('lk_codeHint').textContent='ใช้เลขประจำตัวนักเรียน ('+n+' หลัก) — ไม่ใช่เลขบัตรประชาชน'; }
+    else { ci.removeAttribute('maxlength'); }
+    document.getElementById('lk_term').value=info.lookupTerm==='mid'?'mid':'year';
+    try{ const last=localStorage.getItem('lk_lastCode'); if(last&&!ci.value) ci.value=last.replace(/[^0-9]/g,'').slice(0,n>0?n:20); }catch(_){}
   }catch(e){ if(e.code!=='EXPIRED') toast(e.message,'error'); }
 }
 function closeLookup(){
@@ -3526,10 +3488,31 @@ function closeLookup(){
   showLoginScreen();
 }
 function openIssueForm(){
-  ['is_website','is_reporter','is_name','is_room','is_code','is_detail'].forEach(id=>document.getElementById(id).value='');
+  ['is_website','is_reporter','is_name','is_room','is_code','is_email','is_detail'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('is_type').selectedIndex=0;
   document.getElementById('is_form').classList.remove('hidden'); document.getElementById('is_done').classList.add('hidden');
   document.getElementById('lk_formCard').classList.add('hidden'); document.getElementById('lk_issueCard').classList.remove('hidden');
+}
+function openIssueTrack(){
+  document.getElementById('tk_code').value=''; document.getElementById('tk_result').innerHTML='';
+  document.getElementById('lk_formCard').classList.add('hidden'); document.getElementById('lk_trackCard').classList.remove('hidden');
+}
+function closeIssueTrack(){ document.getElementById('lk_trackCard').classList.add('hidden'); document.getElementById('lk_formCard').classList.remove('hidden'); }
+async function checkIssueTrack(){
+  const t=document.getElementById('tk_code').value.trim();
+  if(!t){ toast('กรุณากรอกเลขติดตามเรื่อง','error'); return; }
+  const el=document.getElementById('tk_result');
+  try{ showLoading(true);
+    const r=await GAS.call('checkIssueStatus',{ticket:t});
+    el.innerHTML=r.status==='done'
+      ? `<div class="rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-2">✅ โรงเรียนดำเนินการแล้ว${r.handledAt?' ('+esc(beTs(r.handledAt))+')':''}${r.reply?`<div class="mt-1 text-slate-700 whitespace-pre-wrap">${esc(r.reply)}</div>`:''}<div class="text-xs text-slate-500 mt-1">ลองเข้าตรวจผลอีกครั้ง</div></div>`
+      : `<div class="rounded-lg bg-amber-50 border border-amber-300 text-amber-800 px-3 py-2">⏳ รอโรงเรียนดำเนินการ (แจ้งเมื่อ ${esc(beTs(r.createdAt))})</div>`;
+  }catch(e){ el.innerHTML=''; toast(e.message,'error'); } finally{ showLoading(false); }
+}
+// ช่องเลขประจำตัว: เหลือเฉพาะ 0-9 ทันที (แปลงเลขไทยเป็นอารบิก)
+function lkCodeInput(el){
+  const v=el.value.replace(/[๐-๙]/g,c=>String(c.charCodeAt(0)-3664)).replace(/[^0-9]/g,'');
+  if(v!==el.value) el.value=v;
 }
 function closeIssueForm(){
   document.getElementById('lk_issueCard').classList.add('hidden'); document.getElementById('lk_formCard').classList.remove('hidden');
@@ -3538,8 +3521,9 @@ async function submitIssue(){
   const g=id=>document.getElementById(id).value.trim();
   if(!g('is_reporter')||!g('is_name')||!g('is_detail')){ toast('กรุณากรอกชื่อผู้แจ้ง ชื่อนักเรียน และรายละเอียด','error'); return; }
   try{ showLoading(true);
-    await GAS.call('reportLookupIssue',{reporter:g('is_reporter'),studentName:g('is_name'),room:g('is_room'),studentCode:g('is_code'),
-      type:g('is_type'),detail:g('is_detail'),website:g('is_website')});
+    const rr=await GAS.call('reportLookupIssue',{reporter:g('is_reporter'),studentName:g('is_name'),room:g('is_room'),studentCode:g('is_code'),
+      email:g('is_email'),type:g('is_type'),detail:g('is_detail'),website:g('is_website')});
+    document.getElementById('is_ticket').textContent=(rr&&rr.ticket)||'';
     document.getElementById('is_form').classList.add('hidden'); document.getElementById('is_done').classList.remove('hidden');
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
@@ -3547,7 +3531,7 @@ function resetLookup(){
   document.getElementById('lk_formCard').classList.remove('hidden');
   document.getElementById('lk_resultWrap').classList.add('hidden');
   document.getElementById('lk_result').innerHTML='';
-  ['lk_code','lk_d','lk_m','lk_y'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['lk_d','lk_m','lk_y'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });   // จำเฉพาะเลขประจำตัวล่าสุด ไม่จำวันเกิด
 }
 async function doLookup(){
   const code=document.getElementById('lk_code').value.trim();
@@ -3555,8 +3539,9 @@ async function doLookup(){
   if(!code){ toast('กรุณากรอกเลขประจำตัวนักเรียน','error'); return; }
   if(!d||!m||!y){ toast('กรุณาเลือกวัน เดือน ปีเกิดให้ครบ','error'); return; }
   try{ showLoading(true);
-    const r=await GAS.call('studentLookup',{studentCode:code, birthDate:d+'/'+m+'/'+y});
-    document.getElementById('lk_result').innerHTML=(r.pendingCount?`<div class="noprint max-w-3xl mx-auto mb-2 rounded-lg bg-amber-50 border border-amber-300 text-amber-800 text-sm px-3 py-2">⏳ มี ${r.pendingCount} รายวิชาที่โรงเรียนยังไม่อนุมัติผล (แสดง “รอการอนุมัติ”) • ระดับความสามารถรวมจะแสดงเมื่อทุกวิชาอนุมัติครบ — กลับมาตรวจอีกครั้งภายหลัง</div>`:'')+reportPageHTML(r.settings, r, {preview:true, term:r.term});
+    const r=await GAS.call('studentLookup',{studentCode:code, birthDate:d+'/'+m+'/'+y, term:document.getElementById('lk_term').value});
+    try{ localStorage.setItem('lk_lastCode',code); }catch(_){}
+    document.getElementById('lk_result').innerHTML=(r.pendingCount?`<div class="noprint max-w-3xl mx-auto mb-2 rounded-lg bg-amber-50 border border-amber-300 text-amber-800 text-sm px-3 py-2">⏳ มี ${r.pendingCount} รายวิชาที่โรงเรียนยังไม่อนุมัติผล (แสดง “รอการอนุมัติ”) • ระดับความสามารถรวมจะแสดงเมื่อทุกวิชาอนุมัติครบ — กลับมาตรวจอีกครั้งภายหลัง</div>`:'')+(r.updatedAt?`<div class="noprint max-w-3xl mx-auto mb-2 text-center text-xs text-slate-400">ข้อมูลอัปเดตล่าสุด ${esc(beTs(r.updatedAt))}</div>`:'')+reportPageHTML(r.settings, r, {preview:true, term:r.term});
     document.getElementById('lk_formCard').classList.add('hidden');
     document.getElementById('lk_resultWrap').classList.remove('hidden');
     document.getElementById('lookupScreen').scrollTop=0;
@@ -3926,8 +3911,9 @@ function reportPageHTML(s, rs, opt){
       </table>
     </div>`; })()}
 
+    ${opt.preview ? '<div class="lk-printonly">' : ''}
     ${opt.preview ? `<div style="margin-top:18px;padding:8px;border:1px dashed #94a3b8;border-radius:6px;text-align:center;font-size:11px;color:#475569">
-      เอกสารนี้สำหรับตรวจสอบผลการเรียนเบื้องต้นเท่านั้น ไม่ใช่เอกสารทางราชการ • ฉบับจริงรับได้ที่ครูประจำชั้น</div>` : `
+      เอกสารนี้สำหรับตรวจสอบผลการเรียนเบื้องต้นเท่านั้น ไม่ใช่เอกสารทางราชการ • ฉบับจริงรับได้ที่ครูประจำชั้น</div>` : ''}
     <div style="display:flex;justify-content:space-around;text-align:center;font-size:11px;margin-top:20px">
       ${teacherBlocks}
     </div>
@@ -3937,7 +3923,8 @@ function reportPageHTML(s, rs, opt){
     </div>
     <div style="display:flex;justify-content:center;text-align:center;font-size:12px;margin-top:18px">
       <div style="flex:0 1 60%"><div style="height:26px"></div>(ลงชื่อ) ............................................. ผู้ปกครอง<br>( ............................................. )<br><span style="font-size:11px;color:#555">ได้รับทราบผลการเรียนของนักเรียนแล้ว</span></div>
-    </div>`}
+    </div>
+    ${opt.preview ? '</div>' : ''}
   </div>`;
 }
 
@@ -4329,7 +4316,7 @@ function renderPrinAppr(){
       let actBtn='';
       if(act){ actBtn=r.approved?`<button onclick="paRevoke('${esc(r.room)}')" class="btn bg-white border border-slate-200 px-2 py-1 text-xs">↩️ ยกเลิก</button>`
         :(r.ready?`<button onclick="paApprove(['${esc(r.room)}'])" class="btn bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 text-xs">✅ อนุมัติ</button>`:''); }
-      const sub=r.approved?`<div class="text-[11px] text-slate-400">โดย ${esc(r.approvedBy||'')} • ${esc(r.approvedAt||'')}</div>`
+      const sub=r.approved?`<div class="text-[11px] text-slate-400">โดย ${esc(r.approvedBy||'')} • ${esc(beTs(r.approvedAt))}</div>`
         :(!r.ready&&r.pending&&r.pending.length?`<div class="text-[11px] text-rose-500">ขาดอนุมัติ: ${r.pending.slice(0,4).map(esc).join(', ')}${r.total-r.locked>4?' …':''}</div>`:'');
       return `<tr class="border-b">
         <td class="px-2 py-2 font-semibold whitespace-nowrap">${esc(r.room)}${sub}</td>
@@ -4426,7 +4413,7 @@ async function loadScoreHist(){
     if(!d.rows.length){ el.innerHTML='<div class="text-center py-4 text-slate-400">ยังไม่มีประวัติการแก้ไขคะแนน</div>'; return; }
     el.innerHTML=`<div class="text-xs text-slate-400 mb-2">แสดง ${d.rows.length} จาก ${d.total} รายการ</div>
       <table class="w-full text-sm" style="min-width:720px"><thead><tr class="text-left text-slate-400 border-b"><th class="px-2 py-1">เวลา</th><th class="px-2">ผู้แก้</th><th class="px-2">ห้อง</th><th class="px-2">นักเรียน</th><th class="px-2">วิชา • หน่วย</th><th class="px-2 text-center">ค่าเดิม → ค่าใหม่</th></tr></thead><tbody>`+
-      d.rows.map(r=>`<tr class="border-b last:border-0 align-top"><td class="px-2 py-1 whitespace-nowrap text-xs">${esc(r.time)}</td><td class="px-2 py-1 whitespace-nowrap">${esc(r.user)}</td><td class="px-2 py-1 whitespace-nowrap">${esc(r.room)}</td><td class="px-2 py-1">${esc(r.studentName)}</td><td class="px-2 py-1 text-xs text-slate-500">${esc(r.subjectName)} • ${esc(r.unitName)}</td><td class="px-2 py-1 text-center whitespace-nowrap"><span class="text-slate-400">${esc(r.oldScore)}</span> → <b class="${String(r.newScore)===''?'text-rose-600':'text-teal-700'}">${String(r.newScore)===''?'ลบ':esc(r.newScore)}</b></td></tr>`).join('')+'</tbody></table>';
+      d.rows.map(r=>`<tr class="border-b last:border-0 align-top"><td class="px-2 py-1 whitespace-nowrap text-xs">${esc(beTs(r.time))}</td><td class="px-2 py-1 whitespace-nowrap">${esc(r.user)}</td><td class="px-2 py-1 whitespace-nowrap">${esc(r.room)}</td><td class="px-2 py-1">${esc(r.studentName)}</td><td class="px-2 py-1 text-xs text-slate-500">${esc(r.subjectName)} • ${esc(r.unitName)}</td><td class="px-2 py-1 text-center whitespace-nowrap"><span class="text-slate-400">${esc(r.oldScore)}</span> → <b class="${String(r.newScore)===''?'text-rose-600':'text-teal-700'}">${String(r.newScore)===''?'ลบ':esc(r.newScore)}</b></td></tr>`).join('')+'</tbody></table>';
   }catch(e){ el.innerHTML='<span class="text-rose-500">'+esc(e.message)+'</span>'; } finally{ showLoading(false); }
 }
 function prinDrill(room){ state._spPreRoom=room; switchTab('scoretrack'); }
@@ -4908,8 +4895,7 @@ async function showLoginScreen(){
     const sel=document.getElementById('loginName');
     sel.innerHTML='<option value="">— เลือกชื่อ —</option>'+names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
     if(info){ state.publicInfo=info; document.getElementById('lookupEntry').classList.toggle('hidden',!info.lookupEnabled); }
-    document.getElementById('demoEntry').classList.toggle('hidden', !!(info && info.demoEnabled===false));   // แอดมินปิดปุ่มทดลองใช้ได้ใน ⚙️ ตั้งค่า
-  }catch(e){ if(e.code!=='EXPIRED'){ setStatus(false); toast(e.message,'error'); document.getElementById('demoEntry').classList.remove('hidden'); } }
+  }catch(e){ if(e.code!=='EXPIRED'){ setStatus(false); toast(e.message,'error'); } }
 }
 
 async function doLogin(){
@@ -4949,7 +4935,6 @@ async function saveChangePin(){
 }
 
 function logout(){
-  if(state.demo){ DEMO.exit(); return; }
   if(state.currentUser && state.currentUser.token) GAS.call('logout').catch(()=>{});   // ยกเลิก token ฝั่งเซิร์ฟเวอร์
   setTimeout(()=>{
     state.currentUser=null; state.mySchedule=[]; state.mySubjects=[]; state.teachers=[];
@@ -4972,8 +4957,6 @@ const TAB_META=[
   ['scores','📝 บันทึกผลการเรียน','staff'],
   ['ability','🎯 กิจกรรม/คุณลักษณะ','staff'],
   ['subdoc','📚 คำอธิบาย/โครงสร้างวิชา','staff'],
-  ['schedule','🗓️ ตารางสอน','all'],
-  ['roomtt','🏫 ตารางเรียนรายห้อง','all'],
   ['calendar','🗓️ ปฏิทินวิชาการ','all'],
   ['attendance','✅ เช็คชื่อ','staff'],
   ['profile','🪪 ประวัตินักเรียน','staff'],
@@ -5011,7 +4994,7 @@ function defaultTabAccess(){
   return {teacher, director, principal};
 }
 // เมนูที่มีอยู่ก่อนเพิ่ม "สรุปผลการเรียน" เข้าตารางสิทธิ์ (ใช้กับสิทธิ์ที่เคยบันทึกไว้ซึ่งยังไม่มี known)
-const LEGACY_TABS=['home','subjects','scores','teachdoc','subdoc','profile','former','exam','sar','teachsum','scoretrack','supervise','schedule','ability','report','stats','attendance','calendar','risk','admin','settings'];
+const LEGACY_TABS=['home','subjects','scores','teachdoc','subdoc','profile','former','exam','sar','teachsum','scoretrack','supervise','ability','report','stats','attendance','calendar','risk','admin','settings'];
 function getTabAccess(){
   const def=defaultTabAccess(), s=state.tabAccess;
   if(!(s && s.teacher && s.director)) return def;
@@ -5045,7 +5028,6 @@ function applyRole(){
     else if(dr==='staff') show=(role==='teacher');
     else show=false;
     if(tab==='home'||tab==='manual'||tab==='developer') show=true;   // หน้าแรก/คู่มือ/ผู้พัฒนา เห็นเสมอ (ไม่อยู่ในตารางสิทธิ์)
-    if(state.demo && tab && !DEMO_TABS.has(tab)) show=false;          // โหมดทดลอง: เห็นเฉพาะเมนูที่มีข้อมูลตัวอย่าง
     el.style.display = show ? '' : 'none';
   });
   // หมวดสุดท้าย: แอดมินเห็น "⚙️ ตั้งค่าระบบ" / ครู-ผอ. เห็น "ℹ️ ช่วยเหลือ" (มีแค่คู่มือ + ผู้พัฒนา)
@@ -5208,7 +5190,7 @@ async function publishEdgeNow(){
    ============================================================ */
 const HC_FIX_LABEL={dup_att:'🔧 ย้ายแถวเช็คชื่อซ้ำออก', dup_scores:'🔧 ย้ายแถวคะแนนซ้ำออก',
   orphans:'🔧 ย้ายแถวกำพร้าออก', rebuild_summary:'🔄 สร้างสรุปเวลาเรียนใหม่',
-  dup_student_ids:'🧬 แยกรหัสนักเรียนที่ซ้ำ', orphan_units:'♻️ กู้หน่วยที่หาย (ใช้รหัสเดิม)', ack_rows:'✔ รับทราบ (ข้อมูลถูกต้อง)'};
+  dup_student_ids:'🧬 แยกรหัสนักเรียนที่ซ้ำ', orphan_units:'♻️ กู้หน่วยที่หาย (ใช้รหัสเดิม)', ack_rows:'✔ รับทราบ (ข้อมูลถูกต้อง)', fix_headers:'🧱 ใส่หัวตารางที่หาย'};
 function hcSevIcon(s){ return s==='red'?'🔴':(s==='yellow'?'🟡':'ℹ️'); }
 async function loadHealth(){
   const area=document.getElementById('hc_area'); if(!area) return;
@@ -5225,9 +5207,9 @@ function renderHealth(r){
   const fixes=new Set();
   const stt=r.stats?(()=>{ const L=r.stats.license||{}, C=r.stats.counts||{}; const dl=L.daysLeft;
     return `<div class="rounded-lg bg-slate-50 border border-slate-200 p-2 mb-2 text-xs text-slate-600">
-      <div>🪪 ใบอนุญาต: หมดอายุ <b>${esc(L.expires||'-')}</b> ${dl!=null?(dl<0?'<span class="text-rose-600">(หมดอายุแล้ว)</span>':'<span class="'+(dl<=60?'text-amber-600':'text-emerald-600')+'">(เหลือ '+dl+' วัน)</span>'):''}</div>
+      <div>🪪 ใบอนุญาต: หมดอายุ <b>${esc(beTs(L.expires)||'-')}</b> ${dl!=null?(dl<0?'<span class="text-rose-600">(หมดอายุแล้ว)</span>':'<span class="'+(dl<=60?'text-amber-600':'text-emerald-600')+'">(เหลือ '+dl+' วัน)</span>'):''}</div>
       <div class="mt-0.5">📦 จำนวนแถว: ${Object.keys(C).map(k=>esc(k)+' '+C[k]).join(' • ')}</div></div>`; })():'';
-  area.innerHTML=stt+`<div class="text-xs text-slate-400 mb-1.5">ตรวจล่าสุด: ${esc(r.at||'')} • โค้ดเซิร์ฟเวอร์: ${esc(r.build||'เก่า (ยังไม่ได้ Deploy ใหม่)')}</div>`+
+  area.innerHTML=stt+`<div class="text-xs text-slate-400 mb-1.5">ตรวจล่าสุด: ${esc(beTs(r.at))} • โค้ดเซิร์ฟเวอร์: ${esc(r.build||'เก่า (ยังไม่ได้ Deploy ใหม่)')}</div>`+
     ((r.issues&&r.issues.length)?r.issues.map(i=>{
       if(i.fix) fixes.add(i.fix);
       return `<div class="border-b last:border-0 border-slate-100 py-1.5">
@@ -5242,6 +5224,9 @@ function renderHealth(r){
 
 // ---------- 👨‍💻 ผู้พัฒนา ----------
 const DEV_CHANGELOG=[
+  ['2026-10-16','ปรับรอบใหญ่: วันเปิดเรียนเท่ากันทุกห้อง + ช่องติ๊กนับวันที่ไม่ได้เช็กว่ามาเรียน (attAssumePresent) • หน้าตรวจผลผู้ปกครอง: เลขประจำตัวเฉพาะ 0-9 ตั้งจำนวนหลักได้ ไม่ล็อกผู้กรอกผิด ข้อความผิดรวม เลือกภาคเรียน จำเลขล่าสุด • แจ้งปัญหา: เลขติดตามเรื่อง + อีเมลแจ้งกลับ • ลบโหมดทดลองใช้และตารางสอน/ระบบนำเข้าวิชาจากตารางสอน • บันทึกคะแนนเขียนเฉพาะแถวที่เปลี่ยน • เมนูตรวจ/ลบชีตไม่จำเป็น'],
+  ['2026-10-16','วันที่/เวลาที่แสดงบนหน้าจอเป็น พ.ศ. ทั้งหมด • หน้าตรวจผลออนไลน์: ซ่อนส่วนลายเซ็น/หมายเหตุบนจอ แสดงเฉพาะตอนพิมพ์'],
+  ['2026-10-16','แก้ "ผอ. กดอนุมัติแล้วยังขึ้นรออนุมัติ": ซ่อมชีตอนุมัติรายห้องที่หัวตารางหาย/แถวซ้ำอัตโนมัติ + ตรวจ "หัวตารางหาย" ทุกชีตในหน้าตรวจสุขภาพข้อมูล'],
   ['2026-10-15','สิทธิ์เมนูรายบทบาทแยก 3 คอลัมน์ (ครู / รองผอ.-วิชาการ / ผอ.) + ลิงก์ตรวจผลของนักเรียน (?check) ไม่มีปุ่มกลับหน้าครู ไม่โหลดหน้าล็อกอิน'],
   ['2026-10-15','หน้า "แก้ผล ร/มส/มผ & เลื่อนชั้น": ครูตั้งสถานะ ร/มส/มผ และบันทึกผลแก้ไขของวิชาที่สอน (ผ่านแล้วบันทึกเป็นผลสูงสุดตามเกณฑ์ + เก็บประวัติ) • ผู้บริหารดูเงื่อนไขเลื่อนชั้น (เวลาเรียน/วิชาค้าง/กิจกรรม) และกดเลื่อนชั้น/ซ้ำชั้นพร้อมเหตุผล • ตั้งเกณฑ์ได้ที่ ⚙️ ตั้งค่า • หน้าขึ้นปีใช้ผลการตัดสินนี้'],
   ['2026-10-15','ขึ้นปีการศึกษาใหม่ (แอดมิน): ตรวจตัวอย่างก่อน → สำรอง + เก็บ Archive ลง Drive → เลื่อนชั้น ป.1→ป.2 … ป.5→ป.6 ย้าย ป.6 ไปนักเรียนจำหน่าย → ล้างคะแนน/เกรด/การอนุมัติ → ปี +1 • มีคลัง Archive และเช็คลิสต์เริ่มปีเพิ่ม 2 ข้อ'],
@@ -5274,7 +5259,7 @@ async function renderDeveloper(){
       <a href="${esc(href)}" target="_blank" rel="noopener" class="btn bg-teal-600 text-white px-3 py-1.5 text-xs">เปิด</a>
       <button onclick="spClip(decodeURIComponent('${encodeURIComponent(cp)}'),'คัดลอก${esc(lb)}แล้ว')" class="btn bg-white border border-slate-200 px-2 py-1.5 text-xs">📋</button></div>`).join('')
     ||'<div class="text-slate-400 text-sm">ยังไม่ได้ตั้งช่องทางติดต่อ</div>';
-  document.getElementById('dv_log').innerHTML=DEV_CHANGELOG.map(([d,t])=>`<div><span class="text-[11px] text-slate-400">${esc(d)}</span><div>${esc(t)}</div></div>`).join('');
+  document.getElementById('dv_log').innerHTML=DEV_CHANGELOG.map(([d,t])=>`<div><span class="text-[11px] text-slate-400">${esc(beTs(d))}</span><div>${esc(t)}</div></div>`).join('');
   devRenderSys();
   try{ const r=await GAS.call('getAppBuild'); DEV_SYS.be=r.build||'เก่า (ยังไม่ได้ Deploy)'; DEV_SYS.license=r.licenseExpires?{expires:r.licenseExpires,daysLeft:r.daysLeft}:null; }
   catch(e){ DEV_SYS.be='ตรวจไม่ได้'; }
@@ -5282,27 +5267,27 @@ async function renderDeveloper(){
 }
 function devRenderSys(){
   const L=DEV_SYS.license, dl=L&&L.daysLeft;
-  const lic=L?`${esc(L.expires)} ${dl<0?'<span class="text-rose-600 font-semibold">(หมดอายุแล้ว)</span>':'<span class="'+(dl<=60?'text-amber-600 font-semibold':'text-emerald-600')+'">(เหลือ '+dl+' วัน)</span>'}`:'—';
+  const lic=L?`${esc(beTs(L.expires))} ${dl<0?'<span class="text-rose-600 font-semibold">(หมดอายุแล้ว)</span>':'<span class="'+(dl<=60?'text-amber-600 font-semibold':'text-emerald-600')+'">(เหลือ '+dl+' วัน)</span>'}`:'—';
   document.getElementById('dv_sys').innerHTML=`<div>📄 เวอร์ชันหน้าเว็บ: <b>${esc(APP_BUILD)}</b></div><div>🧱 เวอร์ชัน Code.gs: <b>${esc(DEV_SYS.be)}</b>${DEV_SYS.be&&DEV_SYS.be!=='…'&&DEV_SYS.be!==APP_BUILD&&DEV_SYS.be.indexOf(APP_BUILD)<0?' <span class="text-amber-600 text-xs">(ไม่ตรงกับหน้าเว็บ — ตรวจว่า Deploy/อัปไฟล์ครบหรือยัง)</span>':''}</div><div>🪪 ใบอนุญาตหมดอายุ: <b>${lic}</b></div>`
     +(L&&dl<=60?`<div class="rounded-lg bg-amber-50 border border-amber-300 text-amber-800 px-3 py-2 text-xs mt-1">${dl<0?'ใบอนุญาตหมดอายุแล้ว':'ใบอนุญาตใกล้หมดอายุ'} — กด “ต่ออายุใบอนุญาต” เพื่อติดต่อผู้พัฒนา</div>`:'');
 }
 function devReportText(){
   const u=state.currentUser||{}, s=state.settings||{}, L=DEV_SYS.license;
   return ['📋 ข้อมูลระบบ NSR SMART ประถมศึกษา','โรงเรียน: '+(s.schoolName||'-'),'ผู้ใช้: '+(u.name||'-')+' ('+(u.role||'-')+')','เวอร์ชันหน้าเว็บ: '+APP_BUILD,'เวอร์ชัน Code.gs: '+DEV_SYS.be,
-    'ใบอนุญาตหมดอายุ: '+(L?L.expires+' (เหลือ '+L.daysLeft+' วัน)':'-'),'เบราว์เซอร์: '+navigator.userAgent,'เวลา: '+new Date().toLocaleString('th-TH'),'','อาการที่พบ: '].join('\n');
+    'ใบอนุญาตหมดอายุ: '+(L?beTs(L.expires)+' (เหลือ '+L.daysLeft+' วัน)':'-'),'เบราว์เซอร์: '+navigator.userAgent,'เวลา: '+new Date().toLocaleString('th-TH'),'','อาการที่พบ: '].join('\n');
 }
 function devCopyReport(){ spClip(devReportText(),'คัดลอกข้อมูลแล้ว — วางใน LINE ถึงผู้พัฒนาได้'); }
 function devRenew(){
   const s=state.settings||{}, L=DEV_SYS.license;
-  const msg='สวัสดีครับ/ค่ะ ขอต่ออายุใบอนุญาตระบบ NSR SMART ประถมศึกษา\nโรงเรียน: '+(s.schoolName||'-')+'\nใบอนุญาตหมดอายุ: '+(L?L.expires:'-');
+  const msg='สวัสดีครับ/ค่ะ ขอต่ออายุใบอนุญาตระบบ NSR SMART ประถมศึกษา\nโรงเรียน: '+(s.schoolName||'-')+'\nใบอนุญาตหมดอายุ: '+(L?beTs(L.expires):'-');
   spClip(msg,'คัดลอกข้อความต่ออายุแล้ว — วางในแชต LINE ได้เลย');
   const u=devLineUrl(); if(u) window.open(u,'_blank','noopener');
 }
 // ---------- 📜 ประวัติการแก้ไข ----------
 const AUDIT_LABEL={approveSubjects:'อนุมัติ/ล็อกวิชา',unlockSubject:'ปลดล็อกวิชา',setLock:'ล็อก/ปลดล็อกทั้งห้อง',saveSettings:'แก้ตั้งค่า',saveTabAccess:'แก้สิทธิ์เมนู',
   saveGradeMapping:'แก้ตารางแปลงเกรด',saveReport51Config:'แก้ตั้งค่าใบรายงาน',saveTeacher:'บันทึกครู',saveTeachersBatch:'บันทึกครูหลายคน',deleteTeacher:'ลบครู',importDMC:'นำเข้า DMC',
-  restoreBackup:'กู้คืนข้อมูล',importBackupData:'นำเข้าข้อมูลสำรอง',clearAllData:'ล้างข้อมูล',saveSubjectAssignments:'จัดครู/รายวิชา',importSchedule:'นำเข้าข้อมูลตารางสอน',bulkImportRoster:'นำเข้ารายชื่อนักเรียน',
-  mergeSubjects:'รวมรายวิชา',mapSubjectAlias:'ผูกชื่อวิชา',runHealthFix:'ซ่อมข้อมูล',runYearRollover:'ขึ้นปีการศึกษาใหม่',setGradeStatus:'ตั้งสถานะ ร/มส/มผ',recordRemedy:'บันทึกผลแก้ไข',setPromotionDecision:'ตัดสินเลื่อนชั้น/ซ้ำชั้น',fixDupStudentIds:'ซ่อมรหัสนักเรียนซ้ำ',recoverOrphanUnits:'กู้หน่วยที่หาย',syncSubjectsFromSchedule:'สร้างวิชาจากตารางสอน',markLookupIssue:'จัดการเรื่องแจ้งปัญหา'};
+  restoreBackup:'กู้คืนข้อมูล',importBackupData:'นำเข้าข้อมูลสำรอง',clearAllData:'ล้างข้อมูล',saveSubjectAssignments:'จัดครู/รายวิชา',bulkImportRoster:'นำเข้ารายชื่อนักเรียน',
+  mergeSubjects:'รวมรายวิชา',mapSubjectAlias:'ผูกชื่อวิชา',runHealthFix:'ซ่อมข้อมูล',runYearRollover:'ขึ้นปีการศึกษาใหม่',setGradeStatus:'ตั้งสถานะ ร/มส/มผ',recordRemedy:'บันทึกผลแก้ไข',setPromotionDecision:'ตัดสินเลื่อนชั้น/ซ้ำชั้น',fixDupStudentIds:'ซ่อมรหัสนักเรียนซ้ำ',recoverOrphanUnits:'กู้หน่วยที่หาย',markLookupIssue:'จัดการเรื่องแจ้งปัญหา'};
 async function loadAudit(){
   const el=document.getElementById('au_area'); if(!el) return;
   try{ showLoading(true);
@@ -5313,7 +5298,7 @@ async function loadAudit(){
     if(!d.rows.length){ el.innerHTML='<div class="text-center py-4 text-slate-400">ยังไม่มีประวัติ</div>'; return; }
     el.innerHTML=`<div class="text-xs text-slate-400 mb-2">แสดง ${d.rows.length} จาก ${d.total} รายการ (ใหม่ → เก่า)</div>
       <table class="w-full text-sm" style="min-width:620px"><thead><tr class="text-left text-slate-400 border-b"><th class="px-2 py-1">เวลา</th><th class="px-2">ผู้ทำ</th><th class="px-2">การกระทำ</th><th class="px-2">รายละเอียด</th></tr></thead><tbody>`+
-      d.rows.map(r=>`<tr class="border-b last:border-0 align-top"><td class="px-2 py-1 whitespace-nowrap text-xs">${esc(r.time)}</td><td class="px-2 py-1 whitespace-nowrap">${esc(r.user)}</td>
+      d.rows.map(r=>`<tr class="border-b last:border-0 align-top"><td class="px-2 py-1 whitespace-nowrap text-xs">${esc(beTs(r.time))}</td><td class="px-2 py-1 whitespace-nowrap">${esc(r.user)}</td>
         <td class="px-2 py-1 whitespace-nowrap">${esc(AUDIT_LABEL[r.action]||r.action)}</td><td class="px-2 py-1 text-xs text-slate-500">${esc(r.detail)}</td></tr>`).join('')+'</tbody></table>';
   }catch(e){ el.innerHTML='<span class="text-rose-500">'+esc(e.message)+'</span>'; } finally{ showLoading(false); }
 }
@@ -5385,7 +5370,7 @@ const LOGIN_LOGO_BASE64='';
 const APP_NAME='NSR SMART ประถมศึกษา';
 const APP_NAME_HTML='NSR <span class="text-emerald-500">SMART</span> <span class="text-slate-600">ประถมศึกษา</span>';
 const APP_TAGLINE='ระบบสารสนเทศงานวิชาการและดูแลช่วยเหลือนักเรียน';
-const APP_BUILD='2026-10-15j'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
+const APP_BUILD='2026-10-16b'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
 const TH_M_ABBR=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 // โหลดรายการ (วัน|ห้อง|คาบ) ที่เช็คแล้วของเดือนนั้น (cache ต่อเดือน)
 async function attMonthKeys(month){
@@ -6422,7 +6407,7 @@ async function renderSubDocPlan(subjectID, el){
       && matchSubjName(sub,d.subject));
     if(!found.length){ el.innerHTML='<p class="text-sm text-slate-400">ยังไม่มีไฟล์กำหนดการสอนของวิชานี้</p>'+note; return; }
     el.innerHTML=found.map(d=>`<div class="border border-slate-200 rounded-lg p-3 flex items-center justify-between gap-2 mb-2">
-      <span class="text-sm">📄 ${esc(d.fileName||'กำหนดการสอน')}<span class="text-xs text-slate-400"> — ครู${esc(d.teacher)} (${esc(String(d.updatedAt).slice(0,10))})</span></span>
+      <span class="text-sm">📄 ${esc(d.fileName||'กำหนดการสอน')}<span class="text-xs text-slate-400"> — ครู${esc(d.teacher)} (${esc(beTs(String(d.updatedAt).slice(0,10)))})</span></span>
       <a href="https://drive.google.com/file/d/${esc(d.fileId)}/view" target="_blank" class="btn bg-sky-500 hover:bg-sky-600 text-white px-3 py-1 text-xs whitespace-nowrap">เปิดไฟล์</a>
     </div>`).join('')+note;
   }catch(e){ el.innerHTML='<p class="text-sm text-slate-400">โหลดไม่สำเร็จ</p>'+note; }
@@ -6598,7 +6583,7 @@ function renderBackupFiles(files){
   if(!files.length){ el.innerHTML='<span class="text-slate-400">ยังไม่มีไฟล์สำรอง</span>'; return; }
   el.innerHTML='<h4 class="font-bold text-teal-700 text-sm mb-2">ไฟล์สำรองล่าสุด</h4>'+
     files.map(f=>`<div class="flex items-center justify-between gap-2 border-b border-slate-100 py-1.5 text-sm">
-      <span>🗂️ ${esc(f.name)} <span class="text-xs text-slate-400">(${esc(f.at)})</span></span>
+      <span>🗂️ ${esc(f.name)} <span class="text-xs text-slate-400">(${esc(beTs(f.at))})</span></span>
       <span class="flex gap-2">
         <a href="https://drive.google.com/file/d/${esc(f.id)}/view" target="_blank" class="text-blue-500 text-xs">ดู</a>
         <button onclick="restoreBackup('${f.id}','${esc(f.name)}')" class="text-amber-600 text-xs">↩️ กู้คืน</button>
@@ -6750,7 +6735,7 @@ function renderLocksAdmin(){
     return `<div class="flex items-center justify-between gap-2 border-b border-slate-100 py-2">
       <span class="font-medium text-slate-700">${esc(r)}
         ${locked?`<span class="badge bg-rose-100 text-rose-700 ml-2">🔒 ล็อกทั้งห้อง</span>`:`<span class="badge bg-emerald-100 text-emerald-700 ml-2">✏️ แก้ไขได้</span>`}
-        ${info&&info.updatedAt?`<span class="text-[11px] text-slate-400 ml-2">${esc(info.updatedAt)}</span>`:''}
+        ${info&&info.updatedAt?`<span class="text-[11px] text-slate-400 ml-2">${esc(beTs(info.updatedAt))}</span>`:''}
       </span>
       <button onclick="toggleLock('${esc(r)}',${locked?'false':'true'})" class="btn px-3 py-1.5 text-xs ${locked?'bg-emerald-500 hover:bg-emerald-600':'bg-rose-500 hover:bg-rose-600'} text-white">${locked?'🔓 ปลดล็อกห้อง':'🔒 ล็อกทั้งห้อง'}</button>
     </div>`;
@@ -6777,7 +6762,7 @@ function renderSubjLocks(){
       return `<tr class="border-b last:border-0 align-top">
         <td class="px-2 py-1.5 whitespace-nowrap">${esc(l.room)}</td><td class="px-2 py-1.5">${esc(l.subjectName||l.subjectID)}</td>
         <td class="px-2 py-1.5 whitespace-nowrap">${on?(Number(l.forced)?'<span class="badge bg-amber-100 text-amber-700">🔒 ล็อกบังคับ</span>':'<span class="badge bg-rose-100 text-rose-700">🔒 อนุมัติแล้ว</span>'):'<span class="badge bg-emerald-100 text-emerald-700">✏️ ปลดล็อกแล้ว</span>'}</td>
-        <td class="px-2 py-1.5 text-xs text-slate-500">${esc(l.lockedBy||'')}<br>${esc(l.lockedAt||'')}</td>
+        <td class="px-2 py-1.5 text-xs text-slate-500">${esc(l.lockedBy||'')}<br>${esc(beTs(l.lockedAt))}</td>
         <td class="px-2 py-1.5 text-xs text-slate-500" style="max-width:200px">${esc(l.reason||'')}</td>
         <td class="px-2 py-1.5 text-center whitespace-nowrap">${on?`<button onclick="lkUnlock('${esc(l.subjectID)}','${esc(l.room)}')" class="btn bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 text-xs">🔓 ปลดล็อก</button> `:''}<button onclick="lkHistory('${esc(l.subjectID)}','${esc(l.room)}')" class="btn bg-white border border-slate-200 px-2 py-1 text-xs">📜 ประวัติ</button></td></tr>`;
     }).join('')+'</tbody></table>';
@@ -6930,139 +6915,6 @@ async function loadGradeCharts(){
       options:{ responsive:true, maintainAspectRatio:false,
         scales:{ y:{ min:0, max:4, ticks:{stepSize:1} } }, plugins:{ legend:{display:false} } } });
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
-}
-
-/* ============================================================
-   ตารางสอน
-   ============================================================ */
-const SCH_DAYS=['จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์'];
-async function initSchedule(){
-  const u=state.currentUser;
-  const pickWrap=document.getElementById('sch_pickWrap');
-  // เติมรายชื่อห้อง
-  const cSel=document.getElementById('sch_class');
-  const classes=[...new Set(state.students.map(s=>s.classLevel))].sort();
-  cSel.innerHTML=classes.map(c=>`<option>${esc(c)}</option>`).join('');
-  const _mode=document.getElementById('sch_mode').value;
-  const _tt=document.getElementById('sch_title'); if(_tt) _tt.textContent=_mode==='class'?'🏫 ตารางเรียนรายห้อง':'🗓️ ตารางสอน';
-  if(isAdminUser()) initSchEdit();
-  if(isTeacherScope(u)){
-    pickWrap.classList.add('hidden');
-    document.getElementById('sch_hint').textContent=_mode==='class'?'เลือกห้อง แล้วกด 🖨️ พิมพ์ตาราง (A4 แนวนอน) ได้เลย':'ตารางสอนของ '+u.name;
-    state._schView={mode:'teacher', title:'ตารางสอน ครู'+u.name, rows:state.mySchedule||[], showTeacher:false};
-    renderScheduleGrid(state.mySchedule||[], false);
-    if(document.getElementById('sch_mode').value==='class') onSchMode();
-  }else{
-    // แอดมิน/ผู้บริหาร เลือกครูได้
-    document.getElementById('sch_hint').textContent=_mode==='class'?'เลือกห้อง แล้วกด 🖨️ พิมพ์ตาราง (A4 แนวนอน) ได้เลย':'เลือกครู แล้วกด 🖨️ พิมพ์ตาราง (A4 แนวนอน) ได้เลย • แอดมินแก้ไขคาบได้ที่ด้านล่าง';
-    let teachers=state.teachers||[];
-    if(!teachers.length){ try{ teachers=state.teachers=await GAS.call('getTeachers'); }catch(e){} }
-    const sel=document.getElementById('sch_teacher'); const cur=sel.value;
-    const names=teachers.filter(t=>t.role!=='admin').map(t=>t.name);
-    sel.innerHTML=names.map(n=>`<option>${esc(n)}</option>`).join('')||'<option value="">(ไม่มีครู)</option>';
-    if(cur) sel.value=cur;
-    onSchMode();
-  }
-}
-function onSchMode(){
-  const u=state.currentUser;
-  const mode=document.getElementById('sch_mode').value;
-  const teacherMode=mode==='teacher';
-  document.getElementById('sch_classWrap').classList.toggle('hidden', teacherMode);
-  if(isTeacherScope(u)){
-    document.getElementById('sch_pickWrap').classList.add('hidden');
-    if(teacherMode){ state._schView={mode:'teacher', title:'ตารางสอน ครู'+u.name, rows:state.mySchedule||[], showTeacher:false}; renderScheduleGrid(state.mySchedule||[], false); }
-    else loadScheduleByClass();
-  }else{
-    document.getElementById('sch_pickWrap').classList.toggle('hidden', !teacherMode);
-    if(teacherMode) loadScheduleView(); else loadScheduleByClass();
-  }
-}
-async function loadScheduleByClass(){
-  const cls=document.getElementById('sch_class').value;
-  if(!cls){ document.getElementById('sch_area').innerHTML='<span class="text-slate-400">ไม่มีห้อง</span>'; return; }
-  try{ showLoading(true);
-    const rows=await GAS.call('getScheduleByClass',{classLevel:cls});
-    state._schView={mode:'class', title:'ตารางเรียน ห้อง '+cls, rows, showTeacher:true};
-    renderScheduleGrid(rows, true);
-  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
-}
-async function loadScheduleView(){
-  const name=document.getElementById('sch_teacher').value;
-  if(!name){ document.getElementById('sch_area').innerHTML='<span class="text-slate-400">ไม่มีครู</span>'; return; }
-  try{ showLoading(true);
-    const rows=await GAS.call('getSchedule',{teacher:name});
-    state._schView={mode:'teacher', title:'ตารางสอน ครู'+name, rows, showTeacher:false};
-    renderScheduleGrid(rows, true);
-  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
-}
-// พิมพ์ตารางสอน (A4 แนวนอน) ตามมุมมองที่แสดงอยู่
-function printScheduleView(){
-  const v=state._schView;
-  if(!v||!v.rows||!v.rows.length){ toast('ยังไม่มีตารางให้พิมพ์','error'); return; }
-  const set=state.settings||{};
-  let maxP=8; v.rows.forEach(r=>{ const p=Number(r.period)||0; if(p>maxP) maxP=p; });
-  const map={};
-  v.rows.forEach(r=>{ const d=String(r.day||'').trim(), p=Number(r.period)||0; ((map[d]=map[d]||{})[p]=map[d][p]||[]).push(r); });
-  const td='border:1px solid #333;padding:4px 5px;vertical-align:top;';
-  let head=`<tr><th style="${td}background:#eee;width:80px">วัน / คาบ</th>`;
-  for(let p=1;p<=maxP;p++) head+=`<th style="${td}background:#eee">คาบ ${p}</th>`;
-  head+='</tr>';
-  let body='';
-  SCH_DAYS.forEach(d=>{
-    body+=`<tr><td style="${td}background:#f7f7f7;font-weight:700">${d}</td>`;
-    for(let p=1;p<=maxP;p++){
-      const cell=(map[d]&&map[d][p])||[];
-      body+=`<td style="${td}font-size:12px;text-align:center">`+cell.map(c=>
-        (v.mode==='class'
-          ? `<div><b>${esc(c.subject||'')}</b><br><span style="color:#555">ครู${esc(c.teacher||'')}</span></div>`
-          : `<div><b>${esc(c.classLevel||'')}</b><br>${esc(c.subject||'')}</div>`)
-      ).join('<hr style="border:none;border-top:1px dashed #bbb;margin:2px 0">')+'</td>';
-    }
-    body+='</tr>';
-  });
-  const html=`<div class="page">
-    <div style="text-align:center">
-      ${set.logoURL?`<img src="${esc(set.logoURL)}" style="height:52px">`:''}
-      <div style="font-size:18px;font-weight:700">${esc(v.title)}</div>
-      <div style="font-size:14px">${esc(set.schoolName||'')} • ภาคเรียนที่/ปีการศึกษา ${esc(set.academicYear||'')}</div>
-    </div>
-    <table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:13px">${head}${body}</table>
-    <table style="width:100%;margin-top:34px;text-align:center;font-size:14px"><tr>
-      <td>ลงชื่อ .................................................<br>ผู้จัดตารางสอน</td>
-      <td>ลงชื่อ .................................................<br>(${esc(set.directorName||'')})<br>ผู้อำนวยการ${esc(set.schoolName||'โรงเรียน')}</td>
-    </tr></table>
-  </div>
-  <style>@page{size:A4 landscape;margin:12mm;}</style>`;
-  openPrintWindow(v.title, html);
-}
-function renderScheduleGrid(rows, showTeacher){
-  const el=document.getElementById('sch_area');
-  if(!rows || !rows.length){ el.innerHTML='<div class="text-center text-slate-400 py-6">ยังไม่มีตารางสอน</div>'; return; }
-  let maxP=0; rows.forEach(r=>{ const p=Number(r.period)||0; if(p>maxP) maxP=p; });
-  if(maxP<1) maxP=8;
-  // map[day][period] = [{subject,class,teacher}]
-  const map={};
-  rows.forEach(r=>{
-    const d=String(r.day||'').trim(), p=Number(r.period)||0;
-    (map[d]=map[d]||{})[p]=(map[d]&&map[d][p]||[]);
-    map[d][p].push(r);
-  });
-  let head='<tr><th class="border border-slate-300 bg-slate-100 px-2 py-1">วัน\\คาบ</th>';
-  for(let p=1;p<=maxP;p++) head+=`<th class="border border-slate-300 bg-slate-100 px-2 py-1">${p}</th>`;
-  head+='</tr>';
-  let body='';
-  SCH_DAYS.forEach(d=>{
-    body+=`<tr><td class="border border-slate-300 bg-slate-50 px-2 py-1 font-medium whitespace-nowrap">${d}</td>`;
-    for(let p=1;p<=maxP;p++){
-      const cell=(map[d]&&map[d][p])||[];
-      body+='<td class="border border-slate-300 px-1 py-1 align-top text-xs">'+
-        cell.map(c=>`<div class="mb-0.5"><span class="font-medium text-teal-700">${esc(c.classLevel||'')}</span> ${esc(c.subject||'')}${showTeacher&&c.teacher?'<br><span class="text-slate-400">'+esc(c.teacher)+'</span>':''}</div>`).join('')+
-        '</td>';
-    }
-    body+='</tr>';
-  });
-  el.innerHTML=`<table class="border-collapse w-full" style="min-width:560px">${head}${body}</table>`;
 }
 
 /* ============================================================
@@ -7454,116 +7306,6 @@ function openPrintWindow(title, bodyHTML){
     <script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script></body></html>`);
   w.document.close();
 }
-/* ============================================================
-   แอดมินแก้ไขตารางสอนรายครู (เพิ่ม/ย้าย/ลบคาบ + ตรวจการชน)
-   ============================================================ */
-const SE_MAX_PERIOD=8;
-async function initSchEdit(){
-  if(!state.teachers || !state.teachers.length){ try{ state.teachers=await GAS.call('getTeachers'); }catch(e){} }
-  const sel=document.getElementById('se_teacher'); const cur=sel.value;
-  const names=(state.teachers||[]).filter(t=>t.role!=='admin').map(t=>t.name);
-  sel.innerHTML='<option value="">— เลือกครู —</option>'+names.map(n=>`<option>${esc(n)}</option>`).join('');
-  if(cur){ sel.value=cur; }
-}
-function refreshSchView(){
-  try{
-    const m=document.getElementById('sch_mode').value;
-    if(m==='teacher') loadScheduleView(); else loadScheduleByClass();
-  }catch(e){}
-}
-async function loadSchEdit(){
-  const name=document.getElementById('se_teacher').value;
-  const el=document.getElementById('se_area');
-  if(!name){ el.innerHTML='เลือกครูเพื่อแสดงตาราง'; return; }
-  try{ showLoading(true);
-    state._seRows=await GAS.call('getSchedule',{teacher:name});
-    renderSchEditGrid();
-  }catch(e){ el.innerHTML='<div class="text-rose-500">'+esc(e.message)+'</div>'; }
-  finally{ showLoading(false); }
-}
-function renderSchEditGrid(){
-  const el=document.getElementById('se_area');
-  const rows=state._seRows||[];
-  let maxP=SE_MAX_PERIOD; rows.forEach(r=>{ const p=Number(r.period)||0; if(p>maxP) maxP=p; });
-  const map={};
-  rows.forEach(r=>{ const d=String(r.day||'').trim(), p=Number(r.period)||0; ((map[d]=map[d]||{})[p]=map[d][p]||[]).push(r); });
-  let head='<tr><th class="border border-slate-300 bg-slate-100 px-2 py-1">วัน\\คาบ</th>';
-  for(let p=1;p<=maxP;p++) head+=`<th class="border border-slate-300 bg-slate-100 px-2 py-1">${p}</th>`;
-  head+='</tr>';
-  let body='';
-  SCH_DAYS.forEach(d=>{
-    body+=`<tr><td class="border border-slate-300 bg-slate-50 px-2 py-1 font-medium whitespace-nowrap">${d}</td>`;
-    for(let p=1;p<=maxP;p++){
-      const cell=(map[d]&&map[d][p])||[];
-      body+='<td class="border border-slate-300 px-1 py-1 align-top text-xs" style="min-width:86px">'+
-        cell.map(c=>`<div class="mb-1 rounded-lg bg-teal-50 border border-teal-200 px-1.5 py-1 cursor-pointer hover:bg-teal-100" onclick="openSchCell('${esc(c.ID)}')" title="คลิกเพื่อแก้ไข/ย้าย/ลบ">
-            <span class="font-semibold text-teal-700">${esc(c.classLevel||'')}</span><br>${esc(c.subject||'')}</div>`).join('')+
-        `<button onclick="openSchCell('','${d}',${p})" class="w-full text-slate-300 hover:text-teal-600 hover:bg-teal-50 rounded text-sm" title="เพิ่มคาบ">➕</button></td>`;
-    }
-    body+='</tr>';
-  });
-  el.innerHTML=`<table class="border-collapse w-full" style="min-width:640px">${head}${body}</table>`;
-}
-function openSchCell(id, day, period){
-  const teacher=document.getElementById('se_teacher').value;
-  if(!teacher){ toast('เลือกครูก่อน','error'); return; }
-  const r=id?(state._seRows||[]).find(x=>String(x.ID)===String(id)):null;
-  const classes=[...new Set(state.students.map(s=>s.classLevel))].sort();
-  const subNames=[...new Set((state.subjects||[]).map(s=>String(s.name).trim()))].sort();
-  let pOpts=''; for(let p=1;p<=SE_MAX_PERIOD;p++) pOpts+=`<option ${String(p)===String(r?r.period:period)?'selected':''}>${p}</option>`;
-  const html=`
-  <div id="seModal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onclick="if(event.target.id==='seModal')this.remove()">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5">
-      <h3 class="font-bold text-teal-700 mb-1">${r?'✏️ แก้ไข/ย้ายคาบสอน':'➕ เพิ่มคาบสอน'}</h3>
-      <p class="text-xs text-slate-400 mb-3">ครู${esc(teacher)}</p>
-      <div class="grid grid-cols-2 gap-2">
-        <div><label class="text-xs text-slate-500">วัน</label>
-          <select id="se_day" class="inp mt-1">${SCH_DAYS.map(d=>`<option ${d===(r?String(r.day).trim():day)?'selected':''}>${d}</option>`).join('')}</select></div>
-        <div><label class="text-xs text-slate-500">คาบ</label><select id="se_period" class="inp mt-1">${pOpts}</select></div>
-        <div><label class="text-xs text-slate-500">ห้อง</label>
-          <select id="se_class" class="inp mt-1">${classes.map(c=>`<option ${c===(r?r.classLevel:'')?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
-        <div><label class="text-xs text-slate-500">วิชา</label>
-          <input id="se_subject" class="inp mt-1" list="se_subList" value="${esc(r?r.subject:'')}" placeholder="เช่น คณิตศาสตร์">
-          <datalist id="se_subList">${subNames.map(n=>`<option value="${esc(n)}">`).join('')}</datalist></div>
-      </div>
-      <input type="hidden" id="se_id" value="${esc(id||'')}">
-      <div class="flex flex-wrap gap-2 mt-4">
-        <button onclick="saveSchCell(false)" class="btn bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 text-sm">💾 บันทึก</button>
-        ${r?`<button onclick="delSchCell('${esc(id)}')" class="btn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 text-sm">🗑️ ลบคาบนี้</button>`:''}
-        <button onclick="document.getElementById('seModal').remove()" class="btn bg-white border border-slate-200 px-4 py-2 text-sm">ยกเลิก</button>
-      </div>
-    </div>
-  </div>`;
-  document.body.insertAdjacentHTML('beforeend',html);
-}
-async function saveSchCell(force){
-  const teacher=document.getElementById('se_teacher').value;
-  const p={ id:document.getElementById('se_id').value||'', teacher,
-    day:document.getElementById('se_day').value, period:document.getElementById('se_period').value,
-    classLevel:document.getElementById('se_class').value, subject:document.getElementById('se_subject').value.trim(), force };
-  if(!p.subject){ toast('กรุณาระบุวิชา','error'); return; }
-  try{ showLoading(true);
-    state._seRows=await GAS.call('saveSchedulePeriod',p);
-    const m=document.getElementById('seModal'); if(m) m.remove();
-    toast(p.id?'บันทึกการแก้ไขแล้ว':'เพิ่มคาบแล้ว');
-    renderSchEditGrid(); refreshSchView();
-  }catch(e){
-    const msg=String(e.message||'');
-    if(msg.indexOf('CONFLICT|')===0){
-      if(confirm('⚠️ พบการชนของตารางสอน:\n\n'+msg.slice(9)+'\n\nยืนยันบันทึกทั้งที่ชนหรือไม่?')){ saveSchCell(true); return; }
-    } else toast(msg,'error');
-  } finally{ showLoading(false); }
-}
-async function delSchCell(id){
-  if(!confirm('ยืนยันลบคาบสอนนี้?')) return;
-  const teacher=document.getElementById('se_teacher').value;
-  try{ showLoading(true);
-    state._seRows=await GAS.call('deleteSchedulePeriod',{id, teacher});
-    const m=document.getElementById('seModal'); if(m) m.remove();
-    toast('ลบคาบแล้ว'); renderSchEditGrid(); refreshSchView();
-  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
-}
-
 /* ============================================================
    ตารางสอบ + กรรมการคุมสอบ
    ============================================================ */
@@ -8148,7 +7890,7 @@ function pfChgRender(){
   ${S.rows.map(c=>`<tr class="border-b ${c.status==='แก้แล้ว'?'text-slate-400':''}"><td><input type="checkbox" ${S.sel.has(c.ID)?'checked':''} onchange="pfChgSel('${esc(c.ID)}',this.checked)"></td>
     <td class="px-1 whitespace-nowrap">${esc(c.classLevel)}</td><td class="px-1">${esc(c.number)}</td><td class="px-1 whitespace-nowrap">${esc(c.studentName)}</td>
     <td class="px-1">${esc(c.label)}</td><td class="px-1"><span class="text-rose-500">${esc(c.oldValue)||'∅'}</span> → <b class="text-emerald-700">${esc(c.newValue)||'∅'}</b></td>
-    <td class="px-1 whitespace-nowrap">${esc(c.editor)}<br><span class="text-slate-400">${esc(String(c.time).slice(0,16))}</span></td>
+    <td class="px-1 whitespace-nowrap">${esc(c.editor)}<br><span class="text-slate-400">${esc(beTs(c.time))}</span></td>
     <td class="px-1 whitespace-nowrap">${c.status==='แก้แล้ว'?'✅ แก้แล้ว':'⏳ รอแก้'}</td></tr>`).join('')}</tbody></table>`;
 }
 function pfChgSel(id,on){ const S=state._pfChg; on?S.sel.add(id):S.sel.delete(id); }
@@ -8921,7 +8663,7 @@ async function loadArchives(){
   try{ const d=await GAS.call('getArchives');
     if(!d.rows.length){ el.innerHTML='<div class="text-slate-400">ยังไม่มี Archive — จะถูกสร้างอัตโนมัติเมื่อกด "ขึ้นปีการศึกษาใหม่"</div>'; return; }
     el.innerHTML='<table class="w-full text-sm" style="min-width:420px"><thead><tr class="text-left text-slate-400 border-b"><th class="px-2 py-1">ปีการศึกษา</th><th class="px-2">เก็บเมื่อ</th><th class="px-2 text-center">นักเรียน</th><th class="px-2 text-center">คะแนน</th><th class="px-2">ไฟล์</th></tr></thead><tbody>'+
-      d.rows.map(r=>`<tr class="border-b last:border-0"><td class="px-2 py-1 font-semibold">${esc(r.year)}</td><td class="px-2 text-xs">${esc(r.createdAt)}<br><span class="text-slate-400">${esc(r.createdBy)}</span></td><td class="px-2 text-center">${r.students}</td><td class="px-2 text-center">${r.scores}</td><td class="px-2">${r.fileUrl?`<a class="text-teal-700 underline" target="_blank" rel="noopener" href="${esc(r.fileUrl)}">เปิดใน Drive</a>`:'-'}</td></tr>`).join('')+'</tbody></table>';
+      d.rows.map(r=>`<tr class="border-b last:border-0"><td class="px-2 py-1 font-semibold">${esc(r.year)}</td><td class="px-2 text-xs">${esc(beTs(r.createdAt))}<br><span class="text-slate-400">${esc(r.createdBy)}</span></td><td class="px-2 text-center">${r.students}</td><td class="px-2 text-center">${r.scores}</td><td class="px-2">${r.fileUrl?`<a class="text-teal-700 underline" target="_blank" rel="noopener" href="${esc(r.fileUrl)}">เปิดใน Drive</a>`:'-'}</td></tr>`).join('')+'</tbody></table>';
   }catch(e){ el.innerHTML='<span class="text-rose-500">'+esc(e.message)+'</span>'; }
 }
 async function initStartYear(){
@@ -8955,8 +8697,6 @@ async function initStartYear(){
         ok:tch.length>0, info:teachers===null?'ตรวจไม่ได้':(tch.length+' คน • ครูประจำชั้น '+homeroom+' คน'), go:'adm_teachers', btn:'ไปจัดการครู/PIN'},
       {t:'🏫 รายวิชา + มอบหมายครู × ห้อง', d:'สร้างรายวิชาของปีนี้ แล้วมอบหมายว่าครูคนไหนสอนวิชาไหนห้องไหน (เป็นฐานของหน้าติดตามคะแนน)',
         ok:nSub>0&&nAsg>0, info:nSub+' วิชา • มอบหมายแล้ว '+nAsg+' รายการ', go:'subjects', btn:'ไปจัดการรายวิชา'},
-      {t:'🗓️ ตารางสอน', d:'เพิ่ม/แก้คาบสอนในหน้า ตารางสอน (แอดมินแก้ได้ที่ด้านล่างของหน้า)',
-        ok:nSch>0, info:schT===null?'ตรวจไม่ได้':('ครูที่มีตารางสอน '+nSch+' คน'), go:'schedule', btn:'ไปตารางสอน'},
       {t:'🪪 ข้อมูลประวัตินักเรียน (DMC)', d:'นำเข้าไฟล์ DMC ที่หน้า ประวัตินักเรียน เพื่อให้ครูประจำชั้นตรวจแก้ข้อมูล',
         ok:nDmc>0, info:prof===null?'ตรวจไม่ได้':('ห้อง '+(rooms0[0]||'-')+' มีข้อมูล DMC '+nDmc+' คน'), go:'profile', btn:'ไปประวัตินักเรียน'},
       {t:'⚙️ ตั้งค่าโรงเรียน', d:'ปีการศึกษา ชื่อโรงเรียน ผู้อำนวยการ ลายเซ็น และตารางแปลงเกรด',
@@ -9062,272 +8802,7 @@ async function startApp(){
   }catch(e){ try{ localStorage.removeItem('kps_session'); }catch(_){} }
   showLoginScreen();
 }
-/* ============================================================
-   👀 โหมดผู้เยี่ยมชม / ทดลองใช้ระบบ
-   ข้อมูลสมมติสร้างในหน้าเว็บทั้งหมด — ไม่เรียก GAS ไม่อ่าน/เขียนข้อมูลจริง ไม่เก็บ token/localStorage
-   GAS.call ถูกสลับมาเรียก DEMO.call เมื่อ state.demo=true (การบันทึกทำได้แค่ในหน้าจอ ปิดหน้าแล้วหาย)
-   ============================================================ */
-const DEMO_TABS=new Set(['home','scores','schedule','roomtt','calendar','risk','stats','scoretrack','prinappr','manual','developer']);
-const DEMO_ME={
-  teacher:{name:'ครูสมศรี ใจดี',role:'teacher',homeroomClass:'ป.1/1'},
-  director:{name:'รองผอ.วิชาการ (ตัวอย่าง)',role:'director',homeroomClass:''},
-  principal:{name:'ผอ.สมปอง (ตัวอย่าง)',role:'principal',homeroomClass:''}
-};
-const DEMO_ROLE_TXT={teacher:'👩‍🏫 ครู',director:'📋 รองผอ./หัวหน้าวิชาการ',principal:'🏛️ ผู้อำนวยการ'};
-const DEMO={
-  d:null,
-  clone(x){ return x===undefined?x:JSON.parse(JSON.stringify(x)); },
-  now(){ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,19).replace('T',' '); },
-  err(msg,code){ const e=new Error(msg); if(code) e.code=code; return e; },
-  grade(p,dd){ const m=((dd||this.d).mapping||[]).find(r=>p>=r.minPercent&&p<=r.maxPercent)||{level68:'ไม่ผ่าน',grade51:'0'}; return m; },
-  build(){
-    const ROOMS=['ป.1/1','ป.2/1','ป.3/1','ป.4/1','ป.5/1','ป.6/1'];
-    const HOME=['ครูสมศรี ใจดี','ครูวิภา รักเรียน','ครูประเสริฐ มั่นคง','ครูนงลักษณ์ สุขสันต์','ครูธนากร เรียนเก่ง','ครูปรีดา ศรีสมบูรณ์'];
-    const ENG='ครูแอนนา ภาษาอังกฤษ', ART='ครูกัลยา ศิลป์ดี';
-    const SUBS=[['ท','ภาษาไทย','ภาษาไทย',200],['ค','คณิตศาสตร์','คณิตศาสตร์',200],['ว','วิทยาศาสตร์และเทคโนโลยี','วิทยาศาสตร์และเทคโนโลยี',80],
-      ['ส','สังคมศึกษา ศาสนาและวัฒนธรรม','สังคมศึกษา ศาสนาและวัฒนธรรม',80],['ส','ประวัติศาสตร์','ประวัติศาสตร์',40],['พ','สุขศึกษาและพลศึกษา','สุขศึกษาและพลศึกษา',80],
-      ['ศ','ศิลปะ','ศิลปะ',80],['ง','การงานอาชีพ','การงานอาชีพ',40],['อ','ภาษาอังกฤษ','ภาษาต่างประเทศ',80]];
-    const owner=(i,k)=>k===8?ENG:((k===5||k===6)?ART:HOME[i]);
-    const FN=['สมชาย','วีระ','ธนา','ปิติ','กมล','ณัฐ','อนุชา','ภูมิ','พีรพัฒน์','ชัยวัฒน์','สมหญิง','มานี','ชูใจ','สุดา','นภา','พิมพ์ใจ','ลลิตา','กานดา','วรรณา','ปริญญา'];
-    const LN=['ใจดี','รักเรียน','สุขสันต์','มั่นคง','เรียนเก่ง','ศรีสมบูรณ์','ตั้งใจ','ใฝ่รู้','สดใส','พัฒนา'];
-    const d={rooms:ROOMS,home:HOME,eng:ENG,art:ART};
-    d.settings={schoolName:'โรงเรียนตัวอย่างวิทยา (ข้อมูลสมมติ)',area:'สำนักงานเขตพื้นที่การศึกษาตัวอย่าง',academicYear:'2569',
-      slogan:'ระบบสารสนเทศงานวิชาการและดูแลช่วยเหลือนักเรียน — โหมดทดลองใช้',directorName:'นายสมปอง ตัวอย่าง',deputyName:'นายสมชาย วิชาการ',
-      logoURL:'',remark:'',lookupEnabled:'1',requirePrincipal:'1',lookupTerm:'year'};
-    d.mapping=[{minPercent:80,maxPercent:100,level68:'เชี่ยวชาญ',grade51:'4'},{minPercent:75,maxPercent:79,level68:'ชำนาญ',grade51:'3.5'},{minPercent:70,maxPercent:74,level68:'ชำนาญ',grade51:'3'},
-      {minPercent:65,maxPercent:69,level68:'พัฒนา',grade51:'2.5'},{minPercent:60,maxPercent:64,level68:'พัฒนา',grade51:'2'},{minPercent:55,maxPercent:59,level68:'เริ่มต้น',grade51:'1.5'},
-      {minPercent:50,maxPercent:54,level68:'เริ่มต้น',grade51:'1'},{minPercent:0,maxPercent:49,level68:'ไม่ผ่าน',grade51:'0'}];
-    // นักเรียน ห้องละ 5 คน
-    d.students=[]; let n=0;
-    ROOMS.forEach((room,i)=>{ for(let j=0;j<5;j++,n++){
-      const fn=FN[(n*7)%20], boy=(n*7)%20<10, pre=boy?'เด็กชาย':'เด็กหญิง', ln=LN[(n*3)%10];
-      d.students.push({ID:'DST'+(n+1),studentCode:String(9001+n),number:String(j+1),fullName:pre+fn+' '+ln,classLevel:room,prefix:pre,firstName:fn,lastName:ln,gender:boy?'ชาย':'หญิง'});
-    } });
-    // รายวิชา
-    d.subjects=[]; ROOMS.forEach((room,i)=>SUBS.forEach((s,k)=>d.subjects.push({ID:'DSUB_'+(i+1)+'_'+(k+1),code:s[0]+'1'+(i+1)+'101',name:s[1],learningArea:s[2],hours:String(s[3]),type:'พื้นฐาน',classLevel:'ป.'+(i+1),sortOrder:k+1,aliases:''})));
-    // ครู
-    d.teachers=HOME.map((t,i)=>({ID:'DT'+(i+1),name:t,role:'teacher',homeroomClass:ROOMS[i],hasPin:true}))
-      .concat([{ID:'DT7',name:ENG,role:'teacher',homeroomClass:'',hasPin:true},{ID:'DT8',name:ART,role:'teacher',homeroomClass:'',hasPin:true},
-        {ID:'DT9',name:DEMO_ME.director.name,role:'director',homeroomClass:'',hasPin:true},{ID:'DT10',name:DEMO_ME.principal.name,role:'principal',homeroomClass:'',hasPin:true}]);
-    // ตารางสอน (ไม่ชนกัน: วิชาของห้อง i ในช่อง s = (s+i)%9)
-    d.schedule=[]; let sid=0;
-    ['จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์'].forEach((day,di)=>{ for(let p=1;p<=6;p++){ const s=di*6+(p-1);
-      ROOMS.forEach((room,i)=>{ const k=(s+i)%9; d.schedule.push({ID:'DSCH'+(++sid),day,period:p,classLevel:room,subject:SUBS[k][1],teacher:owner(i,k)}); }); } });
-    // ปฏิทิน
-    const t=todayISO(), ym=t.slice(0,7), nx=new Date(Number(ym.slice(0,4)),Number(ym.slice(5,7)),1), ym2=nx.getFullYear()+'-'+String(nx.getMonth()+1).padStart(2,'0');
-    d.calendar=[{ID:'DC1',date:ym+'-05',type:'event',title:'ประชุมผู้ปกครอง',note:''},{ID:'DC2',date:ym+'-13',type:'holiday',title:'วันหยุดราชการ',note:''},
-      {ID:'DC3',date:ym+'-20',type:'makeup',title:'สอนชดเชย',note:''},{ID:'DC4',date:ym+'-27',type:'event',title:'สอบกลางภาค',note:''},
-      {ID:'DC5',date:ym2+'-03',type:'event',title:'กิจกรรมวันเด็ก',note:''},{ID:'DC6',date:ym2+'-15',type:'holiday',title:'วันหยุดนักขัตฤกษ์',note:''}];
-    // ความคืบหน้า/หน่วย/คะแนน/เกรด
-    const MAXU=[30,30,40];
-    const kindOf=(i,k)=>{
-      if(i<=1) return (i===1&&k===3)?'partial':'ready';
-      if(i===2) return (k===4||k===8)?'partial':'ready';
-      if(i===3) return (k%2)?'partial':'ready';
-      if(i===4) return k<3?'ready':(k<6?'partial':'none');
-      return k===0?'ready':(k<4?'partial':(k<7?'none':'nounits'));
-    };
-    d.rows=[]; d.units={}; d.scores=[]; d.grades=[]; d.kind={};
-    ROOMS.forEach((room,i)=>SUBS.forEach((s,k)=>{
-      const sub=d.subjects[i*9+k], kind=kindOf(i,k), ow=owner(i,k), kids=d.students.filter(x=>x.classLevel===room);
-      d.kind[sub.ID+'|'+room]=kind;
-      const us=(kind==='nounits')?[]:MAXU.map((m,u)=>({ID:'DU_'+sub.ID+'_'+(u+1),subjectID:sub.ID,unitName:'หน่วยที่ '+(u+1),maxScore:m,sortOrder:u+1,teacher:ow,owner:ow}));
-      d.units[sub.ID]=us;
-      let filled=0, withScore=0, graded=0; const missing=us.map((u,ui)=>({unitID:u.ID,unitName:u.unitName,no:ui+1,missing:0}));
-      kids.forEach((st,j)=>{
-        let have=0, sum=0;
-        us.forEach((u,ui)=>{
-          const miss=(kind==='none')||(kind==='partial'&&ui===2&&j>=2);
-          if(miss){ missing[ui].missing++; return; }
-          const base=60+((i*7+k*5+j*11+ui*3)%36); const sc=Math.round(u.maxScore*base/100);
-          d.scores.push({ID:'DSC'+d.scores.length,studentID:st.ID,subjectID:sub.ID,unitID:u.ID,score:sc}); have++; sum+=sc; filled++;
-        });
-        if(have) withScore++;
-        if(kind==='ready'&&us.length){ const g=DEMO.grade(sum,d); d.grades.push({ID:'DG'+d.grades.length,studentID:st.ID,subjectID:sub.ID,mode:'A',percent:sum,level68:g.level68,grade51:g.grade51,letter51:'',note:''}); graded++; }
-      });
-      const total=kids.length*us.length, pct=total?Math.round(filled/total*100):0;
-      const mu=missing.filter(m=>m.missing>0), gm=kids.length-graded;
-      const status=us.length===0?'no_units':(pct>=100?'done':(pct>0?'partial':'none'));
-      const ready=us.length>0&&mu.length===0&&gm===0;
-      const why=[]; if(!us.length) why.push('ยังไม่กำหนดหน่วย'); else { const by={}; mu.forEach(m=>{(by[m.missing]=by[m.missing]||[]).push(m.no);}); Object.keys(by).forEach(c=>why.push('ขาดคะแนนหน่วย '+by[c].join(', ')+' อีก '+c+' คน')); if(gm>0) why.push('ยังไม่ตัดเกรด '+gm+' คน'); }
-      d.rows.push({subjectID:sub.ID,name:sub.name,classLevel:sub.classLevel,owner:ow,teacher:ow,room,rooms:[room],unitCount:us.length,studentCount:kids.length,
-        studentsWithScore:withScore,filledCells:filled,totalCells:total,gradedCount:graded,percent:pct,status,missingUnits:mu,gradeMissing:gm,ready,reason:why.join(' • ')});
-    }));
-    // การอนุมัติเริ่มต้น: ป.1/1 รองผอ.อนุมัติครบ (ผอ.กดอนุมัติได้เลย) • ป.2/1 อนุมัติบางส่วน
-    d.locks=[]; const vice=DEMO_ME.director.name;
-    d.rows.forEach(r=>{ const ri=ROOMS.indexOf(r.room); const k=Number(r.subjectID.split('_')[2])-1;
-      if(r.ready&&(ri===0||(ri===1&&k<5))) d.locks.push({ID:'DSLK'+d.locks.length,subjectID:r.subjectID,room:r.room,owner:r.owner,status:'locked',lockedAt:'2026-10-14 09:30:00',lockedBy:vice,forced:0,reason:'',history:'',subjectName:r.name});
-    });
-    d.roomApps={};
-    return d;
-  },
-  boot(){ const d=this.d; return {settings:d.settings,mapping:d.mapping,students:d.students,subjects:d.subjects,calendar:d.calendar,locks:[],subjectLocks:d.locks,teachers:d.teachers}; },
-  lockedMap(){ const o={}; this.d.locks.forEach(l=>{ if(l.status==='locked') o[l.subjectID+'|'+l.room]=true; }); return o; },
-  roomList(){
-    const d=this.d, lk=this.lockedMap(), by={};
-    d.rows.forEach(r=>{ const o=by[r.room]=by[r.room]||{room:r.room,level:r.room.split('/')[0],total:0,locked:0,pending:[]}; o.total++; if(lk[r.subjectID+'|'+r.room]) o.locked++; else o.pending.push(r.name); });
-    return d.rooms.filter(r=>by[r]).map(r=>{ const o=by[r], a=d.roomApps[r];
-      return {room:r,level:o.level,total:o.total,locked:o.locked,pending:o.pending.slice(0,12),ready:o.total>0&&o.locked===o.total,approved:!!a,approvedAt:a?a.at:'',approvedBy:a?a.by:''}; });
-  },
-  needRole(roles,msg){ const r=curRole(); if(!roles.includes(r)) throw this.err(msg||'ขออภัย ฟังก์ชันนี้สำหรับแอดมินเท่านั้น','FORBIDDEN'); },
-  assertUnlocked(subjectID,room){ if(room&&this.lockedMap()[subjectID+'|'+room]) throw this.err('วิชานี้ในห้อง '+room+' ถูกล็อก (อนุมัติผลแล้ว) — ให้แอดมินปลดล็อกวิชานี้ก่อนจึงจะแก้ไขได้'); },
-  call(action,p){
-    p=p||{}; const d=this.d;
-    switch(action){
-      case 'ping': return {pong:true};
-      case 'logout': return {ok:true};
-      case 'getBootstrap': return this.clone(this.boot());
-      case 'getSettings': return this.clone(d.settings);
-      case 'getGradeMapping': return this.clone(d.mapping);
-      case 'getStudents': return this.clone(d.students);
-      case 'getSubjects': return this.clone(d.subjects);
-      case 'getTeachers': return this.clone(d.teachers);
-      case 'getLocks': return [];
-      case 'getAssignments': return [];
-      case 'getSubjectDocs': return [];
-      case 'getAppBuild': return {build:APP_BUILD+' (ทดลองใช้)',licenseExpires:'',daysLeft:null};
-      case 'getPublicInfo': return {schoolName:d.settings.schoolName,area:d.settings.area,academicYear:d.settings.academicYear,logoURL:'',slogan:'',lookupEnabled:true,issueEnabled:false,demoEnabled:true};
-      case 'getSubjectLocks': return {locks:this.clone(d.locks)};
-      case 'getTeacherSubjects': return d.rows.filter(r=>r.owner===p.teacher).map(r=>({classLevel:r.room,subject:r.name}));
-      case 'getSchedule': return this.clone(p.teacher?d.schedule.filter(r=>r.teacher===p.teacher):d.schedule);
-      case 'getScheduleByClass': return this.clone(d.schedule.filter(r=>r.classLevel===p.classLevel));
-      // ---- ติดตาม/อนุมัติ ----
-      case 'getScoreProgress': { const s={total:d.rows.length,done:0,partial:0,none:0,noUnits:0};
-        d.rows.forEach(r=>{ if(r.status==='done')s.done++; else if(r.status==='partial')s.partial++; else if(r.status==='no_units')s.noUnits++; else s.none++; });
-        return this.clone({rows:d.rows,summary:s}); }
-      case 'getScoreProgressDetail': { const r=d.rows.find(x=>x.subjectID===p.subjectID&&x.room===p.room); if(!r) throw this.err('ไม่พบรายการ');
-        const sub=d.subjects.find(x=>x.ID===p.subjectID), kids=d.students.filter(x=>x.classLevel===r.room), us=d.units[r.subjectID]||[];
-        const units=us.map((u,ui)=>{ const m=(r.missingUnits.find(x=>x.no===ui+1)||{missing:0}).missing; return {unitName:u.unitName,maxScore:u.maxScore,done:kids.length-m,total:kids.length}; });
-        const missing=kids.map(st=>{ const done=d.scores.filter(s=>s.studentID===st.ID&&s.subjectID===r.subjectID).length; return {number:st.number,fullName:st.fullName,classLevel:st.classLevel,done,total:us.length}; }).filter(m=>m.done<m.total);
-        return this.clone({subject:{name:sub.name,classLevel:sub.classLevel},students:kids.length,units,missing}); }
-      case 'getApprovalBadge': { const lk=this.lockedMap(), g={}, bad={};
-        d.rows.forEach(r=>{ const k=r.subjectID+'|'+r.room; if(!r.ready) bad[k]=1; else g[k]=1; });
-        return {ready:Object.keys(g).filter(k=>!bad[k]&&!lk[k]).length,principalReady:this.roomList().filter(r=>r.ready&&!r.approved).length}; }
-      case 'approveSubjects': { this.needRole(['admin','director'],'เฉพาะแอดมินหรือรองผอ./หัวหน้าวิชาการเท่านั้นที่อนุมัติผลได้');
-        const items=p.items||[], lk=this.lockedMap(); let approved=0, already=0; const refused=[];
-        items.forEach(it=>{ const key=it.subjectID+'|'+it.room, rows=d.rows.filter(r=>r.subjectID===it.subjectID&&r.room===it.room), label={subjectID:it.subjectID,room:it.room,name:rows[0]?rows[0].name:it.subjectID};
-          if(lk[key]){ already++; return; }
-          if(!rows.length){ refused.push(Object.assign(label,{reason:'ไม่พบรายการติดตาม'})); return; }
-          const bad=rows.find(r=>!r.ready); if(bad){ refused.push(Object.assign(label,{reason:bad.reason||'ยังไม่เรียบร้อย'})); return; }
-          d.locks.push({ID:'DSLK'+d.locks.length,subjectID:it.subjectID,room:it.room,owner:rows.map(r=>r.owner).join(', '),status:'locked',lockedAt:this.now(),lockedBy:curName(),forced:0,reason:'',history:'',subjectName:label.name}); approved++; });
-        return this.clone({approved,already,refused,locks:d.locks}); }
-      case 'unlockSubject': { this.needRole(['admin']);
-        throw this.err('โหมดทดลอง: ปลดล็อกทำได้เฉพาะแอดมิน'); }
-      case 'getRoomApprovals': this.needRole(['admin','director','principal'],'ดูได้เฉพาะแอดมิน ผอ. และรองผอ./หัวหน้าวิชาการ');
-        return this.clone({rooms:this.roomList(),requirePrincipal:String(d.settings.requirePrincipal)!=='0'});
-      case 'approveRooms': { this.needRole(['admin','principal'],'เฉพาะผู้อำนวยการเท่านั้นที่อนุมัติผลรายห้องได้');
-        const st={}; this.roomList().forEach(r=>st[r.room]=r); let approved=0, already=0; const refused=[];
-        (p.rooms||[]).forEach(room=>{ const r=st[room]; if(!r){ refused.push({room,reason:'ไม่พบห้องนี้ในระบบ'}); return; } if(r.approved){ already++; return; }
-          if(!r.ready){ refused.push({room,reason:'รองผอ./วิชาการยังอนุมัติไม่ครบ ('+r.locked+'/'+r.total+' วิชา)'}); return; }
-          d.roomApps[room]={at:this.now(),by:curName()}; approved++; });
-        return this.clone({approved,already,refused,rooms:this.roomList()}); }
-      case 'revokeRoomApproval': { this.needRole(['admin','principal'],'เฉพาะผู้อำนวยการหรือแอดมินเท่านั้นที่ยกเลิกการอนุมัติรายห้องได้');
-        if(String(p.reason||'').trim().length<3) throw this.err('ยกเลิกการอนุมัติต้องระบุเหตุผล');
-        if(!d.roomApps[p.room]) throw this.err('ห้องนี้ยังไม่ได้อนุมัติ'); delete d.roomApps[p.room]; return this.clone({ok:true,rooms:this.roomList()}); }
-      // ---- บันทึกผลการเรียน ----
-      case 'getUnits': return this.clone(d.units[p.subjectID]||[]);
-      case 'getScores': return this.clone(d.scores.filter(s=>s.subjectID===p.subjectID));
-      case 'getGrades': return this.clone(d.grades);
-      case 'saveUnits': { this.assertUnlocked(p.subjectID,p.room); const old=d.units[p.subjectID]||[], ow=(old[0]&&old[0].owner)||DEMO_ME.teacher.name;
-        d.units[p.subjectID]=(p.units||[]).map((u,i)=>({ID:u.ID||('DU_'+p.subjectID+'_'+Date.now()+'_'+i),subjectID:p.subjectID,unitName:u.unitName,maxScore:Number(u.maxScore)||0,sortOrder:i+1,teacher:ow,owner:ow}));
-        return this.clone(d.units[p.subjectID]); }
-      case 'saveScores': { this.assertUnlocked(p.subjectID,p.room);
-        const ids=new Set((p.scores||[]).map(s=>s.studentID)), sub=p.subjectID, us=d.units[sub]||[];
-        d.scores=d.scores.filter(s=>!(s.subjectID===sub&&ids.has(s.studentID)));
-        (p.scores||[]).forEach(s=>d.scores.push({ID:'DSC'+Math.random().toString(36).slice(2),studentID:s.studentID,subjectID:sub,unitID:s.unitID,score:Number(s.score)}));
-        const tot=us.reduce((a,u)=>a+Number(u.maxScore||0),0);
-        ids.forEach(id=>{ const mine=d.scores.filter(s=>s.subjectID===sub&&s.studentID===id); d.grades=d.grades.filter(g=>!(g.subjectID===sub&&g.studentID===id));
-          if(mine.length&&tot){ const pc=Math.round(mine.reduce((a,s)=>a+s.score,0)/tot*100), g=this.grade(Math.min(100,pc)); d.grades.push({ID:'DG'+Math.random().toString(36).slice(2),studentID:id,subjectID:sub,mode:'A',percent:pc,level68:g.level68,grade51:g.grade51,letter51:'',note:''}); } });
-        return {ok:true}; }
-      // ---- แดชบอร์ด ----
-      case 'getStats': { const byLevel={}; d.grades.forEach(g=>{ byLevel[g.level68]=(byLevel[g.level68]||0)+1; });
-        return {studentCount:d.students.length,subjectCount:d.subjects.length,gradeCount:d.grades.length,byLevel,_processedAt:''}; }
-      case 'getAttendanceDashboard': return {date:p.date||todayISO(),totals:{total:30,present:27,absent:1,leave:1,late:1},rooms:d.rooms.map(r=>({classLevel:r,total:5,present:4,absent:0,leave:0,late:1}))};
-      case 'getTeachingSummary': { const bt=d.teachers.filter(t=>t.role==='teacher').map((t,i)=>({teacher:t.name,subjects:[9,9,9,9,9,9,6,18][i]||9,plan:[9,9,9,8,6,4,6,12][i]||0,lesson:[9,9,8,6,5,3,5,9][i]||0,exam_mid:[9,8,6,4,3,2,4,6][i]||0,exam_final:[6,5,3,2,1,0,2,3][i]||0}));
-        const sum=k=>bt.reduce((a,t)=>a+t[k],0); return {total:bt.reduce((a,t)=>a+t.subjects,0),planDone:sum('plan'),lessonDone:sum('lesson'),examMidDone:sum('exam_mid'),examFinalDone:sum('exam_final'),byTeacher:bt,assignments:[]}; }
-      case 'getExecOverview': { const rs=d.rows; const avg=Math.round(rs.reduce((a,r)=>a+r.percent,0)/Math.max(1,rs.length));
-        const ts=this.call('getTeachingSummary');
-        return {attendance:{taken:6,classes:6,present:27,absent:1,leave:1,late:1,total:30,uncheckedRooms:[]},
-          scores:{avgPercent:avg,done:rs.filter(r=>r.status==='done').length,partial:rs.filter(r=>r.status==='partial').length,none:rs.filter(r=>r.status==='none'||r.status==='no_units').length},
-          docs:{lesson:ts.lessonDone,total:ts.total,examMid:ts.examMidDone,examFinal:ts.examFinalDone}}; }
-      case 'getAttendanceMatrix': { const dates=[], f=new Date(p.fromDate+'T00:00:00'), t=new Date(p.toDate+'T00:00:00');
-        for(let x=new Date(f);x<=t&&dates.length<40;x.setDate(x.getDate()+1)){ const w=x.getDay(); if(w>0&&w<6) dates.push(new Date(x.getTime()-x.getTimezoneOffset()*60000).toISOString().slice(0,10)); }
-        const rooms=d.rooms.map((r,i)=>{ const cells=dates.map((dt,j)=>((i+j)%7===0)?{checked:false}:{checked:true,present:4,absent:(j%5===0?1:0),leave:0,late:(j%4===0?1:0)}); const c=cells.filter(x=>x.checked).length;
-          return {classLevel:r,cells,checkedDays:c,totalDays:dates.length,percent:dates.length?Math.round(c/dates.length*100):0}; });
-        return {from:p.fromDate,to:p.toDate,dates,rooms}; }
-      case 'getStudentStats': { const by=d.rooms.map(r=>{ const k=d.students.filter(s=>s.classLevel===r); return {classLevel:r,male:k.filter(s=>s.gender==='ชาย').length,female:k.filter(s=>s.gender==='หญิง').length,total:k.length}; });
-        const m=by.reduce((a,b)=>a+b.male,0), f=by.reduce((a,b)=>a+b.female,0);
-        return {totals:{total:m+f,male:m,female:f,withDMC:m+f,withPhoto:Math.round((m+f)*0.8)},byClass:by,religion:{'พุทธ':27,'คริสต์':2,'อิสลาม':1},blood:{'O':12,'A':9,'B':6,'AB':3},disadvantage:{'ไม่มี':27,'ยากจน':3}}; }
-      case 'getGradeStats': { const sc=String(p.classLevel||''); const inScope=st=>!sc||st.classLevel===sc||st.classLevel.split('/')[0]===sc;
-        const stu={}; d.students.forEach(s=>{ if(inScope(s)) stu[s.ID]=s; });
-        const gs=d.grades.filter(g=>stu[g.studentID]), num=g=>Number(g.grade51)||0;
-        const bySub={}; gs.forEach(g=>{ const nm=d.subjects.find(s=>s.ID===g.subjectID).name; (bySub[nm]=bySub[nm]||[]).push(num(g)); });
-        const subjects=Object.keys(bySub).map(nm=>({name:nm,avg:Math.round(bySub[nm].reduce((a,b)=>a+b,0)/bySub[nm].length*100)/100}));
-        const levels=['4','3.5','3','2.5','2','1.5','1','0'], overall=levels.map(l=>gs.filter(g=>String(g.grade51)===l).length);
-        const byRoom={}; gs.forEach(g=>{ const r=stu[g.studentID].classLevel; (byRoom[r]=byRoom[r]||[]).push(num(g)); });
-        const rooms=Object.keys(byRoom).sort().map(r=>({room:r,avg:Math.round(byRoom[r].reduce((a,b)=>a+b,0)/byRoom[r].length*100)/100}));
-        return {subjects,gradeLevels:levels,overall,rooms}; }
-      case 'getClassGradeSummary': return {rows:[]};
-      case 'getRiskStudents': { const st=[{number:'3',fullName:d.students[2].fullName,classLevel:d.students[2].classLevel,percent:72,schoolDays:100,absent:6,avgGrade:2.4,flags:[{k:'att',t:'เวลาเรียน 72%'},{k:'absent',t:'ขาด 6 วัน'}]},
-          {number:'2',fullName:d.students[11].fullName,classLevel:d.students[11].classLevel,percent:90,schoolDays:100,absent:2,avgGrade:1.2,flags:[{k:'grade',t:'เกรดเฉลี่ย 1.2'}]},
-          {number:'5',fullName:d.students[24].fullName,classLevel:d.students[24].classLevel,percent:68,schoolDays:100,absent:9,avgGrade:1.4,flags:[{k:'att',t:'เวลาเรียน 68%'},{k:'absent',t:'ขาด 9 วัน'},{k:'grade',t:'เกรดเฉลี่ย 1.4'}]}]
-          .filter(s=>!p.classLevel||s.classLevel===p.classLevel);
-        return {thresholds:{attMin:Number(p.attMin)||80,gradeMin:Number(p.gradeMin)||1.5,absentMin:Number(p.absentMin)||5},counts:{att:st.filter(s=>s.flags.some(f=>f.k==='att')).length,absent:st.filter(s=>s.flags.some(f=>f.k==='absent')).length,grade:st.filter(s=>s.flags.some(f=>f.k==='grade')).length},total:st.length,students:st}; }
-      // ---- หน้าผู้ปกครอง (จำลอง) ----
-      case 'studentLookup': { const code=String(p.studentCode||'').trim(), stu=d.students.find(s=>s.studentCode===code);
-        if(!stu) throw this.err('ข้อมูลไม่ถูกต้อง หรือไม่พบนักเรียน — ลองเลขประจำตัว 9001 (ป.1/1) หรือ 9006 (ป.2/1)');
-        if(String(d.settings.requirePrincipal)!=='0'&&!d.roomApps[stu.classLevel]) throw this.err('ผลการเรียนของห้อง '+stu.classLevel+' รอผู้อำนวยการอนุมัติ — กรุณาตรวจสอบอีกครั้งภายหลัง');
-        const lk=this.lockedMap(); let pending=0;
-        const subs=d.subjects.filter(s=>s.classLevel===stu.classLevel.split('/')[0]).map(s=>{ if(!lk[s.ID+'|'+stu.classLevel]){ pending++; return {name:s.name,type:s.type,pending:true}; }
-          const g=d.grades.find(x=>x.studentID===stu.ID&&x.subjectID===s.ID); return {name:s.name,type:s.type,grade51:g?g.grade51:'',score50:undefined,fullScore:undefined}; });
-        const lower=Number(stu.classLevel.replace(/[^0-9]/g,'').charAt(0))<=3;
-        const names=lower?['การอ่าน','การเขียน','การคิดคำนวณ','การสื่อสาร','การคิดและแก้ปัญหา','การใช้เทคโนโลยี','การทำงานร่วมกับผู้อื่น','การดำเนินชีวิต']:['การอ่าน','การเขียน','การคิดคำนวณ','การสื่อสาร','การคิดและแก้ปัญหา','การใช้เทคโนโลยี','การทำงานร่วมกับผู้อื่น'];
-        return this.clone({settings:{schoolName:d.settings.schoolName,area:d.settings.area,academicYear:d.settings.academicYear,logoURL:'',remark:''},
-          student:{fullName:stu.fullName,classLevel:stu.classLevel,number:stu.number,studentCode:stu.studentCode},term:'year',subjects:subs,pendingCount:pending,
-          abilityGroups:names.map((nm,i)=>({name:nm,level:pending?'':['ชำนาญ','เชี่ยวชาญ','ชำนาญ','พัฒนา'][i%4],section:lower?(i<3?1:2):0})),abilities:[],
-          attendance:{schoolDays:100,present:96,late:2,leave:1,absent:1,percent:96},homeroomTeachers:[d.home[d.rooms.indexOf(stu.classLevel)]]}); }
-    }
-    // เขียนอื่นๆ: รับทราบเฉยๆ (ไม่บันทึกจริง) • อ่านที่ยังไม่มีข้อมูลตัวอย่าง: แจ้งชัดเจน
-    if(/^(save|add|update|delete|upload|import|clear|restore|renumber|bulk|set|reset|change|sync|recompute|run|map|merge|convert|mark)/i.test(action)){
-      if(!this._warned){ this._warned=true; setTimeout(()=>toast('โหมดทดลองใช้: การบันทึกนี้ไม่ได้เขียนลงข้อมูลจริง','info'),0); }
-      return {ok:true,demo:true};
-    }
-    throw this.err('โหมดทดลองใช้: หน้านี้ยังไม่มีข้อมูลตัวอย่าง');
-  },
-  // ---- เข้า/ออก/สลับมุมมอง ----
-  enter(role){
-    if(state.demo) return;
-    state.demo=true; this.d=this.build(); this._warned=false;
-    closeModal('demoModal'); const cp=document.getElementById('btnChangePin'); if(cp) cp.style.display='none';
-    const ls=document.getElementById('loginScreen'); ls.classList.add('hidden'); ls.classList.remove('flex');
-    document.getElementById('demoBar').classList.remove('hidden');
-    this.setRole(role||'principal');
-  },
-  setRole(role){
-    if(!DEMO_ME[role]) role='teacher';
-    state.currentUser=Object.assign({token:'demo'},DEMO_ME[role]);
-    const d=this.d;
-    state.mySchedule=role==='teacher'?this.clone(d.schedule.filter(r=>r.teacher===state.currentUser.name)):[];
-    state.mySubjects=role==='teacher'?this.call('getTeacherSubjects',{teacher:state.currentUser.name}):[];
-    state.schedule=[]; state._spData=null; state._pa=null; state._spSel={}; state._teachSum=null; state._studStat=null; state._assignments=null; state.riskData=null;
-    document.querySelectorAll('.appr-dot').forEach(e=>e.remove());
-    applyBootData(this.clone(this.boot()));
-    applyRole();
-    const sel=document.getElementById('demoRole'); if(sel) sel.value=role;
-    switchTab('home'); refreshApprovalBadge();
-  },
-  exit(){ location.reload(); },
-  openParent(){
-    state.publicInfo=null; fillLookupDateSelects();
-    document.getElementById('lookupScreen').classList.remove('hidden'); resetLookup();
-    const i=this.call('getPublicInfo'); state.publicInfo=i;
-    document.getElementById('lk_school').textContent=i.schoolName+' • ปีการศึกษา '+i.academicYear+' (ตัวอย่าง)';
-    document.getElementById('lk_issueLink').classList.add('hidden');
-    document.getElementById('lk_code').value='9001'; toast('ลองเลขประจำตัว 9001 (ป.1/1) หรือ 9006 (ป.2/1) • เลือกวันเกิดอะไรก็ได้','info');
-  }
-};
 function curName(){ return (state.currentUser&&state.currentUser.name)||''; }
-function demoOpenChooser(){ openModal('demoModal'); }
 
 applyLoginLogo(); // แสดงโลโก้ทันทีตั้งแต่ยังไม่ล็อกอิน
 startApp();
