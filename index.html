@@ -183,10 +183,14 @@
       <div class="grid grid-cols-3 gap-2 mt-1 mb-2">
         <select id="is_bd" class="inp"></select><select id="is_bm" class="inp"></select><select id="is_by" class="inp"></select>
       </div>
-      <label class="text-xs text-slate-500">อีเมลสำหรับรับผลการแก้ไข (ไม่บังคับ)</label>
-      <input id="is_email" type="email" maxlength="80" autocomplete="off" class="inp mt-1 mb-2" placeholder="name@example.com">
-      <label class="text-xs text-slate-500">รายละเอียด</label>
-      <textarea id="is_detail" maxlength="600" rows="4" class="inp mt-1" placeholder="ถ้าต้องการให้โรงเรียนติดต่อกลับ โปรดระบุเบอร์โทรหรือ LINE"></textarea>
+      <label class="text-xs text-slate-500">ประเภทปัญหา</label>
+      <select id="is_type" class="inp mt-1 mb-2" onchange="document.getElementById('is_otherWrap').classList.toggle('hidden',this.value!=='อื่นๆ')">
+        <option value="">— เลือกประเภทปัญหา —</option><option>เข้าระบบไม่ได้</option><option>ไม่พบผลการเรียน</option><option>ชื่อ-นามสกุลไม่ถูกต้อง</option><option>อื่นๆ</option>
+      </select>
+      <div id="is_otherWrap" class="hidden">
+        <label class="text-xs text-slate-500">ระบุปัญหา</label>
+        <input id="is_other" maxlength="150" autocomplete="off" class="inp mt-1 mb-2" placeholder="โปรดระบุปัญหาที่พบสั้นๆ">
+      </div>
       <button id="is_btn" onclick="submitIssue()" class="btn bg-teal-600 hover:bg-teal-700 text-white w-full py-2.5 mt-3 text-sm">ส่งเรื่องแจ้ง</button>
     </div>
     <div id="is_done" class="hidden text-center py-6"><div class="text-4xl mb-2">✅</div><div class="font-semibold text-slate-700">โรงเรียนได้รับแจ้งแล้ว</div>
@@ -2357,20 +2361,19 @@ async function loadIssues(){
     const d=await GAS.call('getLookupIssues'); setIssueBadge(d.pending||0);
     if(!d.rows.length){ el.innerHTML='<div class="text-center text-slate-400 py-4">ยังไม่มีเรื่องที่แจ้งเข้ามา</div>'; return; }
     el.innerHTML=`<table class="w-full text-sm" style="min-width:760px"><thead><tr class="text-left text-slate-400 border-b">
-      <th class="px-2 py-1">เวลา</th><th class="px-2">ผู้แจ้ง / นักเรียน</th><th class="px-2">ประเภท</th><th class="px-2">รายละเอียด</th><th class="px-2">อีเมล</th><th class="px-2 text-center">สถานะ</th></tr></thead><tbody>`+
+      <th class="px-2 py-1">เวลา</th><th class="px-2">ผู้แจ้ง / นักเรียน</th><th class="px-2">ประเภท</th><th class="px-2">ระบุปัญหา</th><th class="px-2 text-center">สถานะ</th></tr></thead><tbody>`+
       d.rows.map(r=>`<tr class="border-b last:border-0 align-top">
         <td class="px-2 py-1 whitespace-nowrap text-xs">${esc(beTs(r.createdAt))}</td>
-        <td class="px-2 py-1 text-xs"><b>${esc(r.studentName)}</b> ${esc(r.room)}${r.studentCode?' • '+esc(r.studentCode):''}<br><span class="text-slate-400">แจ้งโดย ${esc(r.reporter)}</span>${r.birthDate?`<br><span class="text-slate-400">เกิด ${esc(r.birthDate)}</span>`:''}${r.ticket?`<br><span class="text-slate-400">เลขติดตาม ${esc(r.ticket)}</span>`:''}${r.replyEmail?`<br><span class="text-slate-400">${esc(r.replyEmail)}</span>`:''}${r.reply?`<br><span class="text-emerald-700">ตอบ: ${esc(r.reply)}</span>`:''}</td>
+        <td class="px-2 py-1 text-xs"><b>${esc(r.studentName)}</b> ${esc(r.room)}${r.studentCode?' • '+esc(r.studentCode):''}<br><span class="text-slate-400">แจ้งโดย ${esc(r.reporter)}</span>${r.birthDate?`<br><span class="text-slate-400">เกิด ${esc(r.birthDate)}</span>`:''}${r.ticket?`<br><span class="text-slate-400">เลขติดตาม ${esc(r.ticket)}</span>`:''}${r.reply?`<br><span class="text-emerald-700">ตอบ: ${esc(r.reply)}</span>`:''}</td>
         <td class="px-2 py-1 text-xs whitespace-nowrap">${esc(r.type)}</td>
         <td class="px-2 py-1 text-xs" style="max-width:260px;white-space:pre-wrap">${esc(r.detail)}</td>
-        <td class="px-2 py-1 text-xs ${String(r.emailStatus).indexOf('ไม่สำเร็จ')>=0?'text-rose-500':'text-slate-500'}">${esc(r.emailStatus)}</td>
         <td class="px-2 py-1 text-center">${r.status==='done'?`<span class="badge bg-emerald-100 text-emerald-700">จัดการแล้ว</span>`:`<button onclick="markIssue('${esc(r.ID)}')" class="btn bg-teal-600 text-white px-2 py-1 text-xs">จัดการแล้ว</button>`}</td></tr>`).join('')+'</tbody></table>';
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 async function markIssue(id){
-  const reply=prompt('ข้อความตอบกลับถึงผู้แจ้ง (เว้นว่างได้) — ผู้แจ้งดูได้จากเลขติดตามเรื่อง และได้รับอีเมลถ้าระบุไว้','');
+  const reply=prompt('ข้อความตอบกลับถึงผู้แจ้ง (เว้นว่างได้) — ผู้แจ้งดูได้จากเลขติดตามเรื่องในหน้าตรวจผลออนไลน์','');
   if(reply===null) return;
-  try{ showLoading(true); const r=await GAS.call('markLookupIssue',{id,reply}); if(r&&r.mailed) toast(r.mailed); }catch(e){ toast(e.message,'error'); showLoading(false); return; }
+  try{ showLoading(true); await GAS.call('markLookupIssue',{id,reply}); }catch(e){ toast(e.message,'error'); showLoading(false); return; }
   showLoading(false); loadIssues();
 }
 async function testIssueEmail(){
@@ -3521,7 +3524,8 @@ function fillIssueDateSelects(){
   if(c){ if(n>0) c.maxLength=n; else c.maxLength=20; }
 }
 function openIssueForm(){
-  ['is_website','is_reporter','is_name','is_room','is_code','is_email','is_detail'].forEach(id=>document.getElementById(id).value='');
+  ['is_website','is_reporter','is_name','is_room','is_code','is_type','is_other'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('is_otherWrap').classList.add('hidden');
   fillIssueDateSelects();
   document.getElementById('is_form').classList.remove('hidden'); document.getElementById('is_done').classList.add('hidden');
   document.getElementById('lk_formCard').classList.add('hidden'); document.getElementById('lk_issueCard').classList.remove('hidden');
@@ -3557,13 +3561,15 @@ function closeIssueForm(){
 }
 async function submitIssue(){
   const g=id=>document.getElementById(id).value.trim();
-  if(!g('is_reporter')||!g('is_name')||!g('is_room')||!g('is_detail')){ toast('กรุณากรอกชื่อผู้แจ้ง ชื่อ-นามสกุลนักเรียน ห้อง/ชั้น และรายละเอียด','error'); return; }
+  if(!g('is_reporter')||!g('is_name')||!g('is_room')){ toast('กรุณากรอกชื่อผู้แจ้ง ชื่อ-นามสกุลนักเรียน และห้อง/ชั้น','error'); return; }
   const bd=g('is_bd'), bm=g('is_bm'), by=g('is_by');
   if(!bd||!bm||!by){ toast('กรุณาเลือกวัน เดือน ปีเกิดของนักเรียนให้ครบ','error'); return; }
+  if(!g('is_type')){ toast('กรุณาเลือกประเภทปัญหา','error'); return; }
+  if(g('is_type')==='อื่นๆ'&&!g('is_other')){ toast('กรุณาระบุปัญหาที่พบ','error'); return; }
   const btn=document.getElementById('is_btn'); if(btn){ btn.disabled=true; btn.textContent='⏳ รอสักครู่ กำลังส่งเรื่อง…'; }
   try{ showLoading(true);
     const rr=await GAS.call('reportLookupIssue',{reporter:g('is_reporter'),studentName:g('is_name'),room:g('is_room'),studentCode:g('is_code'),
-      birthDate:bd+'/'+bm+'/'+by,email:g('is_email'),detail:g('is_detail'),website:g('is_website')});
+      birthDate:bd+'/'+bm+'/'+by,type:g('is_type'),detail:g('is_type')==='อื่นๆ'?g('is_other'):'',website:g('is_website')});
     document.getElementById('is_ticket').textContent=(rr&&rr.ticket)||'';
     try{ if(rr&&rr.ticket) localStorage.setItem('lk_lastTicket',rr.ticket); }catch(_){}
     document.getElementById('is_form').classList.add('hidden');
@@ -5428,7 +5434,7 @@ const LOGIN_LOGO_BASE64='';
 const APP_NAME='NSR SMART ประถมศึกษา';
 const APP_NAME_HTML='NSR <span class="text-emerald-500">SMART</span> <span class="text-slate-600">ประถมศึกษา</span>';
 const APP_TAGLINE='ระบบรายงานผลการเรียน หลักสูตร 2568 (เทียบเคียง 2551)';
-const APP_BUILD='2026-10-17a'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
+const APP_BUILD='2026-10-17b'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
 const TH_M_ABBR=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 // โหลดรายการ (วัน|ห้อง|คาบ) ที่เช็คแล้วของเดือนนั้น (cache ต่อเดือน)
 async function attMonthKeys(month){
