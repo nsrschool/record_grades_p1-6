@@ -17,7 +17,7 @@
   window.WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwjo4Vyq0OWbIYiUD7BoBdrTnbCrEp42jlAyIJvw4I9y_-_HQFvzI329yQK4w1VZQ-L/exec';
   // ข้อมูลผู้พัฒนา (เมนู 👨‍💻 ผู้พัฒนา) — ช่องที่เว้นว่างจะไม่แสดง
   window.DEV_INFO = {
-    brand: 'ครูรุ่งนิรันดร์™', owner: 'ครูรุ่งนิรันดร์',
+    brand: '', owner: 'ครูรุ่งนิรันดร์',
     facebook: '',
     line: '',
     website: '',
@@ -3951,7 +3951,7 @@ function reportPageHTML(s, rs, opt){
 
     <div style="font-size:11px;color:#444;margin-top:8px">หมายเหตุ : ${esc(formNote)}${s.remark?`<div style="margin-top:1px">${esc(s.remark)}</div>`:''}</div>
 
-    ${(()=>{ const a=rs.attendance||{}; if(!a.schoolDays) return ''; return `
+    ${(()=>{ const a=rs.attendance||{}; if(!rs.attendance) return ''; return `
     <div style="margin-top:8px;font-size:12px">
       <div style="font-weight:600;margin-bottom:3px">สรุปเวลาเรียน${mid?' ภาคเรียนที่ 1':''}</div>
       <table style="border-collapse:collapse;font-size:12px;width:100%">
@@ -3964,12 +3964,12 @@ function reportPageHTML(s, rs, opt){
           <th style="border:1px solid #000;padding:2px 6px">คิดเป็นร้อยละ</th>
         </tr>
         <tr style="text-align:center">
-          <td style="border:1px solid #000;padding:2px 6px">${a.schoolDays}</td>
+          <td style="border:1px solid #000;padding:2px 6px">${a.schoolDays||0}</td>
           <td style="border:1px solid #000;padding:2px 6px">${a.present}</td>
           <td style="border:1px solid #000;padding:2px 6px">${a.late}</td>
           <td style="border:1px solid #000;padding:2px 6px">${a.leave}</td>
           <td style="border:1px solid #000;padding:2px 6px">${a.absent}</td>
-          <td style="border:1px solid #000;padding:2px 6px;font-weight:700;${a.percent<80?'color:#dc2626':''}">${a.percent}%</td>
+          <td style="border:1px solid #000;padding:2px 6px;font-weight:700;${a.percent<80?'color:#dc2626':''}">${a.schoolDays?a.percent+'%':'-'}</td>
         </tr>
       </table>
     </div>`; })()}
@@ -5434,7 +5434,7 @@ const LOGIN_LOGO_BASE64='';
 const APP_NAME='NSR SMART ประถมศึกษา';
 const APP_NAME_HTML='NSR <span class="text-emerald-500">SMART</span> <span class="text-slate-600">ประถมศึกษา</span>';
 const APP_TAGLINE='ระบบรายงานผลการเรียน หลักสูตร 2568 (เทียบเคียง 2551)';
-const APP_BUILD='2026-10-17b'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
+const APP_BUILD='2026-10-17d'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
 const TH_M_ABBR=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 // โหลดรายการ (วัน|ห้อง|คาบ) ที่เช็คแล้วของเดือนนั้น (cache ต่อเดือน)
 async function attMonthKeys(month){
