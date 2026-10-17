@@ -878,21 +878,6 @@
             <label class="text-xs text-slate-500">หมายเหตุ (แสดงในใบรายงาน)</label>
             <textarea id="set_remark" class="inp mt-1" rows="2"></textarea>
           </div>
-          <div class="sm:col-span-2 rounded-xl border border-sky-200 bg-sky-50 p-3">
-            <div class="text-xs font-semibold text-sky-800 mb-2">📅 ช่วงวันที่ภาคเรียน (ใช้คำนวณเวลาเรียน/ช่วงรายงาน และแสดง "ปิดภาคเรียน" ที่หน้าแรก)</div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <div><label class="text-xs text-slate-500">ภาค 1 เปิด</label><input type="date" id="set_term1Start" class="inp mt-1"></div>
-              <div><label class="text-xs text-slate-500">ภาค 1 ปิด</label><input type="date" id="set_term1End" class="inp mt-1"></div>
-              <div><label class="text-xs text-slate-500">ภาค 2 เปิด</label><input type="date" id="set_term2Start" class="inp mt-1"></div>
-              <div><label class="text-xs text-slate-500">ภาค 2 ปิด</label><input type="date" id="set_term2End" class="inp mt-1"></div>
-            </div>
-            <p class="text-[11px] text-slate-400 mt-1">ว่าง = ใช้ค่ามาตรฐาน (ภาค 1: 16 พ.ค.–10 ต.ค. / ภาค 2: 3 พ.ย.–31 มี.ค.) • วันสิ้นสุดภาค 1 ใช้นับเวลาเรียนในใบกลางปีด้วย</p>
-            <label class="flex items-start gap-2 text-sm mt-2"><input type="checkbox" id="set_attAssumePresent" class="w-5 h-5 mt-0.5"> <span>นับวันที่ห้องไม่ได้เช็กชื่อว่า “มาเรียน” (วันเปิดเรียนเท่ากันทุกห้อง = วันที่มีบันทึกอย่างน้อย 1 ห้อง + วันเรียนตามปฏิทินวิชาการ)<br><span class="text-[11px] text-slate-400">เทอมหน้าเมื่อครูเช็กครบแล้ว ให้ปิดช่องนี้ก่อนพิมพ์รายงาน • ปิด = นับเฉพาะวันที่มีบันทึก ห้องที่ไม่เช็กจะนับว่าไม่ได้มา</span></span></label>
-            <div class="mt-2 flex flex-wrap gap-2">
-              <button type="button" onclick="showSchoolDays('mid')" class="btn bg-white border border-sky-300 text-sky-800 px-3 py-1.5 text-xs">📋 ดูรายการวันเปิดเรียน ภาค 1</button>
-              <button type="button" onclick="showSchoolDays('year')" class="btn bg-white border border-sky-300 text-sky-800 px-3 py-1.5 text-xs">📋 ทั้งปี</button>
-            </div>
-          </div>
           <div class="sm:col-span-2 rounded-xl border border-violet-200 bg-violet-50 p-3">
             <div class="text-xs font-semibold text-violet-800 mb-2">🎓 เกณฑ์แก้ไขผลการเรียน/เลื่อนชั้น (ตั้งตามระเบียบวัดผลของโรงเรียน)</div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -1299,6 +1284,23 @@
       </div>
       <div id="calGrid" class="cal-grid"></div>
     </div>
+
+          <div id="termCard" data-role="admin" class="rounded-xl border border-sky-200 bg-sky-50 p-3 mt-4">
+            <div class="text-xs font-semibold text-sky-800 mb-2">📅 ช่วงวันที่ภาคเรียน (ใช้คำนวณเวลาเรียน/ช่วงรายงาน และแสดง "ปิดภาคเรียน" ที่หน้าแรก)</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="text-xs text-slate-500">ภาค 1 เปิด</label><div class="grid grid-cols-3 gap-1 mt-1"><select id="tm_term1Start_d" class="inp px-1"></select><select id="tm_term1Start_m" class="inp px-1"></select><select id="tm_term1Start_y" class="inp px-1"></select></div></div>
+              <div><label class="text-xs text-slate-500">ภาค 1 ปิด</label><div class="grid grid-cols-3 gap-1 mt-1"><select id="tm_term1End_d" class="inp px-1"></select><select id="tm_term1End_m" class="inp px-1"></select><select id="tm_term1End_y" class="inp px-1"></select></div></div>
+              <div><label class="text-xs text-slate-500">ภาค 2 เปิด</label><div class="grid grid-cols-3 gap-1 mt-1"><select id="tm_term2Start_d" class="inp px-1"></select><select id="tm_term2Start_m" class="inp px-1"></select><select id="tm_term2Start_y" class="inp px-1"></select></div></div>
+              <div><label class="text-xs text-slate-500">ภาค 2 ปิด</label><div class="grid grid-cols-3 gap-1 mt-1"><select id="tm_term2End_d" class="inp px-1"></select><select id="tm_term2End_m" class="inp px-1"></select><select id="tm_term2End_y" class="inp px-1"></select></div></div>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">ว่าง = ใช้ค่ามาตรฐาน (ภาค 1: 16 พ.ค.–10 ต.ค. / ภาค 2: 3 พ.ย.–31 มี.ค.) • วันสิ้นสุดภาค 1 ใช้นับเวลาเรียนในใบกลางปีด้วย • เลือกปีเป็น พ.ศ.</p>
+            <label class="flex items-start gap-2 text-sm mt-2"><input type="checkbox" id="set_attAssumePresent" class="w-5 h-5 mt-0.5"> <span>นับวันที่ห้องไม่ได้เช็กชื่อว่า “มาเรียน” (วันเปิดเรียนเท่ากันทุกห้อง = วันที่มีบันทึกอย่างน้อย 1 ห้อง + วันเรียนตามปฏิทินวิชาการ)<br><span class="text-[11px] text-slate-400">เทอมหน้าเมื่อครูเช็กครบแล้ว ให้ปิดช่องนี้ก่อนพิมพ์รายงาน • ปิด = นับเฉพาะวันที่มีบันทึก ห้องที่ไม่เช็กจะนับว่าไม่ได้มา</span></span></label>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <button type="button" onclick="saveTermDates()" class="btn bg-teal-600 text-white px-3 py-1.5 text-xs">💾 บันทึกช่วงภาคเรียน</button>
+              <button type="button" onclick="showSchoolDays('mid')" class="btn bg-white border border-sky-300 text-sky-800 px-3 py-1.5 text-xs">📋 ดูรายการวันเปิดเรียน ภาค 1</button>
+              <button type="button" onclick="showSchoolDays('year')" class="btn bg-white border border-sky-300 text-sky-800 px-3 py-1.5 text-xs">📋 ทั้งปี</button>
+            </div>
+          </div>
 
     <!-- แอดมิน: แผงเพิ่ม/รายการของวันที่เลือก -->
     <div id="calAdmin" data-role="admin" class="card p-4 mt-4 hidden">
@@ -2269,16 +2271,16 @@ function applySettingsToUI(){
   const ie=document.getElementById('set_issueEnabled'); if(ie) ie.checked=String(s.issueEnabled)==='1';
   const im=document.getElementById('set_issueEmail'); if(im) im.value=s.issueEmail||'';
   const lt=document.getElementById('set_lookupTerm'); if(lt) lt.value=(s.lookupTerm==='mid')?'mid':'year';
-  const aap=document.getElementById('set_attAssumePresent'); if(aap) aap.checked=String(s.attAssumePresent)!=='0';
   const lcl=document.getElementById('set_lookupCodeLen'); if(lcl) lcl.value=s.lookupCodeLen||'';
-  ['term1Start','term1End','term2Start','term2End'].forEach(k=>{ const e=document.getElementById('set_'+k); if(e) e.value=termDateInput(s[k]); });
   [['passPercent','50'],['minAttendPercent','80'],['remedyCapPercent','50'],['promoteMaxFail','0']].forEach(([k,def])=>{ const e=document.getElementById('set_'+k); if(e) e.value=(s[k]!==undefined&&s[k]!=='')?s[k]:def; });
   const lk=document.getElementById('set_lookupLink'); if(lk) lk.value=lookupLink();
 }
 // ค่าวันที่จากชีต (yyyy-MM-dd หรือ yyyy-MM-dd HH:mm:ss หรือ yyyyMMdd) → ค่าสำหรับ <input type=date>
 function termDateInput(v){
   const d=String(v==null?'':v).replace(/[^0-9]/g,'').slice(0,8);
-  return (d.length===8 && Number(d.slice(0,4))>=1900) ? d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8) : '';
+  if(!(d.length===8 && Number(d.slice(0,4))>=1900)) return '';
+  let y=Number(d.slice(0,4)); if(y>=2400) y-=543;   // ปีที่กรอกเป็น พ.ศ. → ค.ศ.
+  return y+'-'+d.slice(4,6)+'-'+d.slice(6,8);
 }
 // ช่วงภาคเรียน: ใช้ค่าที่ตั้งไว้ ถ้าว่างใช้ค่ามาตรฐานจากปีการศึกษา
 function termRanges(){
@@ -2314,15 +2316,12 @@ async function saveSettings(){
   s.issueEnabled=document.getElementById('set_issueEnabled').checked?'1':'';
   s.issueEmail=val('set_issueEmail');
   s.lookupTerm=document.getElementById('set_lookupTerm').value==='mid'?'mid':'year';
-  s.attAssumePresent=document.getElementById('set_attAssumePresent').checked?'1':'0';
   s.lookupCodeLen=String(Math.max(0,parseInt(document.getElementById('set_lookupCodeLen').value,10)||0)||'');
-  ['term1Start','term1End','term2Start','term2End'].forEach(k=>{ s[k]=val('set_'+k); });
   for(const [k,mx] of [['passPercent',100],['minAttendPercent',100],['remedyCapPercent',100],['promoteMaxFail',20]]){
     const v=val('set_'+k); if(v===''){ s[k]=''; continue; }
     if(!/^\d{1,3}$/.test(v)||Number(v)>mx){ toast('เกณฑ์แก้ไขผล/เลื่อนชั้น: ต้องเป็นจำนวนเต็ม 0–'+mx,'error'); return; }
     s[k]=v;
   }
-  if((s.term1Start&&s.term1End&&s.term1Start>s.term1End)||(s.term2Start&&s.term2End&&s.term2Start>s.term2End)||(s.term1End&&s.term2Start&&s.term1End>s.term2Start)){ toast('ช่วงวันที่ภาคเรียนไม่ถูกต้อง (วันเปิดต้องก่อนวันปิด และภาค 1 ต้องจบก่อนภาค 2 เริ่ม)','error'); return; }
   try{ showLoading(true); await GAS.call('saveSettings', s); applySettingsToUI(); patchBootSnap('settings', state.settings); toast('บันทึกข้อมูลสถานศึกษาแล้ว'); }
   catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
@@ -3971,7 +3970,7 @@ function reportPageHTML(s, rs, opt){
           <td style="border:1px solid #000;padding:2px 6px">${a.absent}</td>
           <td style="border:1px solid #000;padding:2px 6px;font-weight:700;${a.percent<80?'color:#dc2626':''}">${a.schoolDays?a.percent+'%':'-'}</td>
         </tr>
-      </table>
+      </table>${a.schoolDays?'':'<div style="font-size:11px;color:#dc2626;margin-top:2px">ยังนับวันเปิดเรียนไม่ได้ — ตรวจ “ช่วงวันที่ภาคเรียน” ที่หน้าปฏิทินวิชาการ</div>'}
     </div>`; })()}
 
     ${opt.preview ? '<div class="lk-printonly">' : ''}
@@ -5434,7 +5433,7 @@ const LOGIN_LOGO_BASE64='';
 const APP_NAME='NSR SMART ประถมศึกษา';
 const APP_NAME_HTML='NSR <span class="text-emerald-500">SMART</span> <span class="text-slate-600">ประถมศึกษา</span>';
 const APP_TAGLINE='ระบบรายงานผลการเรียน หลักสูตร 2568 (เทียบเคียง 2551)';
-const APP_BUILD='2026-10-17d'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
+const APP_BUILD='2026-10-17e'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
 const TH_M_ABBR=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 // โหลดรายการ (วัน|ห้อง|คาบ) ที่เช็คแล้วของเดือนนั้น (cache ต่อเดือน)
 async function attMonthKeys(month){
@@ -6706,8 +6705,44 @@ function schoolDayReason(iso){
   return '';
 }
 
+// ---- ช่วงวันที่ภาคเรียน (หน้าปฏิทิน): เลือก วัน/เดือน/ปี พ.ศ. → เก็บเป็น yyyy-MM-dd ค.ศ. ----
+const TERM_KEYS=['term1Start','term1End','term2Start','term2End'];
+function termFillCard(){
+  if(!document.getElementById('tm_term1Start_d')) return;
+  const s=state.settings||{}, be=new Date().getFullYear()+543;
+  const mo=(typeof TH_MONTHS_JS!=='undefined'?TH_MONTHS_JS:['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']);
+  TERM_KEYS.forEach(k=>{
+    const iso=termDateInput(s[k]), p=iso?iso.split('-').map(Number):[0,0,0];
+    const d=document.getElementById('tm_'+k+'_d'), m=document.getElementById('tm_'+k+'_m'), y=document.getElementById('tm_'+k+'_y');
+    d.innerHTML='<option value="">วัน</option>'+Array.from({length:31},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('');
+    m.innerHTML='<option value="">เดือน</option>'+mo.map((n,i)=>`<option value="${i+1}">${n}</option>`).join('');
+    const ys=[]; for(let v=be-2;v<=be+2;v++) ys.push(v); if(p[0]&&ys.indexOf(p[0]+543)<0) ys.push(p[0]+543);
+    y.innerHTML='<option value="">ปี พ.ศ.</option>'+ys.sort().map(v=>`<option value="${v}">${v}</option>`).join('');
+    if(p[0]){ d.value=String(p[2]); m.value=String(p[1]); y.value=String(p[0]+543); }
+  });
+  const aap=document.getElementById('set_attAssumePresent'); if(aap) aap.checked=String(s.attAssumePresent)!=='0';
+}
+function termGet(k){   // '' = ว่าง, null = กรอกไม่ครบ
+  const g=x=>document.getElementById('tm_'+k+'_'+x).value;
+  const d=g('d'), m=g('m'), y=g('y');
+  if(!d&&!m&&!y) return '';
+  if(!d||!m||!y) return null;
+  const ce=Number(y)-543, dt=new Date(ce,Number(m)-1,Number(d));
+  if(dt.getFullYear()!==ce||dt.getMonth()!==Number(m)-1||dt.getDate()!==Number(d)) return null;
+  return ce+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+}
+async function saveTermDates(){
+  const s=state.settings, v={};
+  for(const k of TERM_KEYS){ v[k]=termGet(k); if(v[k]===null){ toast('ช่วงวันที่ภาคเรียน: เลือกวัน เดือน ปี ให้ครบ/ถูกต้อง','error'); return; } }
+  if((v.term1Start&&v.term1End&&v.term1Start>v.term1End)||(v.term2Start&&v.term2End&&v.term2Start>v.term2End)||(v.term1End&&v.term2Start&&v.term1End>v.term2Start)){ toast('ช่วงวันที่ภาคเรียนไม่ถูกต้อง (วันเปิดต้องไม่หลังวันปิด และภาค 1 ต้องจบก่อนภาค 2 เริ่ม)','error'); return; }
+  TERM_KEYS.forEach(k=>{ s[k]=v[k]; });
+  s.attAssumePresent=document.getElementById('set_attAssumePresent').checked?'1':'0';
+  try{ showLoading(true); await GAS.call('saveSettings', s); applySettingsToUI(); patchBootSnap('settings', state.settings); toast('บันทึกช่วงวันที่ภาคเรียนแล้ว'); }
+  catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
 function initCalendar(){
   if(!state.calMonth) state.calMonth=todayISO().slice(0,7);
+  termFillCard();
   renderCalendar();
 }
 function calMove(d){
