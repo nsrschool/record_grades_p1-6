@@ -1251,6 +1251,16 @@
         <h3 class="font-bold text-teal-700 mb-1">🔒 ล็อกบังคับ/ปลดล็อก</h3>
         <p class="text-[11px] text-slate-400">การอนุมัติปกติทำที่เมนู 📈 ติดตาม &amp; อนุมัติ (ต้องคะแนนครบ+ตัดเกรดครบ) • หน้านี้ใช้ <b>ปลดล็อก</b> วิชาที่อนุมัติแล้ว (ต้องระบุเหตุผล เก็บประวัติไว้) และ <b>ล็อกบังคับ</b> กรณีพิเศษ เช่น กิจกรรมที่ไม่มีคะแนน • ล็อกแล้วครูแก้คะแนน/เกรดของวิชา×ห้องนั้นไม่ได้ และผู้ปกครองเห็นผลวิชานั้น</p>
       </div>
+      <div class="card p-4 mb-4" id="wrCard">
+        <h4 class="font-semibold text-slate-700 mb-1">🏫 อนุมัติ / ปลดล็อก ทั้งห้อง (แอดมิน)</h4>
+        <p class="text-[11px] text-slate-400 mb-2">อนุมัติทั้งห้อง = ล็อกผลทุกวิชาของห้องอัตโนมัติ + อนุมัติห้อง (ถ้ามีวิชายังไม่เรียบร้อย ระบบจะไม่ล็อกอะไรในห้องนั้น เว้นแต่เลือกบังคับพร้อมเหตุผล) • ปลดล็อกทั้งห้อง = ปลดทุกวิชา + ยกเลิกการอนุมัติ (ต้องระบุเหตุผล)</p>
+        <div class="flex flex-wrap gap-2 items-center">
+          <select id="wr_room" onchange="wrInfo()" class="inp text-sm" style="max-width:190px"><option value="">— เลือกห้อง/ชั้น —</option></select>
+          <button onclick="wrApprove()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 text-sm">✅ อนุมัติทั้งห้อง</button>
+          <button onclick="wrUnlock()" class="btn bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 text-sm">🔓 ปลดล็อกทั้งห้อง</button>
+        </div>
+        <div id="wr_info" class="text-xs text-slate-500 mt-2"></div>
+      </div>
       <div class="card p-4 mb-4">
         <h4 class="font-semibold text-slate-700 mb-2">📚 วิชา × ห้อง ที่ล็อกอยู่</h4>
         <div class="flex flex-wrap gap-2 mb-2">
@@ -5839,6 +5849,7 @@ function renderHealth(r){
 
 // ---------- 👨‍💻 ผู้พัฒนา ----------
 const DEV_CHANGELOG=[
+  ['2026-11-06','แอดมิน: อนุมัติผลทั้งห้อง (ล็อกทุกวิชาอัตโนมัติ + อนุมัติห้อง) และปลดล็อกทั้งห้อง (ยกเลิกการอนุมัติ) • เลือกทีละห้องหรือทั้งชั้น • ห้องที่วิชายังไม่เรียบร้อยไม่ล็อกอะไร เว้นแต่ล็อกบังคับพร้อมเหตุผล'],
   ['2026-11-06','หน่วยการเรียนรู้/คะแนนเต็ม แยกรายห้อง (วิชา+ชั้นเดียวกันแต่คนละห้อง = คนละชุด ไม่ผูกกับครู) • ปุ่ม "นำเข้าจากห้องอื่น" (ไม่บังคับ ไม่กดก็กรอกเองได้) • ระบบแยกชุดเดิมเป็นรายห้องให้อัตโนมัติ + สำรองก่อนย้าย'],
   ['2026-10-17','รองรับ ม.1–6 (หลักสูตร 2551) ในไฟล์เดียวกับประถม: ตั้ง "ขอบเขตชั้น" ได้ (ป.1-6 / ม.1-6 / ม.1-3 / ป.1-6,ม.1-3) • ภาคเรียนปัจจุบัน + ปุ่มสลับภาค (แอดมิน) • รายวิชา ม. แยกรายภาค • ตัวเลือกชั้น/ชื่อระบบตามขอบเขต • ขึ้นปีใหม่ตามขอบเขต (ป.6→ม.1 ถ้าเปิด)'],
   ['2026-10-17','Archive ปีการศึกษา: เปิดดูย้อนหลังรายห้อง (นักเรียน/คะแนนรวม/เกรด/ร มส มผ) + ส่งออก Excel • กู้คืนปีจาก Archive (ยืนยัน 2 ชั้น + สำรองสถานะปัจจุบันให้ก่อน) • เช็กลิสต์ความพร้อมก่อนขึ้นปีใหม่'],
@@ -5905,7 +5916,7 @@ function devRenew(){
   const u=devLineUrl(); if(u) window.open(u,'_blank','noopener');
 }
 // ---------- 📜 ประวัติการแก้ไข ----------
-const AUDIT_LABEL={approveSubjects:'อนุมัติ/ล็อกวิชา',unlockSubject:'ปลดล็อกวิชา',setLock:'ล็อก/ปลดล็อกทั้งห้อง',saveSettings:'แก้ตั้งค่า',saveTabAccess:'แก้สิทธิ์เมนู',
+const AUDIT_LABEL={approveWholeRoom:'อนุมัติทั้งห้อง',unlockWholeRoom:'ปลดล็อกทั้งห้อง',approveSubjects:'อนุมัติ/ล็อกวิชา',unlockSubject:'ปลดล็อกวิชา',setLock:'ล็อก/ปลดล็อกทั้งห้อง',saveSettings:'แก้ตั้งค่า',saveTabAccess:'แก้สิทธิ์เมนู',
   saveGradeMapping:'แก้ตารางแปลงเกรด',saveReport51Config:'แก้ตั้งค่าใบรายงาน',saveTeacher:'บันทึกครู',saveTeachersBatch:'บันทึกครูหลายคน',deleteTeacher:'ลบครู',importDMC:'นำเข้า DMC',
   restoreBackup:'กู้คืนข้อมูล',importBackupData:'นำเข้าข้อมูลสำรอง',clearAllData:'ล้างข้อมูล',saveSubjectAssignments:'จัดครู/รายวิชา',bulkImportRoster:'นำเข้ารายชื่อนักเรียน',
   mergeSubjects:'รวมรายวิชา',mapSubjectAlias:'ผูกชื่อวิชา',runHealthFix:'ซ่อมข้อมูล',runYearRollover:'ขึ้นปีการศึกษาใหม่',setGradeStatus:'ตั้งสถานะ ร/มส/มผ',recordRemedy:'บันทึกผลแก้ไข',setPromotionDecision:'ตัดสินเลื่อนชั้น/ซ้ำชั้น',fixDupStudentIds:'ซ่อมรหัสนักเรียนซ้ำ',recoverOrphanUnits:'กู้หน่วยที่หาย',markLookupIssue:'จัดการเรื่องแจ้งปัญหา'};
@@ -5991,7 +6002,7 @@ const LOGIN_LOGO_BASE64='';
 const APP_NAME='NSR SMART ประถมศึกษา';
 const APP_NAME_HTML='NSR <span class="text-emerald-500">SMART</span> <span class="text-slate-600">ประถมศึกษา</span>';
 const APP_TAGLINE='ระบบรายงานผลการเรียน หลักสูตร 2568 (เทียบเคียง 2551)';
-const APP_BUILD='2026-11-06a'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
+const APP_BUILD='2026-11-06b'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
 const TH_M_ABBR=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 // โหลดรายการ (วัน|ห้อง|คาบ) ที่เช็คแล้วของเดือนนั้น (cache ต่อเดือน)
 async function attMonthKeys(month){
@@ -7451,7 +7462,69 @@ function isSubjLocked(sid,room){ if(isRoomLocked(room)) return true; const l=sub
 function roomHasSubjLock(room){ return isRoomLocked(room)||(state.subjectLocks||[]).some(l=>String(l.room)===String(room)&&String(l.status)==='locked'); }
 async function refreshSubjectLocks(){ try{ const d=await GAS.call('getSubjectLocks'); state.subjectLocks=(d&&d.locks)||[]; }catch(e){} }
 
+/* ---- อนุมัติ/ปลดล็อก ทั้งห้อง (แอดมิน) ---- */
+async function wrLoad(){
+  const sel=document.getElementById('wr_room'); if(!sel) return;
+  const card=document.getElementById('wrCard'); if(card) card.classList.toggle('hidden',!isAdminUser());
+  if(!isAdminUser()) return;
+  try{ const d=await GAS.call('getRoomApprovals'); state._wrRooms=d.rooms||[]; }catch(e){ state._wrRooms=state._wrRooms||[]; }
+  const cur=sel.value, rooms=state._wrRooms, levels=[...new Set(rooms.map(r=>r.level))];
+  sel.innerHTML='<option value="">— เลือกห้อง/ชั้น —</option>'+levels.map(l=>`<option value="L:${esc(l)}">ทุกห้อง ${esc(l)}</option>`).join('')+
+    rooms.map(r=>`<option value="${esc(r.room)}">${r.approved?'✅ ':''}${esc(r.room)}</option>`).join('');
+  if([...sel.options].some(o=>o.value===cur)) sel.value=cur;
+  wrInfo();
+}
+function wrTargets(){
+  const v=(document.getElementById('wr_room')||{}).value||''; if(!v) return [];
+  const rooms=state._wrRooms||[];
+  return v.indexOf('L:')===0 ? rooms.filter(r=>r.level===v.slice(2)).map(r=>r.room) : [v];
+}
+function wrInfo(){
+  const el=document.getElementById('wr_info'); if(!el) return;
+  const rooms=state._wrRooms||[], tg=wrTargets().map(rm=>rooms.find(r=>r.room===rm)).filter(Boolean);
+  if(!tg.length){ el.textContent=''; return; }
+  el.innerHTML=tg.slice(0,12).map(r=>`${esc(r.room)}: ล็อก ${r.locked}/${r.total} วิชา • ${r.approved?'<b class="text-emerald-600">อนุมัติแล้ว</b>':'ยังไม่อนุมัติ'}`).join('<br>')+(tg.length>12?'<br>…อีก '+(tg.length-12)+' ห้อง':'');
+}
+function wrAfter(d){
+  if(d.locks) state.subjectLocks=d.locks;
+  renderSubjLocks(); refreshApprovalBadge(); state._wrAt=0; wrLoad();
+}
+async function wrApprove(){
+  const tg=wrTargets(); if(!tg.length){ toast('เลือกห้องหรือชั้นก่อน','error'); return; }
+  if(!confirm('อนุมัติทั้งห้อง '+(tg.length>1?tg.length+' ห้อง':tg[0])+'?\nระบบจะล็อกผลทุกวิชาของห้องอัตโนมัติ (ครูจะแก้คะแนน/เกรดไม่ได้จนกว่าจะปลดล็อก)\nห้องที่ยังมีวิชาไม่เรียบร้อยจะไม่ถูกล็อกอะไรเลย')) return;
+  try{
+    showLoading(true);
+    let d=await GAS.call('approveWholeRoom',{rooms:tg});
+    wrAfter(d);
+    const bad=(d.results||[]).filter(r=>r.status==='refused'), forceable=bad.filter(r=>r.pending&&r.pending.length);
+    let msg='อนุมัติทั้งห้อง '+d.approved+' ห้อง'+(d.already?' • อนุมัติอยู่แล้ว '+d.already:'')+(bad.length?' • ไม่ผ่าน '+bad.length:'');
+    toast(msg, bad.length&&!d.approved?'error':undefined);
+    if(forceable.length){
+      const lines=forceable.slice(0,5).map(r=>r.room+': '+r.pending.slice(0,3).join(', ')).join('\n');
+      if(confirm('มี '+forceable.length+' ห้องที่ยังมีวิชาไม่เรียบร้อย:\n'+lines+'\n\nต้องการ "ล็อกบังคับ" ทั้งห้องเหล่านี้หรือไม่? (ต้องระบุเหตุผล)')){
+        const reason=(prompt('เหตุผลในการล็อกบังคับ (จำเป็น):')||'').trim();
+        if(reason.length<3){ toast('ต้องระบุเหตุผลในการล็อกบังคับ','error'); return; }
+        d=await GAS.call('approveWholeRoom',{rooms:forceable.map(r=>r.room),force:true,reason});
+        wrAfter(d); toast('ล็อกบังคับ+อนุมัติ '+d.approved+' ห้อง'+(d.refused?' • ไม่ผ่าน '+d.refused:''), d.refused&&!d.approved?'error':undefined);
+      }
+    }else if(bad.length){
+      alert('ไม่ผ่าน:\n'+bad.slice(0,6).map(r=>r.room+' — '+(r.reason||'')).join('\n'));
+    }
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
+async function wrUnlock(){
+  const tg=wrTargets(); if(!tg.length){ toast('เลือกห้องหรือชั้นก่อน','error'); return; }
+  const reason=(prompt('ปลดล็อกทั้งห้อง '+(tg.length>1?tg.length+' ห้อง':tg[0])+' — ครูจะกลับมาแก้คะแนน/เกรดได้ และยกเลิกการอนุมัติของห้อง\nระบุเหตุผล (จำเป็น):')||'').trim();
+  if(reason.length<3){ toast('ต้องระบุเหตุผลในการปลดล็อก','error'); return; }
+  try{ showLoading(true);
+    const d=await GAS.call('unlockWholeRoom',{rooms:tg,reason});
+    wrAfter(d);
+    const rv=(d.results||[]).filter(r=>r.revokedRoomApproval).length;
+    toast('ปลดล็อก '+d.unlocked+' วิชา'+(rv?' • ยกเลิกการอนุมัติ '+rv+' ห้อง':''));
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
 function renderLocksAdmin(){
+  if(!state._wrAt||Date.now()-state._wrAt>4000){ state._wrAt=Date.now(); wrLoad(); }
   renderSubjLocks();
   const el=document.getElementById('locksList'); if(!el) return;
   const rooms=allClasses();
