@@ -27,16 +27,7 @@
 
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
-<!-- SheetJS (นำเข้า/ส่งออก Excel) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<!-- Chart.js (กราฟ Dashboard) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<!-- html2canvas (แคปภาพสรุป) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<!-- pdf.js (อ่านข้อความ) + pdf-lib (ตัดแยกหน้า) สำหรับแยกคำอธิบายจากไฟล์หลักสูตร -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-<script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+<!-- SheetJS / Chart.js / html2canvas / pdf.js / pdf-lib: โหลดเมื่อใช้ (lazy-load) — ดู LIBS ในสคริปต์หลัก -->
 <!-- ฟอนต์ Sarabun -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -123,7 +114,7 @@
 <div id="loginScreen" class="fixed inset-0 z-[80] bg-gradient-to-br from-teal-50 via-white to-amber-50 hidden items-center justify-center p-4">
   <div class="card p-6 w-full max-w-sm text-center">
     <div id="loginLogo" class="mb-2 flex justify-center"><div class="text-4xl">🏫</div></div>
-    <h2 class="text-lg font-bold text-teal-700">NSR <span class="text-emerald-500">SMART</span> <span class="text-slate-600">ประถมศึกษา</span></h2>
+    <h2 id="loginTitle" class="text-lg font-bold text-teal-700">NSR <span class="text-emerald-500">SMART</span> <span class="text-slate-600">ประถมศึกษา</span></h2>
     <p class="text-xs text-slate-400 mb-4">ระบบรายงานผลการเรียน หลักสูตร 2568 (เทียบเคียง 2551)</p>
     <div class="space-y-2 text-left">
       <div>
@@ -543,7 +534,7 @@
       <div id="flagListWrap" class="card p-4 hidden">
         <div id="flagSummary" class="text-xs text-slate-500 mb-2"></div>
         <div id="flagList"></div>
-        <div class="text-right mt-3"><button onclick="saveFlag()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 text-sm">💾 บันทึกเช็คชื่อหน้าเสาธง</button></div>
+        <div class="flex justify-end gap-2 mt-3"><button onclick="openAttSummary('flag')" class="btn bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 text-sm">📷 สรุป/แคปภาพ</button><button onclick="saveFlag()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 text-sm">💾 บันทึกเช็คชื่อหน้าเสาธง</button></div>
       </div>
       <div id="flagEmpty" class="card p-8 text-center text-slate-400">เลือกวันที่และห้อง แล้วกดโหลดรายชื่อ</div>
     </div>
@@ -562,7 +553,7 @@
       <div id="periodListWrap" class="card p-4 hidden">
         <div id="periodSummary" class="text-xs text-slate-500 mb-2"></div>
         <div id="periodList"></div>
-        <div class="text-right mt-3"><button onclick="savePeriod()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 text-sm">💾 บันทึกเช็คชื่อรายคาบ</button></div>
+        <div class="flex justify-end gap-2 mt-3"><button onclick="openAttSummary('period')" class="btn bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 text-sm">📷 สรุป/แคปภาพ</button><button onclick="savePeriod()" class="btn bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 text-sm">💾 บันทึกเช็คชื่อรายคาบ</button></div>
       </div>
       <div id="periodEmpty" class="card p-8 text-center text-slate-400">เลือกวันที่และคาบ แล้วกดโหลดรายชื่อ</div>
     </div>
@@ -844,6 +835,10 @@
           <label class="text-xs text-slate-500">เลือกห้อง</label>
           <select id="ex_class" class="inp mt-1 w-auto"><option value="">— เลือกห้อง —</option></select>
         </div>
+        <div class="js-mOnly hidden">
+          <label class="text-xs text-slate-500">ภาคเรียน (ม.)</label>
+          <select id="ex_sem" class="inp mt-1 w-auto"><option value="">ทั้งปี (ทุกวิชา)</option><option value="1">ภาคเรียนที่ 1</option><option value="2">ภาคเรียนที่ 2</option></select>
+        </div>
         <button onclick="exportMISWide()" class="btn bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 text-sm">📤 ส่งออกแบบ School MIS (รายห้อง)</button>
         <button onclick="exportMIS()" class="btn bg-white border border-slate-200 text-slate-600 px-4 py-2 text-sm">📄 ส่งออกแบบยาว (รายวิชา)</button>
       </div>
@@ -881,6 +876,7 @@
           <div>
             <label class="text-xs text-slate-500">ขอบเขตชั้นที่เปิดใช้ (เช่น ป.1-6 • ม.1-6 • ม.1-3 • ป.1-6,ม.1-3)</label>
             <input id="set_scope" class="inp mt-1" placeholder="ป.1-6">
+            <div id="set_scopeLic" class="text-[11px] text-sky-700 mt-0.5 hidden"></div>
           </div>
           <div>
             <label class="text-xs text-slate-500">ภาคเรียนปัจจุบัน (ใช้กับรายวิชา ม.)</label>
@@ -1229,7 +1225,7 @@
           <button onclick="backupNow()" class="btn bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 text-sm">⚡ สำรองทันที</button>
         </div>
         <p id="bk_status" class="text-xs text-slate-500 mt-2"></p>
-        <p class="text-[11px] text-slate-400 mt-1">ไฟล์เก็บในโฟลเดอร์ <b>“สำรองข้อมูล - ป.1-6”</b> บน Drive แยกจากระบบ ม.1-3 ชัดเจน (เก็บย้อนหลังสูงสุด 30 ไฟล์ ชื่อไฟล์ backup_p16_...)</p>
+        <p class="text-[11px] text-slate-400 mt-1">ไฟล์เก็บในโฟลเดอร์ <b>“สำรองข้อมูล - ป.1-6”</b> บน Drive (ทุกโรงเรียนใช้โฟลเดอร์นี้ร่วมกัน แต่ชื่อไฟล์ผูกกับรหัสชีตของโรงเรียน — แสดง/ลบ/กู้คืนเฉพาะไฟล์ของโรงเรียนนี้ เก็บย้อนหลังสูงสุด 30 ไฟล์)</p>
       </div>
       <div id="bk_files" class="card p-4 text-sm text-slate-400">ยังไม่มีไฟล์สำรอง</div>
     </div>
@@ -1260,6 +1256,18 @@
           <button onclick="wrUnlock()" class="btn bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 text-sm">🔓 ปลดล็อกทั้งห้อง</button>
         </div>
         <div id="wr_info" class="text-xs text-slate-500 mt-2"></div>
+      </div>
+      <div class="card p-4 mb-4" id="zfCard">
+        <h4 class="font-semibold text-slate-700 mb-1">0️⃣ เติม 0 ช่องคะแนนที่ว่าง (แอดมิน)</h4>
+        <p class="text-[11px] text-slate-400 mb-2">ใช้ก่อนตัดสินผล เมื่อมีนักเรียนที่ไม่ส่งงาน/ไม่สอบแล้วช่องคะแนนว่าง • ไม่นับนักเรียนที่ติด ร/มส/มผ • ไม่ทับช่องที่มีคะแนน • ข้ามวิชา×ห้องที่ล็อก • ทำเป็นรอบ ย้อนกลับได้ (ช่องที่ครูแก้เป็นค่าอื่นแล้วจะไม่ถูกแตะ)</p>
+        <div class="flex flex-wrap gap-2 items-center">
+          <select id="zf_sem" class="inp text-sm js-mOnly hidden" style="max-width:150px"><option value="">ทุกวิชา</option><option value="1">วิชาภาค 1</option><option value="2">วิชาภาค 2</option></select>
+          <select id="zf_room" class="inp text-sm" style="max-width:150px"><option value="">ทุกห้อง</option></select>
+          <button onclick="zfPreview()" class="btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 text-sm">🔍 ดูช่องว่าง</button>
+          <button onclick="zfApply()" class="btn bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 text-sm">0️⃣ เติม 0 รายการที่เลือก</button>
+        </div>
+        <div id="zf_list" class="text-sm mt-2 overflow-x-auto"></div>
+        <div id="zf_batches" class="text-xs mt-3"></div>
       </div>
       <div class="card p-4 mb-4">
         <h4 class="font-semibold text-slate-700 mb-2">📚 วิชา × ห้อง ที่ล็อกอยู่</h4>
@@ -1794,7 +1802,7 @@
     <div class="card p-5 text-center mb-4 bg-gradient-to-br from-teal-50 via-white to-amber-50">
       <img id="dv_logo" class="w-20 h-20 object-contain mx-auto mb-2 rounded-2xl" alt="">
       <h2 id="dv_brand" class="text-xl font-bold text-teal-700"></h2>
-      <p class="text-xs text-slate-500 mt-0.5">ผู้พัฒนาระบบ NSR SMART ประถมศึกษา</p>
+      <p class="text-xs text-slate-500 mt-0.5">ผู้พัฒนาระบบ <span class="js-appname">NSR SMART ประถมศึกษา</span></p>
     </div>
     <div class="card p-4 mb-4 hidden">
       <h3 class="font-semibold text-teal-700 mb-2">📞 ช่องทางติดต่อ</h3>
@@ -2113,7 +2121,7 @@ function onUnauthorized(){
   if(state._authRedirect || !state.currentUser) return;
   state._authRedirect=true;
   state.currentUser=null; state.mySchedule=[]; state.mySubjects=[]; state.teachers=[];
-  try{ localStorage.removeItem('kps_session'); localStorage.removeItem(BOOT_SNAP_KEY); localStorage.removeItem('nsr_sp_v1'); }catch(e){}
+  try{ localStorage.removeItem('kps_session'); localStorage.removeItem(BOOT_SNAP_KEY); localStorage.removeItem('nsr_sp_v1'); localStorage.removeItem(MY_TEACH_KEY); }catch(e){}
   showLoginScreen();
   toast('หมดเวลาการใช้งาน กรุณาเข้าสู่ระบบใหม่','error');
   setTimeout(()=>{ state._authRedirect=false; },3000);
@@ -2215,7 +2223,7 @@ function formatReportDate(v){
 const DEFAULT_REMARK='โรงเรียนในโครงการขับเคลื่อนหลักสูตรการศึกษาประถมศึกษา 2568';
 // แทนที่หมายเหตุค่าตั้งต้นเดิม (เลขไทย/ป.๑-๓) ด้วยข้อความใหม่ ; ข้อความที่ผู้ใช้แก้เองคงไว้
 function normalizeRemark(v){
-  if(!v) return DEFAULT_REMARK;
+  if(!v) return scopeHas('ป')?DEFAULT_REMARK:'';
   if(/ชั้นประถมศึกษาปีที่\s*๑\s*-\s*๓/.test(v)) return DEFAULT_REMARK;
   return v;
 }
@@ -2263,6 +2271,7 @@ const VTAB={
   set_school:{tab:'settings',sub:'school'}, set_mapping:{tab:'settings',sub:'mapping'}, set_criteria:{tab:'settings',sub:'criteria'}, rp_cfg:{tab:'report',open:'rp_cfgCard'}, set_lookup:{tab:'settings',sub:'lookup'}
 };
 function switchTab(name){
+  try{ libPrefetch(name); }catch(e){}
   const ftk=TAB_FEATURE[name];
   if(ftk && !featureOn(ftk)){ toast('ฟีเจอร์นี้ไม่ได้เปิดใช้งานสำหรับโรงเรียนนี้','error'); if(name!=='home') return switchTab('home'); }
   const v=VTAB[name]||null, real=v?v.tab:name;
@@ -2469,6 +2478,7 @@ function applySettingsToUI(){
   const s=state.settings;
   // ชื่อระบบ: แก้ที่ค่าคงที่ APP_NAME/APP_TAGLINE จุดเดียว (บนสุดของสคริปต์)
   document.getElementById('hdrTitle').innerHTML=appNameHTML();
+  { const lt=document.getElementById('loginTitle'); if(lt) lt.innerHTML=appNameHTML(); document.querySelectorAll('.js-appname').forEach(x=>x.textContent=appNameText()); document.title=appNameText()+' • ระบบรายงานผลการเรียน'; }
   applyLoginLogo();
   document.getElementById('hdrSlogan').textContent=s.slogan||(scopeHas('ป')?(scopeHas('ม')?'ระบบรายงานผลการเรียน ประถม–มัธยม (หลักสูตร 2568 / 2551)':'ระบบรายงานผลการเรียน หลักสูตร 2568 (เทียบเคียง 2551)'):'ระบบรายงานผลการเรียน หลักสูตรแกนกลาง 2551');
   document.getElementById('hdrSchool').textContent=(s.schoolName||'')+((s.schoolName&&s.academicYear)?' • ':'')+(s.academicYear?'ปีการศึกษา '+s.academicYear:'');
@@ -2478,6 +2488,8 @@ function applySettingsToUI(){
   Object.keys(map).forEach(id=>{ const el=document.getElementById(id); if(el) el.value=s[map[id]]||''; });
   { const cs=document.getElementById('set_currentSemester'); if(cs) cs.value=currentSem(); }
   refreshLevelSelects(); updateSemChip();
+  document.querySelectorAll('.js-mOnly').forEach(x=>x.classList.toggle('hidden',!scopeHas('ม')));
+  { const sl=document.getElementById('set_scopeLic'); if(sl){ sl.textContent=s.scopeLicensed?('🔐 สิทธิ์ที่ซื้อไว้: '+s.scopeLicensed+' (ตั้งเกินนี้ไม่ได้ — ขยายสิทธิ์ติดต่อครูพร้อมสอน)'):''; sl.classList.toggle('hidden',!s.scopeLicensed); } }
   setImg('logoPreview', s.logoURL);
   setImg('dirSignPreview', s.directorSignURL);
   setImg('depSignPreview', s.deputySignURL);
@@ -3354,6 +3366,10 @@ async function showSchoolDays(term){
   finally{ showLoading(false); }
 }
 
+// แทนที่เกรดของวิชานี้ใน state.grades (คงเกรดวิชาอื่นที่โหลดไว้)
+function mergeSubjectGrades(sid, list){
+  state.grades=(state.grades||[]).filter(g=>String(g.subjectID)!==String(sid)).concat(list||[]);
+}
 async function onSelectScoreSubject(){
   const raw=document.getElementById('sc_subject').value;
   const sep=raw.indexOf('|');
@@ -3370,10 +3386,10 @@ async function onSelectScoreSubject(){
     showLoading(true);
     const [units, scores, grades]=await Promise.all([
       GAS.call('getUnits',{subjectID:id, room:state.scoreRoom}),
-      GAS.call('getScores',{subjectID:id}),
-      GAS.call('getGrades')
+      GAS.call('getScores',{subjectID:id, room:state.scoreRoom}),
+      GAS.call('getGrades',{subjectID:id})
     ]);
-    state.units[id]=units; state.scores=scores; state.grades=grades;
+    state.units[id]=units; state.scores=scores; mergeSubjectGrades(id, grades);
     GAS.call('getSubjectDocs',{subjectID:id}).then(docs=>renderDocList(docs,'sc_docs',false)).catch(()=>{});
     document.getElementById('sc_lockBanner').classList.toggle('hidden', !isRoomLocked(state.scoreRoom));
     document.getElementById('sc_empty').classList.add('hidden');
@@ -3630,7 +3646,7 @@ async function saveScoresFn(){
   try{ showLoading(true);
     const res=await GAS.call('saveScores',{subjectID:sub.ID, scores:out, room:state.scoreRoom});
     if(Array.isArray(res)) applySavedScores(sub,out,res);          // เดิมยิงเพิ่ม 2 คำขอ (getScores + getGrades ทั้งโรงเรียน) → ตอนนี้อัปเดตในเครื่องเอง
-    else { state.scores=await GAS.call('getScores',{subjectID:sub.ID}); state.grades=await GAS.call('getGrades'); }
+    else { state.scores=await GAS.call('getScores',{subjectID:sub.ID, room:state.scoreRoom}); mergeSubjectGrades(sub.ID, await GAS.call('getGrades',{subjectID:sub.ID})); }
     state._spDirty=true;                                           // หน้าติดตาม&อนุมัติ: เปิดครั้งหน้าให้ซิงก์ใหม่เบื้องหลัง
     renderLegacyBanner();
     toast('บันทึกคะแนนและคำนวณเกรดแล้ว');
@@ -4311,7 +4327,82 @@ function fmtScore(v){ if(v==null||v==='') return '-'; const n=Number(v); if(isNa
 const REPORT_NOTE_SEMI='ผลตามหลักสูตร พ.ศ. 2568 เป็นการรายงานความก้าวหน้าระหว่างปี มิใช่ผลตัดสินเมื่อจบชั้นปี';
 const REPORT_NOTE_TWO='การจัดวางสองหลักสูตรในแนวเดียวกัน มิใช่การเทียบผลแบบหนึ่งต่อหนึ่ง';
 const PENDING_TXT='<span style="font-size:10px;color:#b45309">รอการอนุมัติ</span>';
+// ===== 3A: ใบรายงานผลการเรียน ม. (หลักสูตรแกนกลาง 2551) — รายวิชาแยกภาค + หน่วยกิต + GPA =====
+function fmtGPA(x){ return (x&&x.gpa!=null)?Number(x.gpa).toFixed(2):'-'; }
+function fmtCredit(c){ const n=Number(c); return n>0?(Number.isInteger(n)?n+'.0':String(n)):'-'; }
+function reportPageHTML51(s, rs, opt){
+  opt=opt||{};
+  const mid=opt.term==='mid';
+  const st=rs.student, digit=gradeDigitOf(st.classLevel);
+  const ab={}; (rs.abilities||[]).forEach(a=>ab[a.itemKey]=a.result||'');
+  const g=v=>(v==null||v==='')?'-':v;
+  const gp=rs.gpa||{};
+  const logo=s.logoURL?`<img src="${esc(s.logoURL)}" style="width:46px;height:46px;object-fit:contain">`:'';
+  const dirSign=s.directorSignURL?`<img src="${esc(s.directorSignURL)}" style="height:32px;object-fit:contain;display:block;margin:0 auto -2px">`:'<div style="height:30px"></div>';
+  const bd='border:1px solid #000;padding:2px 5px;';
+  const cell=x=>x.flag?'<b style="color:#b91c1c">'+esc(x.flag)+'</b>':(x.pending?PENDING_TXT:g(x.grade51));
+  const termBlock=(label,list,res)=>{
+    if(!list.length) return '';
+    const basic=list.filter(x=>x.type!=='เพิ่มเติม'), extra=list.filter(x=>x.type==='เพิ่มเติม');
+    const row=x=>`<tr><td style="${bd}text-align:center;white-space:nowrap">${esc(x.code||'')}</td><td style="${bd}">${esc(x.name)}</td><td style="${bd}text-align:center">${fmtCredit(x.credit)}</td><td style="${bd}text-align:center">${cell(x)}</td></tr>`;
+    const sec=t=>`<tr><td colspan="4" style="${bd}font-weight:700;background:#f8fafc">${t}</td></tr>`;
+    return `<table style="border-collapse:collapse;width:100%;font-size:12px;margin-top:6px">
+      <tr style="background:#e2e8f0"><th colspan="4" style="${bd}text-align:left">${label}</th></tr>
+      <tr style="background:#f1f5f9"><th style="${bd}width:72px">รหัสวิชา</th><th style="${bd}">รายวิชา</th><th style="${bd}width:56px">หน่วยกิต</th><th style="${bd}width:64px">ผลการเรียน</th></tr>
+      ${basic.length?sec('รายวิชาพื้นฐาน')+basic.map(row).join(''):''}${extra.length?sec('รายวิชาเพิ่มเติม')+extra.map(row).join(''):''}
+      <tr><td colspan="2" style="${bd}text-align:right;font-weight:700">หน่วยกิตที่ได้ / ผลการเรียนเฉลี่ย (GPA)</td><td style="${bd}text-align:center;font-weight:700">${fmtCredit((res||{}).credits)}</td><td style="${bd}text-align:center;font-weight:700">${fmtGPA(res)}${res&&res.gpa!=null&&!res.complete?'<span style="font-size:9px;color:#b45309"> *</span>':''}</td></tr>
+    </table>`;
+  };
+  const subs=rs.subjects||[];
+  const s1=subs.filter(x=>String(x.semester)==='1'), s2=subs.filter(x=>String(x.semester)==='2'), yr=subs.filter(x=>String(x.semester||'')==='');
+  const incomplete=[gp.s1,gp.s2,gp.year].some(r=>r&&r.gpa!=null&&!r.complete);
+  let hts=(rs.homeroomTeachers||[]).slice(0,2); if(!hts.length) hts=[''];
+  const a=rs.attendance;
+  return `<div class="report-page">
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;text-align:center">
+      ${logo}
+      <div>
+        <div style="font-weight:700;font-size:15px">แบบรายงานผลการเรียน${mid?' ภาคเรียนที่ 1':''}</div>
+        <div style="font-weight:700;font-size:14px">ชั้นมัธยมศึกษาปีที่ ${digit||'-'} &nbsp;&nbsp; ปีการศึกษา ${esc(s.academicYear)}</div>
+        <div style="font-size:13px">${esc(s.schoolName)} ${esc(s.area||'')}</div>
+        <div style="font-size:11px;color:#334155">ตามหลักสูตรแกนกลางการศึกษาขั้นพื้นฐาน พุทธศักราช 2551</div>
+      </div>
+    </div>
+    <div style="text-align:right;font-size:12px;margin-top:6px">เลขประจำตัว <b>${esc(st.studentCode)}</b></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;border-bottom:1px solid #000;padding-bottom:3px;margin-bottom:4px">
+      <span>ชื่อ-สกุล <b>${esc(st.fullName)}</b></span>
+      <span>ชั้น <b>ม.${esc(String(st.classLevel).replace(/^ม\.?/,''))}</b> &nbsp; เลขที่ <b>${esc(st.number)}</b></span>
+    </div>
+    ${termBlock('ภาคเรียนที่ 1',s1,gp.s1)}
+    ${mid?'':termBlock('ภาคเรียนที่ 2',s2,gp.s2)}
+    ${termBlock('รายวิชาตลอดปี',yr,null)}
+    ${mid?'':`<div style="margin-top:6px;font-size:13px;text-align:right">ผลการเรียนเฉลี่ยตลอดปี (GPAX) <b style="font-size:15px">${fmtGPA(gp.year)}</b> &nbsp; หน่วยกิตรวม <b>${fmtCredit((gp.year||{}).credits)}</b></div>`}
+    ${(subs.length)?'':'<div style="text-align:center;color:#888;margin:10px">ยังไม่มีข้อมูลรายวิชา</div>'}
+    <div style="margin-top:8px;font-size:12px">
+      <div style="font-weight:600;margin-bottom:3px">ผลการประเมิน</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 24px">
+        <div>• คุณลักษณะอันพึงประสงค์ : <b>${g(ab['คุณลักษณะอันพึงประสงค์'])}</b></div>
+        <div>• การอ่าน คิดวิเคราะห์ และเขียน : <b>${g(ab['การอ่าน คิดวิเคราะห์ และเขียน'])}</b></div>
+        <div>• กิจกรรมแนะแนว : <b>${g(ab['กิจกรรมแนะแนว'])}</b></div>
+        <div>• ลูกเสือ – เนตรนารี / นักศึกษาวิชาทหาร : <b>${g(ab['ลูกเสือ – เนตรนารี']||ab['ลูกเสือ – ยุวกาชาด'])}</b></div>
+        <div>• ชมรม/ชุมนุม : <b>${g(ab['ชมรม/ชุมนุม'])}</b></div>
+        <div>• กิจกรรมเพื่อสังคมและสาธารณประโยชน์ : <b>${g(ab['กิจกรรมเพื่อสังคมและสาธารณประโยชน์'])}</b></div>
+      </div>
+    </div>
+    ${a?`<div style="margin-top:8px;font-size:12px">เวลาเรียน${mid?' ภาคเรียนที่ 1':''} : เปิดเรียน <b>${a.schoolDays||0}</b> วัน • มา <b>${a.present}</b> • สาย <b>${a.late}</b> • ลา <b>${a.leave}</b> • ขาด <b>${a.absent}</b> • ร้อยละ <b style="${a.percent<80?'color:#dc2626':''}">${a.schoolDays?a.percent+'%':'-'}</b></div>`:''}
+    <div style="font-size:11px;color:#444;margin-top:6px">หมายเหตุ : หน่วยกิต = ชั่วโมงเรียน ÷ 40 • GPA ถ่วงน้ำหนักด้วยหน่วยกิต${incomplete?' • * ยังมีรายวิชาที่ไม่มีผลการเรียน/ติด ร มส มผ (GPA คิดจากวิชาที่มีผลแล้ว)':''}${(s.remark&&s.remark!==DEFAULT_REMARK)?`<div style="margin-top:1px">${esc(s.remark)}</div>`:''}</div>
+    ${opt.preview ? '<div class="lk-printonly">' : ''}
+    <div style="display:flex;justify-content:space-around;text-align:center;font-size:11px;margin-top:18px">
+      ${hts.map(nm=>`<div style="flex:0 1 40%"><div style="height:26px"></div>(ลงชื่อ) ...........................<br>( ${esc(nm||'.............................')} )<br>ครูที่ปรึกษา</div>`).join('')}
+    </div>
+    <div style="display:flex;justify-content:center;text-align:center;font-size:12px;margin-top:14px">
+      <div style="flex:0 1 50%">${dirSign}(ลงชื่อ) .....................................<br>( ${esc(s.directorName||'.................................')} )<br>ผู้อำนวยการสถานศึกษา</div>
+    </div>
+    ${opt.preview ? '</div>' : ''}
+  </div>`;
+}
 function reportPageHTML(s, rs, opt){
+  if(rs && (rs.curriculum==='M' || /^ม/.test(String(rs.student&&rs.student.classLevel||'')))) return reportPageHTML51(s, rs, opt);
   opt=opt||{};
   const mid=opt.term==='mid';
   const st=rs.student;
@@ -4478,22 +4569,25 @@ async function exportMISWide(){
   const cls=document.getElementById('ex_class').value;
   if(!cls){ toast('เลือกห้องก่อน','error'); return; }
   try{ showLoading(true);
-    const d=await GAS.call('exportSchoolMISWide',{classLevel:cls});
+    const sem=(document.getElementById('ex_sem')||{}).value||'';
+    const d=await GAS.call('exportSchoolMISWide',{classLevel:cls, semester:sem});
     if(!d.rows.length){ toast('ไม่มีข้อมูลในห้องนี้','error'); return; }
     const aoa=[d.header,...d.rows];
     const ws=XLSX.utils.aoa_to_sheet(aoa); const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,'SchoolMIS');
-    XLSX.writeFile(wb,'SchoolMIS_'+cls.replace('/','-')+'.xlsx');
+    XLSX.writeFile(wb,'SchoolMIS_'+cls.replace('/','-')+(sem?'_ภาค'+sem:'')+'.xlsx');
     toast('ส่งออก '+d.rows.length+' คนแล้ว');
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 async function exportMIS(){
   const cls=document.getElementById('ex_class').value;
   try{ showLoading(true);
-    const rows=await GAS.call('exportSchoolMIS',{classLevel:cls});
+    const sem=(document.getElementById('ex_sem')||{}).value||'';
+    const rows=await GAS.call('exportSchoolMIS',{classLevel:cls, semester:sem});
     if(!rows.length){ toast('ไม่มีข้อมูลให้ส่งออก','error'); return; }
     const aoa=[['เลขประจำตัว','เลขที่','ชื่อ-นามสกุล','ชั้น/ห้อง','รหัสวิชา','ชื่อวิชา','ร้อยละ','เกรด (51)','ระดับ (68)']];
     rows.forEach(r=>aoa.push([r.studentCode,r.number,r.fullName,r.classLevel,r.subjectCode,r.subjectName,r.percent,r.grade51,r.level68]));
+    if(rows.some(r=>r.credit!==''&&r.credit!=null)){ aoa[0].push('ภาคเรียน','หน่วยกิต'); rows.forEach((r,i)=>aoa[i+1].push(r.semester||'ตลอดปี',r.credit)); }
     const ws=XLSX.utils.aoa_to_sheet(aoa); const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,'SchoolMIS');
     XLSX.writeFile(wb,'SchoolMIS_'+(cls||'ทั้งหมด')+'.xlsx');
@@ -5209,34 +5303,6 @@ async function loadExecDocs(force){
   }catch(e){ el.innerHTML='<div class="text-rose-500">'+esc(e.message)+'</div>'; }
   finally{ showLoading(false); }
 }
-// ---------- นักเรียนเสี่ยง (มุมมองผู้บริหาร) ----------
-async function loadExecRisk(){
-  const el=document.getElementById('xr_area');
-  try{ showLoading(true);
-    const d=await GAS.call('getRiskStudents',{
-      classLevel:'', attMin:Number(document.getElementById('xr_att').value)||80,
-      gradeMin:Number(document.getElementById('xr_grade').value)||2, absentMin:5
-    });
-    document.getElementById('xr_summary').innerHTML=
-      `<span class="badge bg-slate-100 text-slate-700">รวมเสี่ยง ${d.total} คน</span>`+
-      `<span class="badge bg-rose-100 text-rose-700">เวลาเรียน<${d.thresholds.attMin}% : ${d.counts.att}</span>`+
-      `<span class="badge bg-violet-100 text-violet-700">เกรด<${d.thresholds.gradeMin} : ${d.counts.grade}</span>`+
-      `<span class="badge bg-amber-100 text-amber-700">ขาด≥${d.thresholds.absentMin}วัน : ${d.counts.absent}</span>`;
-    if(!d.students.length){ el.innerHTML='<div class="text-center text-emerald-600 py-6">🎉 ไม่พบนักเรียนเสี่ยงตามเงื่อนไข</div>'; return; }
-    el.innerHTML='<table class="w-full text-sm" style="min-width:720px"><thead><tr class="text-left text-slate-400 border-b">'+
-      '<th class="py-2 px-2">ห้อง</th><th class="px-2">เลขที่</th><th class="px-2">ชื่อ-นามสกุล</th><th class="px-2 text-center">เวลาเรียน</th><th class="px-2 text-center">ขาด</th><th class="px-2 text-center">เกรดเฉลี่ย</th><th class="px-2">สัญญาณเสี่ยง</th></tr></thead><tbody>'+
-      d.students.map(s=>`<tr class="border-b hover:bg-rose-50/40">
-        <td class="py-1.5 px-2">${esc(s.classLevel)}</td>
-        <td class="px-2">${esc(s.number)}</td>
-        <td class="px-2 font-medium text-slate-700">${esc(s.fullName)}</td>
-        <td class="px-2 text-center ${s.percent<d.thresholds.attMin?'text-rose-600 font-bold':''}">${s.schoolDays?s.percent+'%':'—'}</td>
-        <td class="px-2 text-center ${s.absent>=d.thresholds.absentMin?'text-amber-600 font-bold':''}">${s.absent}</td>
-        <td class="px-2 text-center ${s.avgGrade!=null&&s.avgGrade<d.thresholds.gradeMin?'text-violet-600 font-bold':''}">${s.avgGrade!=null?s.avgGrade.toFixed(2):'—'}</td>
-        <td class="px-2"><div class="flex flex-wrap gap-1">${s.flags.map(riskBadge).join('')}</div></td>
-      </tr>`).join('')+'</tbody></table>';
-  }catch(e){ el.innerHTML='<div class="text-rose-500">'+esc(e.message)+'</div>'; }
-  finally{ showLoading(false); }
-}
 
 // ---------- สถิตินักเรียน ----------
 async function loadStudStat(force){
@@ -5302,7 +5368,7 @@ function exportStudStat(){
    หน้าแรก (HOME)
    ============================================================ */
 function makeChart(id, config){
-  if(typeof Chart==='undefined') return;
+  if(typeof Chart==='undefined'){ ensureLib('chart').then(()=>makeChart(id, config)).catch(()=>{}); return; }
   if(!state.charts) state.charts={};
   if(state.charts[id]) state.charts[id].destroy();
   const el=document.getElementById(id); if(!el) return;
@@ -5454,6 +5520,15 @@ async function showLoginScreen(){
   }catch(e){ if(e.code!=='EXPIRED'){ setStatus(false); toast(e.message,'error'); } }
 }
 
+// ตารางสอน/วิชาที่สอนของครู (จำในเครื่องไว้เปิดครั้งหน้าได้ทันที)
+const MY_TEACH_KEY='nsr_myteach_v1';
+function myTeachCache(u){ try{ const c=JSON.parse(localStorage.getItem(MY_TEACH_KEY)||'null'); return (c&&c.n===u.name&&Array.isArray(c.sch)&&Array.isArray(c.subj))?c:null; }catch(e){ return null; } }
+async function fetchMyTeaching(u){
+  const [sch,subj]=await Promise.all([GAS.call('getSchedule',{teacher:u.name}), GAS.call('getTeacherSubjects',{teacher:u.name})]);
+  state.mySchedule=sch; state.mySubjects=subj;
+  try{ localStorage.setItem(MY_TEACH_KEY, JSON.stringify({n:u.name, sch, subj})); }catch(e){}
+  return true;
+}
 async function doLogin(){
   const name=document.getElementById('loginName').value;
   const pin=document.getElementById('loginPin').value;
@@ -5463,10 +5538,8 @@ async function doLogin(){
     if(u.features) setFeatures(u.features,true);
     state.currentUser=u;
     try{ localStorage.setItem('kps_session', JSON.stringify(u)); }catch(e){}
-    if(isTeacherScope(u)){
-      const [sch,subj]=await Promise.all([GAS.call('getSchedule',{teacher:u.name}), GAS.call('getTeacherSubjects',{teacher:u.name})]);
-      state.mySchedule=sch; state.mySubjects=subj;
-    } else { state.mySchedule=[]; state.mySubjects=[]; }
+    if(isTeacherScope(u)){ await fetchMyTeaching(u); }
+    else { state.mySchedule=[]; state.mySubjects=[]; }
     const ls=document.getElementById('loginScreen'); ls.classList.add('hidden'); ls.classList.remove('flex');
     applyRole();
     await bootstrap();
@@ -5495,7 +5568,7 @@ function logout(){
   if(state.currentUser && state.currentUser.token) GAS.call('logout').catch(()=>{});   // ยกเลิก token ฝั่งเซิร์ฟเวอร์
   setTimeout(()=>{
     state.currentUser=null; state.mySchedule=[]; state.mySubjects=[]; state.teachers=[];
-    try{ localStorage.removeItem('kps_session'); localStorage.removeItem(BOOT_SNAP_KEY); localStorage.removeItem('nsr_sp_v1'); }catch(e){}
+    try{ localStorage.removeItem('kps_session'); localStorage.removeItem(BOOT_SNAP_KEY); localStorage.removeItem('nsr_sp_v1'); localStorage.removeItem(MY_TEACH_KEY); }catch(e){}
     showLoginScreen();
   },0);
 }
@@ -5598,6 +5671,7 @@ function applyRole(){
     else if(dr==='staff') show=(role==='teacher');
     else show=false;
     const ft=el.dataset.feature||(tab&&TAB_FEATURE[tab]); if(ft && !featureOn(ft)) show=false;   // ศูนย์ควบคุมปิดฟีเจอร์นี้
+    if(tab==='summary68' && !scopeHas('ป')) show=false;   // สรุปผล 2568 ใช้กับประถมเท่านั้น
     if(tab==='home'||tab==='manual'||tab==='developer') show=true;   // หน้าแรก/คู่มือ/ผู้พัฒนา เห็นเสมอ (ไม่อยู่ในตารางสิทธิ์)
     el.style.display = show ? '' : 'none';
   });
@@ -5677,6 +5751,7 @@ function toggleSemFields(){
     b.classList.toggle('hidden',!/^ม/.test(a.value));
   });
 }
+function appNameText(){ return 'NSR SMART '+(scopeHas('ม')?(scopeHas('ป')?'ประถม–มัธยม':'มัธยมศึกษา'):'ประถมศึกษา'); }
 function appNameHTML(){
   const p=scopeHas('ป'), m=scopeHas('ม');
   const tail=p&&m?'':'<span class="text-slate-600"> '+(m?'มัธยมศึกษา':'ประถมศึกษา')+'</span>';
@@ -5849,6 +5924,12 @@ function renderHealth(r){
 
 // ---------- 👨‍💻 ผู้พัฒนา ----------
 const DEV_CHANGELOG=[
+  ['2026-11-18','ศูนย์ควบคุมกำหนด "ขอบเขตชั้นที่ซื้อ" ได้ → โรงเรียนตั้งขอบเขตเกินสิทธิ์ไม่ได้ และโรงเรียนใหม่ใช้ขอบเขตตามที่ซื้ออัตโนมัติ (แสดงสิทธิ์ในหน้าตั้งค่า)'],
+  ['2026-11-18','เติม 0 ช่องคะแนนว่าง (แอดมิน • เลือกวิชา×ห้อง • ย้อนกลับได้ • ข้ามนักเรียนที่ติด ร/มส/มผ และวิชาที่ล็อก) • ส่งออก SchoolMIS เลือกภาคเรียนได้ (ม.) + คอลัมน์ภาค/หน่วยกิต'],
+  ['2026-11-18','ม. (หลักสูตร 2551): ใบรายงานผลการเรียน ม. แยกภาค 1/2 + หน่วยกิต (ชม.÷40) + GPA รายภาค/GPAX • ใบรายงานกลางปีของ ม. = ผลภาคเรียนที่ 1 • ความสามารถ 2568 ไม่คิดกับห้อง ม. • นักเรียนเสี่ยงของ ม. ใช้ GPA ถ่วงหน่วยกิต • ชื่อชั้นในเอกสารตาม ป./ม. • ซ่อนเมนูสรุปผล 2568 เมื่อเปิดเฉพาะ ม.'],
+  ['2026-11-18','ความเร็ว: เปิดหน้าเว็บไม่ต้องโหลดไลบรารี Excel/กราฟ/PDF ~2 MB ก่อน (โหลดเมื่อใช้) • เปิดแอปซ้ำ (ครู) แสดงทันทีจากข้อมูลในเครื่อง • หน้าบันทึกคะแนนโหลดเฉพาะวิชา×ห้อง • หลังบ้านอ่านชีตน้อยลง (บันทึกคะแนน 14→5 ครั้ง, อนุมัติทั้งห้องไม่คำนวณซ้ำรายห้อง)'],
+  ['2026-11-18','ตรวจบั๊ก/ความปลอดภัย: หลังบ้านกันการเรียก API ตรงของคำสั่งแอดมิน (นักเรียน/รายวิชา/ปฏิทิน/ตารางสอน) • ครูบันทึกคะแนน/หน่วยได้เฉพาะวิชา×ห้องที่ตนสอนหรือห้องประจำชั้น • คำสั่งเขียนทุกตัวทำงานใต้ล็อกเดียว (กันบันทึกชนกัน) • ลบโค้ดที่ไม่ได้ใช้'],
+  ['2026-11-17','เช็คชื่อ: เพิ่มปุ่ม "📷 สรุป/แคปภาพ" ข้างปุ่มบันทึก (หน้าเสาธง/รายคาบ) เปิดหน้าสรุปได้ทุกเมื่อ • หน้าสรุปขึ้นทันทีหลังบันทึก แม้ปฏิทินเช็คชื่อรีเฟรชไม่สำเร็จ'],
   ['2026-11-06','แอดมิน: อนุมัติผลทั้งห้อง (ล็อกทุกวิชาอัตโนมัติ + อนุมัติห้อง) และปลดล็อกทั้งห้อง (ยกเลิกการอนุมัติ) • เลือกทีละห้องหรือทั้งชั้น • ห้องที่วิชายังไม่เรียบร้อยไม่ล็อกอะไร เว้นแต่ล็อกบังคับพร้อมเหตุผล'],
   ['2026-11-06','หน่วยการเรียนรู้/คะแนนเต็ม แยกรายห้อง (วิชา+ชั้นเดียวกันแต่คนละห้อง = คนละชุด ไม่ผูกกับครู) • ปุ่ม "นำเข้าจากห้องอื่น" (ไม่บังคับ ไม่กดก็กรอกเองได้) • ระบบแยกชุดเดิมเป็นรายห้องให้อัตโนมัติ + สำรองก่อนย้าย'],
   ['2026-10-17','รองรับ ม.1–6 (หลักสูตร 2551) ในไฟล์เดียวกับประถม: ตั้ง "ขอบเขตชั้น" ได้ (ป.1-6 / ม.1-6 / ม.1-3 / ป.1-6,ม.1-3) • ภาคเรียนปัจจุบัน + ปุ่มสลับภาค (แอดมิน) • รายวิชา ม. แยกรายภาค • ตัวเลือกชั้น/ชื่อระบบตามขอบเขต • ขึ้นปีใหม่ตามขอบเขต (ป.6→ม.1 ถ้าเปิด)'],
@@ -5905,18 +5986,18 @@ function devRenderSys(){
 }
 function devReportText(){
   const u=state.currentUser||{}, s=state.settings||{}, L=DEV_SYS.license;
-  return ['📋 ข้อมูลระบบ NSR SMART ประถมศึกษา','โรงเรียน: '+(s.schoolName||'-'),'ผู้ใช้: '+(u.name||'-')+' ('+(u.role||'-')+')','เวอร์ชันหน้าเว็บ: '+APP_BUILD,'เวอร์ชัน Code.gs: '+DEV_SYS.be,
+  return ['📋 ข้อมูลระบบ '+appNameText(),'โรงเรียน: '+(s.schoolName||'-'),'ผู้ใช้: '+(u.name||'-')+' ('+(u.role||'-')+')','เวอร์ชันหน้าเว็บ: '+APP_BUILD,'เวอร์ชัน Code.gs: '+DEV_SYS.be,
     'ใบอนุญาตหมดอายุ: '+(L?beTs(L.expires)+' (เหลือ '+L.daysLeft+' วัน)':'-'),'เบราว์เซอร์: '+navigator.userAgent,'เวลา: '+new Date().toLocaleString('th-TH'),'','อาการที่พบ: '].join('\n');
 }
 function devCopyReport(){ spClip(devReportText(),'คัดลอกข้อมูลแล้ว — วางใน LINE ถึงผู้พัฒนาได้'); }
 function devRenew(){
   const s=state.settings||{}, L=DEV_SYS.license;
-  const msg='สวัสดีครับ/ค่ะ ขอต่ออายุใบอนุญาตระบบ NSR SMART ประถมศึกษา\nโรงเรียน: '+(s.schoolName||'-')+'\nใบอนุญาตหมดอายุ: '+(L?beTs(L.expires):'-');
+  const msg='สวัสดีครับ/ค่ะ ขอต่ออายุใบอนุญาตระบบ '+appNameText()+'\nโรงเรียน: '+(s.schoolName||'-')+'\nใบอนุญาตหมดอายุ: '+(L?beTs(L.expires):'-');
   spClip(msg,'คัดลอกข้อความต่ออายุแล้ว — วางในแชต LINE ได้เลย');
   const u=devLineUrl(); if(u) window.open(u,'_blank','noopener');
 }
 // ---------- 📜 ประวัติการแก้ไข ----------
-const AUDIT_LABEL={approveWholeRoom:'อนุมัติทั้งห้อง',unlockWholeRoom:'ปลดล็อกทั้งห้อง',approveSubjects:'อนุมัติ/ล็อกวิชา',unlockSubject:'ปลดล็อกวิชา',setLock:'ล็อก/ปลดล็อกทั้งห้อง',saveSettings:'แก้ตั้งค่า',saveTabAccess:'แก้สิทธิ์เมนู',
+const AUDIT_LABEL={applyZeroFill:'เติม 0 ช่องว่าง',undoZeroFill:'ย้อนการเติม 0',approveWholeRoom:'อนุมัติทั้งห้อง',unlockWholeRoom:'ปลดล็อกทั้งห้อง',approveSubjects:'อนุมัติ/ล็อกวิชา',unlockSubject:'ปลดล็อกวิชา',setLock:'ล็อก/ปลดล็อกทั้งห้อง',saveSettings:'แก้ตั้งค่า',saveTabAccess:'แก้สิทธิ์เมนู',
   saveGradeMapping:'แก้ตารางแปลงเกรด',saveReport51Config:'แก้ตั้งค่าใบรายงาน',saveTeacher:'บันทึกครู',saveTeachersBatch:'บันทึกครูหลายคน',deleteTeacher:'ลบครู',importDMC:'นำเข้า DMC',
   restoreBackup:'กู้คืนข้อมูล',importBackupData:'นำเข้าข้อมูลสำรอง',clearAllData:'ล้างข้อมูล',saveSubjectAssignments:'จัดครู/รายวิชา',bulkImportRoster:'นำเข้ารายชื่อนักเรียน',
   mergeSubjects:'รวมรายวิชา',mapSubjectAlias:'ผูกชื่อวิชา',runHealthFix:'ซ่อมข้อมูล',runYearRollover:'ขึ้นปีการศึกษาใหม่',setGradeStatus:'ตั้งสถานะ ร/มส/มผ',recordRemedy:'บันทึกผลแก้ไข',setPromotionDecision:'ตัดสินเลื่อนชั้น/ซ้ำชั้น',fixDupStudentIds:'ซ่อมรหัสนักเรียนซ้ำ',recoverOrphanUnits:'กู้หน่วยที่หาย',markLookupIssue:'จัดการเรื่องแจ้งปัญหา'};
@@ -6002,7 +6083,7 @@ const LOGIN_LOGO_BASE64='';
 const APP_NAME='NSR SMART ประถมศึกษา';
 const APP_NAME_HTML='NSR <span class="text-emerald-500">SMART</span> <span class="text-slate-600">ประถมศึกษา</span>';
 const APP_TAGLINE='ระบบรายงานผลการเรียน หลักสูตร 2568 (เทียบเคียง 2551)';
-const APP_BUILD='2026-11-06b'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
+const APP_BUILD='2026-11-18e'; // เลขเวอร์ชันหน้าเว็บ — ใช้เช็คว่าไฟล์ล่าสุดขึ้น GitHub Pages แล้วหรือยัง
 const TH_M_ABBR=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 // โหลดรายการ (วัน|ห้อง|คาบ) ที่เช็คแล้วของเดือนนั้น (cache ต่อเดือน)
 async function attMonthKeys(month){
@@ -6249,8 +6330,8 @@ async function saveFlag(){
   try{ showLoading(true);
     await GAS.call('saveAttendance',{date, classLevel:cls, period:0, checkedBy:state.currentUser.name, records});
     toast('บันทึกเช็คชื่อหน้าเสาธงแล้ว');
-    attKeyAdd(date, cls, '0'); renderFlagCal();
-    showAttResult({classLevel:cls, date, subtitle:'', students:state.flagStudents, draft:state.flagDraft});
+    try{ showAttResult({classLevel:cls, date, subtitle:'', students:state.flagStudents, draft:state.flagDraft}); }catch(e2){ toast('แสดงหน้าสรุปไม่สำเร็จ: '+e2.message+' — กดปุ่ม 📷 สรุป/แคปภาพ','error'); }
+    try{ attKeyAdd(date, cls, '0'); renderFlagCal(); }catch(e3){}
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 
@@ -6304,8 +6385,8 @@ async function savePeriod(){
   try{ showLoading(true);
     await GAS.call('saveAttendance',{date, classLevel:slot.classLevel, period:slot.period, checkedBy:state.currentUser.name, records});
     toast('บันทึกเช็คชื่อคาบ '+slot.period+' แล้ว');
-    attKeyAdd(date, slot.classLevel, String(slot.period)); renderPeriodCal();
-    showAttResult({classLevel:slot.classLevel, date, subtitle:'คาบ '+slot.period+' • '+(slot.subject||''), students:state.periodStudents, draft:state.periodDraft});
+    try{ showAttResult({classLevel:slot.classLevel, date, subtitle:'คาบ '+slot.period+' • '+(slot.subject||''), students:state.periodStudents, draft:state.periodDraft}); }catch(e2){ toast('แสดงหน้าสรุปไม่สำเร็จ: '+e2.message+' — กดปุ่ม 📷 สรุป/แคปภาพ','error'); }
+    try{ attKeyAdd(date, slot.classLevel, String(slot.period)); renderPeriodCal(); }catch(e3){}
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
 
@@ -6574,6 +6655,20 @@ function showAttResult(o){
      <div class="grid grid-cols-4 gap-2 mb-4">${cards}</div>
      ${lists}`;
   const m=document.getElementById('attResultModal'); m.classList.remove('hidden'); m.classList.add('flex');
+}
+// เปิดหน้าสรุป/แคปภาพได้ทุกเมื่อ (ไม่ต้องบันทึกใหม่) — ใช้สถานะที่เห็นบนหน้าจอตอนนี้
+function openAttSummary(kind){
+  try{
+    if(kind==='flag'){
+      const cls=document.getElementById('att_flag_class').value, date=val('att_flag_date');
+      if(!cls||!date||!(state.flagStudents||[]).length){ toast('โหลดรายชื่อห้องก่อน','error'); return; }
+      showAttResult({classLevel:cls, date, subtitle:'', students:state.flagStudents, draft:state.flagDraft});
+    }else{
+      const slot=state.periodSlot, date=val('att_period_date');
+      if(!slot||!(state.periodStudents||[]).length){ toast('โหลดรายชื่อคาบก่อน','error'); return; }
+      showAttResult({classLevel:slot.classLevel, date, subtitle:'คาบ '+slot.period+' • '+(slot.subject||''), students:state.periodStudents, draft:state.periodDraft});
+    }
+  }catch(e){ toast('แสดงหน้าสรุปไม่สำเร็จ: '+e.message,'error'); }
 }
 function closeAttResult(){ const m=document.getElementById('attResultModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
 
@@ -6929,7 +7024,7 @@ function pp5PageHTML(d){
   const s=d.settings||{};
   const bd='border:1px solid #000;';
   const td=(v,extra)=>`<td style="${bd}padding:2px 4px;text-align:center;${extra||''}">${v}</td>`;
-  const classTH='ประถมศึกษาปีที่ '+String(d.classLevel).replace(/^ป\./,'');
+  const classTH=(/^ม/.test(String(d.classLevel))?'มัธยมศึกษาปีที่ ':'ประถมศึกษาปีที่ ')+String(d.classLevel).replace(/^[ปม]\./,'');
   const hts=(d.homeroomTeachers&&d.homeroomTeachers.length?d.homeroomTeachers:['','']).slice(0,2);
   while(hts.length<2) hts.push('');
   // ===== ตารางซ้าย: คะแนนรายวิชา (header + body อยู่ตารางเดียวกัน คอลัมน์ตรงกันแน่นอน) =====
@@ -7523,7 +7618,53 @@ async function wrUnlock(){
     toast('ปลดล็อก '+d.unlocked+' วิชา'+(rv?' • ยกเลิกการอนุมัติ '+rv+' ห้อง':''));
   }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
 }
+/* ---- เติม 0 ช่องว่าง (แอดมิน) ---- */
+function zfFillRooms(){
+  const sel=document.getElementById('zf_room'); if(!sel) return; const cur=sel.value;
+  sel.innerHTML='<option value="">ทุกห้อง</option>'+allClasses().map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join('');
+  if([...sel.options].some(o=>o.value===cur)) sel.value=cur;
+}
+async function zfPreview(){
+  const sem=(document.getElementById('zf_sem')||{}).value||'', room=document.getElementById('zf_room').value, el=document.getElementById('zf_list');
+  try{ showLoading(true);
+    const d=await GAS.call('getZeroFillPreview',{semester:sem});
+    let rows=d.rows||[]; if(room) rows=rows.filter(r=>r.room===room);
+    state._zfRows=rows;
+    if(!rows.length){ el.innerHTML='<div class="text-emerald-600 py-2">✅ ไม่มีช่องคะแนนว่าง'+(d.skippedLocked?' (ข้ามวิชาที่ล็อก '+d.skippedLocked+' รายการ)':'')+'</div>'; return; }
+    el.innerHTML=`<div class="text-xs text-slate-500 mb-1">พบ ${rows.reduce((a,r)=>a+r.cells,0)} ช่อง ใน ${rows.length} วิชา×ห้อง${d.skippedLocked?' • ข้ามที่ล็อก '+d.skippedLocked:''} — เลือกรายการที่จะเติม 0</div>
+      <table class="w-full text-sm" style="min-width:420px"><thead><tr class="text-left text-slate-400 border-b"><th class="px-1"><input type="checkbox" checked onchange="document.querySelectorAll('.zfpick').forEach(x=>x.checked=this.checked)"></th><th class="px-2">ห้อง</th><th class="px-2">วิชา</th><th class="px-2 text-center">ช่องว่าง</th><th class="px-2 text-center">นักเรียน</th></tr></thead><tbody>`+
+      rows.map((r,i)=>`<tr class="border-b last:border-0"><td class="px-1"><input type="checkbox" class="zfpick" value="${i}" checked></td><td class="px-2 whitespace-nowrap">${esc(r.room)}</td><td class="px-2">${esc((r.code?r.code+' ':'')+r.name)}</td><td class="px-2 text-center">${r.cells}</td><td class="px-2 text-center">${r.students}</td></tr>`).join('')+'</tbody></table>';
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
+async function zfApply(){
+  const rows=state._zfRows||[]; const picks=[...document.querySelectorAll('.zfpick:checked')].map(x=>rows[Number(x.value)]).filter(Boolean);
+  if(!picks.length){ toast('กด “ดูช่องว่าง” แล้วเลือกรายการก่อน','error'); return; }
+  const n=picks.reduce((a,r)=>a+r.cells,0);
+  if(!confirm('เติม 0 จำนวน '+n+' ช่อง ใน '+picks.length+' วิชา×ห้อง?\nระบบจะคำนวณเกรดใหม่ และย้อนกลับได้ภายหลัง')) return;
+  try{ showLoading(true);
+    const sem=(document.getElementById('zf_sem')||{}).value||'';
+    const d=await GAS.call('applyZeroFill',{semester:sem, targets:picks.map(r=>r.subjectID+'|'+r.room)});
+    toast('เติม 0 แล้ว '+d.filled+' ช่อง • '+d.rows+' วิชา×ห้อง'+(d.errors&&d.errors.length?' • คำนวณเกรดไม่สำเร็จ '+d.errors.length:''));
+    state._spDirty=true; document.getElementById('zf_list').innerHTML=''; state._zfRows=[]; zfLoadBatches();
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
+async function zfLoadBatches(){
+  const el=document.getElementById('zf_batches'); if(!el||!isAdminUser()) return;
+  try{
+    const list=await GAS.call('getZeroFillBatches',{});
+    el.innerHTML=list.length?'<div class="font-semibold text-slate-600 mb-1">รอบที่เติมไว้</div>'+list.slice(0,10).map(b=>`<div class="flex justify-between items-center border-b border-slate-100 py-1"><span>${esc(beTs?beTs(b.at):b.at)} • ${b.cells} ช่อง • ${b.rows} วิชา×ห้อง${b.semester?' • ภาค '+esc(b.semester):''} • ${esc(b.by||'')}</span><button onclick="zfUndo('${esc(b.batchId)}')" class="text-rose-600 px-2">↩️ ย้อนกลับ</button></div>`).join(''):'';
+  }catch(e){ el.innerHTML=''; }
+}
+async function zfUndo(id){
+  if(!confirm('ย้อนกลับรอบนี้? ช่องที่ยังเป็น 0 จะกลับเป็นว่าง (ช่องที่ครูแก้แล้วไม่แตะ / ข้ามวิชาที่ล็อก)')) return;
+  try{ showLoading(true);
+    const d=await GAS.call('undoZeroFill',{batchId:id});
+    toast('ย้อนแล้ว '+d.undone+' ช่อง'+(d.changed?' • ข้าม (ครูแก้แล้ว) '+d.changed:'')+(d.locked?' • ข้าม (ล็อก) '+d.locked:''));
+    state._spDirty=true; zfLoadBatches();
+  }catch(e){ toast(e.message,'error'); } finally{ showLoading(false); }
+}
 function renderLocksAdmin(){
+  try{ zfFillRooms(); if(!state._zfAt||Date.now()-state._zfAt>4000){ state._zfAt=Date.now(); zfLoadBatches(); } }catch(e){}
   if(!state._wrAt||Date.now()-state._wrAt>4000){ state._wrAt=Date.now(); wrLoad(); }
   renderSubjLocks();
   const el=document.getElementById('locksList'); if(!el) return;
@@ -9700,10 +9841,12 @@ async function startApp(){
       state.currentUser=u;
       try{
         if(isTeacherScope(u)){
-          const [sch,subj]=await Promise.all([GAS.call('getSchedule',{teacher:u.name}), GAS.call('getTeacherSubjects',{teacher:u.name})]);
-          state.mySchedule=sch; state.mySubjects=subj;
+          const fresh=fetchMyTeaching(u);
+          const c=myTeachCache(u);
+          if(c){ state.mySchedule=c.sch; state.mySubjects=c.subj; fresh.catch(()=>{}); }   // แสดงทันที แล้วอัปเดตเบื้องหลัง
+          else await fresh;
         } else { state.mySchedule=[]; state.mySubjects=[]; }
-      }catch(e){ state.mySchedule=[]; state.mySubjects=[]; }
+      }catch(e){ state.mySchedule=state.mySchedule||[]; state.mySubjects=state.mySubjects||[]; }
       const ls=document.getElementById('loginScreen'); ls.classList.add('hidden'); ls.classList.remove('flex');
       applyRole(); await bootstrap(); switchTab('home');
       return;
@@ -9712,6 +9855,56 @@ async function startApp(){
   showLoginScreen();
 }
 function curName(){ return (state.currentUser&&state.currentUser.name)||''; }
+
+/* ---------- โหลดไลบรารีเมื่อใช้ (เดิมโหลดทั้งหมด ~2 MB ตอนเปิดหน้า) ---------- */
+const CDNJS='https://cdnjs.cloudflare.com/ajax/libs/';
+const LIBS={
+  xlsx:  {url:CDNJS+'xlsx/0.18.5/xlsx.full.min.js',       ok:()=>typeof XLSX!=='undefined'},
+  chart: {url:CDNJS+'Chart.js/4.4.1/chart.umd.min.js',    ok:()=>typeof Chart!=='undefined'},
+  h2c:   {url:CDNJS+'html2canvas/1.4.1/html2canvas.min.js', ok:()=>typeof html2canvas!=='undefined'},
+  pdfjs: {url:CDNJS+'pdf.js/3.11.174/pdf.min.js',         ok:()=>typeof pdfjsLib!=='undefined',
+          after:()=>{ pdfjsLib.GlobalWorkerOptions.workerSrc=CDNJS+'pdf.js/3.11.174/pdf.worker.min.js'; }},
+  pdflib:{url:CDNJS+'pdf-lib/1.17.1/pdf-lib.min.js',      ok:()=>typeof PDFLib!=='undefined'}
+};
+const _libP={};
+function ensureLib(k){
+  const L=LIBS[k]; if(L.ok()) return Promise.resolve();
+  if(_libP[k]) return _libP[k];
+  _libP[k]=new Promise((res,rej)=>{
+    const sc=document.createElement('script'); sc.src=L.url; sc.async=true;
+    sc.onload=()=>{ try{ L.after&&L.after(); }catch(e){} res(); };
+    sc.onerror=()=>{ delete _libP[k]; sc.remove(); rej(new Error('โหลดเครื่องมือไม่สำเร็จ ('+k+') — ตรวจอินเทอร์เน็ตแล้วลองใหม่')); };
+    document.head.appendChild(sc);
+  });
+  return _libP[k];
+}
+// ห่อฟังก์ชันที่ปุ่มเรียก: รอไลบรารีโหลดก่อน แล้วค่อยทำงานเดิม
+function libWrap(keys, names){
+  names.forEach(n=>{
+    const f=window[n]; if(typeof f!=='function' || f._libWrapped) return;
+    const w=async function(...a){
+      if(keys.some(k=>!LIBS[k].ok())){
+        try{ showLoading(true); await Promise.all(keys.map(ensureLib)); }
+        catch(e){ toast(e.message,'error'); return; }
+        finally{ showLoading(false); }
+      }
+      return f.apply(this,a);
+    };
+    w._libWrapped=true; window[n]=w;
+  });
+}
+libWrap(['xlsx'],['downloadTemplate','importStudents','scoreFormDownload','scoreFormImport','exportMISWide','exportMIS','exportAttMatrix',
+  'exportScoreProgress','exportStudStat','downloadRosterTemplate','importRoster','exportAllData','exportAttSummary','exportRegister','exportRisk',
+  'exportTeachSumPending','importDMCFile','exportDMC','exportSAR','svExport','smExport','smExportAll','arExport']);
+libWrap(['h2c'],['captureAttResult']);
+libWrap(['pdfjs'],['fillPP5Docs','onPickCurriculum']);
+libWrap(['pdfjs','pdflib'],['splitAndUpload']);
+// โหลดล่วงหน้าแบบไม่บล็อก: กราฟหลังเปิดแอป • Excel เมื่อเข้าเมนูที่มักส่งออก/นำเข้า
+const LIB_PREFETCH_TABS={xlsx:['admin','settings','report','stats','profile','scoretrack','risk','attendance','former','schoolmis','scores','summary68']};
+function libPrefetch(tab){
+  Object.keys(LIB_PREFETCH_TABS).forEach(k=>{ if(LIB_PREFETCH_TABS[k].indexOf(tab)>=0 && !LIBS[k].ok()) setTimeout(()=>ensureLib(k).catch(()=>{}),800); });
+}
+setTimeout(()=>{ ensureLib('chart').catch(()=>{}); },2500);
 
 applyLoginLogo(); // แสดงโลโก้ทันทีตั้งแต่ยังไม่ล็อกอิน
 startApp();
